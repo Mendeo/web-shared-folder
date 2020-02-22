@@ -48,6 +48,7 @@ function answer(res, filePath, params)
 	}
 }
 
+/*Обычная отправка считанного файла без использования файловых потоков.
 function sendFile(res, filePath)
 {
 	let file = fs.readFile(filePath, (err, data) =>
@@ -68,6 +69,38 @@ function sendFile(res, filePath)
 			res.end(data);
 		}
 	});
+}
+*/
+
+//Отправка файлов с использованием файловых потоков.
+function sendFile(res, filePath)
+{
+	let file = fs.ReadStream(filePath);
+	file.pipe(res);
+	fs.stat(filePath, (err, stats) =>
+			{
+				if (err)
+				{
+					error(err);
+				}
+				else
+				{
+					let size = stats.size;
+					res.writeHead(200, 
+					{
+						'Content-Length': size,
+						'Content-Type': getContentType(path.extname(filePath))
+					});
+				}
+			});
+	file.on('error', (err) => error(err));
+	res.on('close', () => file.destroy());
+	function error(err)
+	{
+		console.log(filePath + ' not found');
+		res.writeHead(500);
+		res.end('Internal sever error');
+	}
 }
 
 function getContentType(ext)
