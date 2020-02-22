@@ -7,6 +7,69 @@ const dirPath = process.argv[2];
 
 if (!path.isAbsolute(dirPath)) path.join(__dirname, dirPath);
 
+http.createServer((req, res) =>
+{
+	let url = req.url.split('?');
+	let fileName = url[0];
+	let paramsGet = parseGetString(url[1]);
+	if (fileName === '/') fileName = 'index.html';
+	let filePath = path.join(dirPath, fileName);
+	console.log(filePath);
+	answer(res, filePath, paramsGet);
+}).listen(PORT);
+
+function parseGetString(getStr)
+{
+	let paramsGet;
+	if (getStr)
+	{
+		paramsGet = {};
+		let params = getStr.split('&');
+		params.forEach((p) =>
+			{
+				let keyVal = p.split('=');
+				paramsGet[keyVal[0]] = keyVal[1];
+			});
+	}
+	return paramsGet;
+}
+
+function answer(res, filePath, params)
+{
+	if (!params) 
+	{
+		sendFile(res, filePath);
+	}
+	else
+	{
+		res.writeHead(500);
+		res.end(JSON.stringify(params)); //Сделать что-то с параметрами.
+		console.log(params);
+	}
+}
+
+function sendFile(res, filePath)
+{
+	let file = fs.readFile(filePath, (err, data) =>
+	{
+		if (err)
+		{
+			console.log(filePath + ' not found');
+			res.writeHead(500);
+			res.end('Internal sever error');
+		}
+		else
+		{
+			res.writeHead(200, 
+			{
+				'Content-Length': Buffer.byteLength(data),
+				'Content-Type': getContentType(path.extname(filePath))
+			});
+			res.end(data);
+		}
+	});
+}
+
 function getContentType(ext)
 {
 	//Text
@@ -32,29 +95,3 @@ function getContentType(ext)
 	if (ext == '.webp') return 'image/webp';
 	return 'application/octet-stream';
 }
-
-http.createServer((req, res) =>
-{
-	let url = req.url;
-	if (url === '/') url = 'index.html';
-	let filePath = path.join(dirPath, url);
-	console.log(filePath);
-	let file = fs.readFile(filePath, (err, data) =>
-	{
-		if (err)
-		{
-			console.log(req.url + ' not found');
-			res.writeHead(500);
-			res.end('Internal sever error');
-		}
-		else
-		{
-			res.writeHead(200, 
-			{
-				'Content-Length': Buffer.byteLength(data),
-				'Content-Type': getContentType(path.extname(filePath))
-			});
-			res.end(data);
-		}
-	})
-}).listen(PORT);
