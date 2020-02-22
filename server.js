@@ -1,9 +1,11 @@
 'use strict';
-const PORT =3128;
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const dirPath = process.argv[2];
+const PORT = process.argv[3];
+
+console.log('port = ' + PORT);
 
 if (!path.isAbsolute(dirPath)) path.join(__dirname, dirPath);
 
