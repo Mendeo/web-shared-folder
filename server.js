@@ -94,7 +94,11 @@ function sendFile(res, filePath)
 				}
 			});
 	file.on('error', (err) => error(err));
-	res.on('close', () => file.destroy());
+	res.on('close', () => 
+		{
+			file.destroy();
+			console.log('Connection lost');
+		});
 	function error(err)
 	{
 		console.log(filePath + ' not found');
