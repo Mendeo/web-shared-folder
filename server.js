@@ -44,8 +44,10 @@ function answer(res, filePath, params)
 	}
 	else
 	{
-		res.writeHead(500);
-		res.end(JSON.stringify(params)); //Сделать что-то с параметрами.
+		sendFile(res, filePath);
+		//Сделать что-то с параметрами.
+		//res.writeHead(500);
+		//res.end(JSON.stringify(params)); 
 		console.log(params);
 	}
 }
