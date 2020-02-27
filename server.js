@@ -106,8 +106,8 @@ function sendFile(res, filePath)
 	function error(err)
 	{
 		console.log(filePath + ' not found');
-		res.writeHead(500);
-		res.end('Internal sever error');
+		res.writeHead(404);
+		res.end('404 Not Found');
 	}
 }
 
