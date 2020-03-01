@@ -111,7 +111,7 @@ function sendFile(res, filePath)
 			});
 	function error(err)
 	{
-		console.log(filePath + ' not found, error: ' + err);
+		console.log('Not found: ' + filePath + ' ' + err);
 		res.writeHead(404);
 		res.end('404 Not Found');
 	}
