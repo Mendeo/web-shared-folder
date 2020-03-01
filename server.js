@@ -99,11 +99,11 @@ function sendFile(res, filePath)
 	res.on('close', () => 
 		{
 			file.destroy();
-			console.log('Connection lost');
+			console.log('Connection lost: ' + filePath);
 		});
 	function error(err)
 	{
-		console.log(filePath + ' not found');
+		console.log(filePath + ' not found, error: ' + err);
 		res.writeHead(404);
 		res.end('404 Not Found');
 	}
