@@ -7,8 +7,6 @@ const PORT = process.argv[3];
 
 console.log('port = ' + PORT);
 
-if (!path.isAbsolute(dirPath)) path.join(__dirname, dirPath);
-
 http.createServer((req, res) =>
 {
 	let url = req.url.split('?');
