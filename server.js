@@ -77,8 +77,6 @@ function sendFile(res, filePath)
 //Отправка файлов с использованием файловых потоков.
 function sendFile(res, filePath)
 {
-	let file = fs.ReadStream(filePath);
-	file.pipe(res);
 	fs.stat(filePath, (err, stats) =>
 			{
 				if (err)
@@ -87,20 +85,30 @@ function sendFile(res, filePath)
 				}
 				else
 				{
+					let file = fs.ReadStream(filePath);
+					file.pipe(res);
+					file.on('error', (err) => error(err));
 					let size = stats.size;
 					res.writeHead(200, 
 					{
 						'Content-Length': size,
 						'Content-Type': getContentType(path.extname(filePath))
 					});
+					res.on('close', () => 
+						{
+							if (!res.writableFinished)
+							{
+								file.destroy();
+								console.log('Conection lost: ' + filePath);
+							}
+						});
+					res.on('finish', () =>
+						{
+							console.log('Sent successfully: ' + filePath);
+						});
+
 				}
 			});
-	file.on('error', (err) => error(err));
-	res.on('close', () => 
-		{
-			file.destroy();
-			console.log('Connection lost: ' + filePath);
-		});
 	function error(err)
 	{
 		console.log(filePath + ' not found, error: ' + err);
