@@ -10,10 +10,9 @@ console.log('port = ' + PORT);
 http.createServer((req, res) =>
 {
 	let url = req.url.split('?');
-	let fileName = url[0];
+	let filePath = url[0];
 	let paramsGet = parseGetString(url[1]);
-	if (fileName === '/') fileName = 'index.html';
-	let filePath = path.join(dirPath, fileName);
+	filePath = path.join(dirPath, filePath);
 	console.log(filePath);
 	answer(res, filePath, paramsGet);
 }).listen(PORT);
@@ -83,31 +82,42 @@ function sendFile(res, filePath)
 				{
 					error(err);
 				}
-				else
+				else if (stats.isDirectory()) 
 				{
-					let file = fs.ReadStream(filePath);
-					file.pipe(res);
-					file.on('error', (err) => error(err));
-					let size = stats.size;
-					res.writeHead(200, 
-					{
-						'Content-Length': size,
-						'Content-Type': getContentType(path.extname(filePath))
-					});
-					res.on('close', () => 
-						{
-							if (!res.writableFinished)
-							{
-								file.destroy();
-								console.log('Conection lost: ' + filePath);
-							}
-						});
-					res.on('finish', () =>
-						{
-							console.log('Sent successfully: ' + filePath);
-						});
-
+					filePath = path.join(filePath, 'index.html');
 				}
+				fs.stat(filePath, (err, stats) =>
+					{
+						if(err)
+						{
+							error(err);
+						}
+						else
+						{
+							let file = fs.ReadStream(filePath);
+							file.pipe(res);
+							file.on('error', (err) => error(err));
+							let size = stats.size;
+							res.writeHead(200, 
+							{
+								'Content-Length': size,
+								'Content-Type': getContentType(path.extname(filePath))
+							});
+							res.on('close', () => 
+								{
+									if (!res.writableFinished)
+									{
+										file.destroy();
+										console.log('Conection lost: ' + filePath);
+									}
+								});
+							res.on('finish', () =>
+								{
+									console.log('Sent successfully: ' + filePath);
+								});
+
+						}
+					});
 			});
 	function error(err)
 	{
