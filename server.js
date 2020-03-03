@@ -2,7 +2,8 @@
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
-const dirPath = process.argv[2];
+const INITIAL_ROOT_PATH = process.argv[2]; //Папка относительно которой будут задаваться все папки, которые идут с адресом
+let _rootPath = INITIAL_ROOT_PATH; //Папка, которая указана в адресе.
 const PORT = process.argv[3];
 
 console.log('port = ' + PORT);
@@ -10,11 +11,10 @@ console.log('port = ' + PORT);
 http.createServer((req, res) =>
 {
 	let url = req.url.split('?');
-	let filePath = url[0];
+	let urlPath = url[0];
+	console.log('url: ' + urlPath);
 	let paramsGet = parseGetString(url[1]);
-	filePath = path.join(dirPath, filePath);
-	console.log(filePath);
-	answer(res, filePath, paramsGet);
+	answer(res, urlPath, paramsGet);
 }).listen(PORT);
 
 function parseGetString(getStr)
@@ -33,15 +33,15 @@ function parseGetString(getStr)
 	return paramsGet;
 }
 
-function answer(res, filePath, params)
+function answer(res, urlPath, params)
 {
 	if (!params) 
 	{
-		sendFile(res, filePath);
+		sendFileByUrl(res, urlPath);
 	}
 	else
 	{
-		sendFile(res, filePath);
+		sendFileByUrl(res, urlPath);
 		//Сделать что-то с параметрами.
 		//res.writeHead(500);
 		//res.end(JSON.stringify(params)); 
@@ -73,58 +73,80 @@ function sendFile(res, filePath)
 }
 */
 
-//Отправка файлов с использованием файловых потоков.
-function sendFile(res, filePath)
+//Поиск и сопоставление нужных путей
+function sendFileByUrl(res, urlPath)
 {
+	let filePath = path.join(_rootPath, urlPath);	
 	fs.stat(filePath, (err, stats) =>
 			{
-				if (err)
+				if (err) //Либо нет такого файла, либо это запрос относительно основного пути.
 				{
-					error(err);
+					filePath = path.join(INITIAL_ROOT_PATH, urlPath)
+					fs.stat(filePath, (err, stats) =>
+						{
+							if (err)
+							{
+								error(err, res);
+							}
+							else if(stats.isDirectory()) //Если в адресной строке папка, то переделываем корневую папку, чтобы все последующие запросы файлов без слэша вначале читались из неё.
+							{
+								_rootPath = filePath;
+								filePath = path.join(_rootPath, 'index.html');
+							}
+						});
 				}
 				else if (stats.isDirectory()) 
 				{
-					filePath = path.join(filePath, 'index.html');
+					_rootPath = filePath;
+					filePath = path.join(_rootPath, 'index.html');
 				}
 				fs.stat(filePath, (err, stats) =>
+				{
+					if(err)
 					{
-						if(err)
-						{
-							error(err);
-						}
-						else
-						{
-							let file = fs.ReadStream(filePath);
-							file.pipe(res);
-							file.on('error', (err) => error(err));
-							let size = stats.size;
-							res.writeHead(200, 
-							{
-								'Content-Length': size,
-								'Content-Type': getContentType(path.extname(filePath))
-							});
-							res.on('close', () => 
-								{
-									if (!res.writableFinished)
-									{
-										file.destroy();
-										console.log('Conection lost: ' + filePath);
-									}
-								});
-							res.on('finish', () =>
-								{
-									console.log('Sent successfully: ' + filePath);
-								});
-
-						}
-					});
+						error(err, res);
+					}
+					else
+					{
+						let size = stats.size;
+						sendFile(res, filePath, size);
+					}
+				});
+				
 			});
-	function error(err)
+	
+}
+
+function error(err, res)
+{
+	console.log('Not found: ' + err);
+	res.writeHead(404);
+	res.end('404 Not Found');
+}
+//Отправка файлов с использованием файловых потоков.
+function sendFile(res, filePath, size)
+{
+	let file = fs.ReadStream(filePath);
+	file.pipe(res);
+	file.on('error', (err) => error(err, res));
+	res.writeHead(200, 
 	{
-		console.log('Not found: ' + filePath + ' ' + err);
-		res.writeHead(404);
-		res.end('404 Not Found');
-	}
+		'Content-Length': size,
+		'Content-Type': getContentType(path.extname(filePath))
+	});
+	res.on('close', () => 
+		{
+			if (!res.writableFinished)
+			{
+				file.destroy();
+				console.log('Conection lost: ' + filePath);
+			}
+		});
+	res.on('finish', () =>
+		{
+			console.log('Sent successfully: ' + filePath);
+		});
+
 }
 
 function getContentType(ext)
