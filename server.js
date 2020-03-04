@@ -2,8 +2,7 @@
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
-const INITIAL_ROOT_PATH = process.argv[2]; //Папка относительно которой будут задаваться все папки, которые идут с адресом
-let _rootPath = INITIAL_ROOT_PATH; //Папка, которая указана в адресе.
+const ROOT_PATH = process.argv[2]; //Папка относительно которой будут задаваться все папки, которые идут с адресом
 const PORT = process.argv[3];
 
 console.log('port = ' + PORT);
@@ -76,43 +75,33 @@ function sendFile(res, filePath)
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath)
 {
-	let filePath = path.join(_rootPath, urlPath);	
+	let filePath = path.join(ROOT_PATH, urlPath);	
 	fs.stat(filePath, (err, stats) =>
 			{
-				if (err) //Либо нет такого файла, либо это запрос относительно основного пути.
+				if (err)
 				{
-					filePath = path.join(INITIAL_ROOT_PATH, urlPath)
+					error(err, res);
+				}
+				else if (stats.isDirectory()) 
+				{
+					filePath = path.join(filePath, 'index.html');
 					fs.stat(filePath, (err, stats) =>
 						{
 							if (err)
 							{
 								error(err, res);
 							}
-							else if(stats.isDirectory()) //Если в адресной строке папка, то переделываем корневую папку, чтобы все последующие запросы файлов без слэша вначале читались из неё.
+							else
 							{
-								_rootPath = filePath;
-								filePath = path.join(_rootPath, 'index.html');
+								sendFile(res, filePath, stats.size);
 							}
 						});
+
 				}
-				else if (stats.isDirectory()) 
+				else
 				{
-					_rootPath = filePath;
-					filePath = path.join(_rootPath, 'index.html');
+					sendFile(res, filePath, stats.size);
 				}
-				fs.stat(filePath, (err, stats) =>
-				{
-					if(err)
-					{
-						error(err, res);
-					}
-					else
-					{
-						let size = stats.size;
-						sendFile(res, filePath, size);
-					}
-				});
-				
 			});
 	
 }
