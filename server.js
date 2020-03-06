@@ -7,8 +7,13 @@ const PORT = process.argv[3];
 
 console.log('port = ' + PORT);
 
+let _lastReqTime = new Date(0);
+
 http.createServer((req, res) =>
 {
+	let now = new Date();
+	if (now - _lastReqTime > 10000) console.log('*******' + now.toLocaleString('ru-RU', {hour: 'numeric', minute: 'numeric', second: 'numeric'}) + '*******');
+	_lastReqTime = now;
 	let url = req.url.split('?');
 	let urlPath = url[0];
 	console.log('url: ' + urlPath);
