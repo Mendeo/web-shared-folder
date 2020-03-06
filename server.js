@@ -12,7 +12,7 @@ let _lastReqTime = new Date(0);
 http.createServer((req, res) =>
 {
 	let now = new Date();
-	if (now - _lastReqTime > 10000) console.log('*******' + now.toLocaleString('ru-RU', {hour: 'numeric', minute: 'numeric', second: 'numeric'}) + '*******');
+	if (now - _lastReqTime > 1000) console.log('*******' + now.toLocaleString('ru-RU', {hour: 'numeric', minute: 'numeric', second: 'numeric'}) + '*******');
 	_lastReqTime = now;
 	let url = req.url.split('?');
 	let urlPath = url[0];
