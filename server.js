@@ -32,20 +32,20 @@ http.createServer((req, res) =>
   	});
 }).listen(PORT);
 
-function parseRequest(getStr)
+function parseRequest(data)
 {
-	let paramsGet;
-	if (getStr)
+	let params;
+	if (data)
 	{
-		paramsGet = {};
-		let params = getStr.split('&');
-		params.forEach((p) =>
+		params = {};
+		data = data.split('&');
+		data.forEach((p) =>
 			{
 				let keyVal = p.split('=');
-				paramsGet[keyVal[0]] = keyVal[1];
+				params[keyVal[0]] = keyVal[1];
 			});
 	}
-	return paramsGet;
+	return params;
 }
 
 function answer(res, urlPath, paramsGet, paramsPost)
