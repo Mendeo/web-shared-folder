@@ -17,11 +17,22 @@ http.createServer((req, res) =>
 	let url = req.url.split('?');
 	let urlPath = url[0];
 	console.log('url: ' + urlPath);
-	let paramsGet = parseGetString(url[1]);
-	answer(res, urlPath, paramsGet);
+	let paramsGet = parseRequest(url[1]);
+	/*Post данные*/
+	let paramsPost;
+	let data = [];
+  	req.on('data', chunk => 
+	{
+    	data.push(chunk);
+  	});
+  	req.on('end', () =>
+	{
+    	paramsPost = parseRequest(data.join());
+		answer(res, urlPath, paramsGet, paramsPost);
+  	});
 }).listen(PORT);
 
-function parseGetString(getStr)
+function parseRequest(getStr)
 {
 	let paramsGet;
 	if (getStr)
@@ -37,20 +48,12 @@ function parseGetString(getStr)
 	return paramsGet;
 }
 
-function answer(res, urlPath, params)
+function answer(res, urlPath, paramsGet, paramsPost)
 {
-	if (!params) 
-	{
-		sendFileByUrl(res, urlPath);
-	}
-	else
-	{
-		sendFileByUrl(res, urlPath);
-		//Сделать что-то с параметрами.
-		//res.writeHead(500);
-		//res.end(JSON.stringify(params)); 
-		console.log(params);
-	}
+
+	sendFileByUrl(res, urlPath);
+	if (paramsGet) console.log(paramsGet);
+	if (paramsPost) console.log(paramsPost);
 }
 
 /*Обычная отправка считанного файла без использования файловых потоков.
