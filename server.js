@@ -21,15 +21,15 @@ http.createServer((req, res) =>
 	/*Post данные*/
 	let paramsPost;
 	let data = [];
-  	req.on('data', chunk => 
+	req.on('data', chunk => 
 	{
-    	data.push(chunk);
-  	});
-  	req.on('end', () =>
+		data.push(chunk);
+	});
+	req.on('end', () =>
 	{
-    	paramsPost = parseRequest(data.join());
+		paramsPost = parseRequest(data.join());
 		answer(res, urlPath, paramsGet, paramsPost);
-  	});
+	});
 }).listen(PORT);
 
 function parseRequest(data)
