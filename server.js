@@ -2,8 +2,11 @@
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
+
 const ROOT_PATH = process.argv[2]; //Папка относительно которой будут задаваться все папки, которые идут с адресом
 const PORT = process.argv[3];
+const username = process.argv[4];
+const password = process.argv[5];
 
 console.log('port = ' + PORT);
 
@@ -14,22 +17,71 @@ http.createServer((req, res) =>
 	let now = new Date();
 	if (now - _lastReqTime > 1000) console.log('*******' + now.toLocaleString('ru-RU', {hour: 'numeric', minute: 'numeric', second: 'numeric'}) + '*******');
 	_lastReqTime = now;
-	let url = req.url.split('?');
-	let urlPath = url[0];
-	console.log('url: ' + urlPath);
-	let paramsGet = parseRequest(url[1]);
-	/*Post данные*/
-	let paramsPost;
-	let data = [];
-	req.on('data', chunk => 
+	//Проводим авторизацию
+	if (username)
 	{
-		data.push(chunk);
-	});
-	req.on('end', () =>
+		if (req.headers.authorization)
+		{
+			const data = req.headers.authorization.split(' ');
+			if (data[0] !== 'Basic')
+			{
+				authForm();
+			}
+			else
+			{
+				const cred = Buffer.from(data[1], 'base64').toString().split(':');
+				if (cred[0] === username && cred[1] === password)
+				{
+					normalWork();
+				}
+				else
+				{
+					authForm();
+				}
+			}
+		}
+		else
+		{
+			authForm();
+		}
+
+		function authForm()
+		{
+			console.log('Authorization form');
+			const msg = 'Authorization required.'
+			res.writeHead(401,
+				{
+					'WWW-Authenticate': 'Basic realm="Please input correct username and password before viewing this page."',
+					'Content-Length': msg.length,
+					'Content-Type': 'text/plain'
+				});
+			res.end(msg);
+		}
+	}
+	else
 	{
-		paramsPost = parseRequest(data.join());
-		answer(res, urlPath, paramsGet, paramsPost);
-	});
+		normalWork();
+	}
+
+	function normalWork()
+	{
+		let url = req.url.split('?');
+		let urlPath = url[0];
+		console.log('url: ' + urlPath);
+		let paramsGet = parseRequest(url[1]);
+		/*Post данные*/
+		let paramsPost;
+		let data = [];
+		req.on('data', chunk =>
+		{
+			data.push(chunk);
+		});
+		req.on('end', () =>
+		{
+			paramsPost = parseRequest(data.join());
+			answer(res, urlPath, paramsGet, paramsPost);
+		});
+	}
 }).listen(PORT);
 
 function parseRequest(data)
