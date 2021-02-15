@@ -17,7 +17,7 @@ http.createServer((req, res) =>
 	let now = new Date();
 	if (now - _lastReqTime > 1000) console.log('*******' + now.toLocaleString('ru-RU', {hour: 'numeric', minute: 'numeric', second: 'numeric'}) + '*******');
 	_lastReqTime = now;
-	//Проводим авторизацию
+	//Проводим аутентификацию
 	if (username)
 	{
 		if (req.headers.authorization)
@@ -47,8 +47,8 @@ http.createServer((req, res) =>
 
 		function authForm()
 		{
-			console.log('Authorization form');
-			const msg = 'Authorization required.'
+			console.log('Authentication form');
+			const msg = 'Authentication required.'
 			res.writeHead(401,
 				{
 					'WWW-Authenticate': 'Basic realm="Please input correct username and password before viewing this page."',
