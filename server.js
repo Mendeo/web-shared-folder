@@ -56,30 +56,6 @@ function answer(res, urlPath, paramsGet, paramsPost)
 	if (paramsPost) console.log(paramsPost);
 }
 
-/*Обычная отправка считанного файла без использования файловых потоков.
-function sendFile(res, filePath)
-{
-	let file = fs.readFile(filePath, (err, data) =>
-	{
-		if (err)
-		{
-			console.log(filePath + ' not found');
-			res.writeHead(500);
-			res.end('Internal sever error');
-		}
-		else
-		{
-			res.writeHead(200, 
-			{
-				'Content-Length': Buffer.byteLength(data),
-				'Content-Type': getContentType(path.extname(filePath))
-			});
-			res.end(data);
-		}
-	});
-}
-*/
-
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath)
 {
@@ -117,9 +93,39 @@ function sendFileByUrl(res, urlPath)
 function error(err, res)
 {
 	console.log('Not found: ' + err);
-	res.writeHead(404);
-	res.end('404 Not Found');
+	const msg = '404 Not Found';
+	res.writeHead(404, 
+		{
+			'Content-Length': msg.length,
+			'Content-Type': 'text/plain'
+		});
+	res.end(msg);
 }
+
+/*Обычная отправка считанного файла без использования файловых потоков.
+function sendFile(res, filePath)
+{
+	let file = fs.readFile(filePath, (err, data) =>
+	{
+		if (err)
+		{
+			console.log(filePath + ' not found');
+			res.writeHead(500);
+			res.end('Internal sever error');
+		}
+		else
+		{
+			res.writeHead(200, 
+			{
+				'Content-Length': Buffer.byteLength(data),
+				'Content-Type': getContentType(path.extname(filePath))
+			});
+			res.end(data);
+		}
+	});
+}
+*/
+
 //Отправка файлов с использованием файловых потоков.
 function sendFile(res, filePath, size)
 {
@@ -127,10 +133,10 @@ function sendFile(res, filePath, size)
 	file.pipe(res);
 	file.on('error', (err) => error(err, res));
 	res.writeHead(200, 
-	{
-		'Content-Length': size,
-		'Content-Type': getContentType(path.extname(filePath))
-	});
+		{
+			'Content-Length': size,
+			'Content-Type': getContentType(path.extname(filePath))
+		});
 	res.on('close', () => 
 		{
 			if (!res.writableFinished)
