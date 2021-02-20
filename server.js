@@ -1,18 +1,37 @@
 'use strict';
 const http = require('http');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
 
 const ROOT_PATH = process.argv[2]; //Папка относительно которой будут задаваться все папки, которые идут с адресом
 const PORT = process.argv[3];
-const username = process.argv[4];
-const password = process.argv[5];
+const key = process.argv[4];
+const cert = process.argv[5];
+const username = process.argv[6];
+const password = process.argv[7];
 
 console.log('port = ' + PORT);
 
 let _lastReqTime = new Date(0);
 
-http.createServer((req, res) =>
+if (key && cert)
+{
+	const ssl_cert =
+	{
+		key: fs.readFileSync(key),
+		cert: fs.readFileSync(cert)
+	};
+	console.log('Start in https mode');
+	https.createServer(ssl_cert, app).listen(PORT);
+}
+else
+{
+	console.log('Start in http mode');
+	http.createServer(app).listen(PORT)
+}
+
+function app(req, res)
 {
 	let now = new Date();
 	if (now - _lastReqTime > 1000) console.log('*******' + now.toLocaleString('ru-RU', {hour: 'numeric', minute: 'numeric', second: 'numeric'}) + '*******');
@@ -82,7 +101,7 @@ http.createServer((req, res) =>
 			answer(res, urlPath, paramsGet, paramsPost);
 		});
 	}
-}).listen(PORT);
+}
 
 function parseRequest(data)
 {
