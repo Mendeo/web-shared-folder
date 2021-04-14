@@ -310,4 +310,5 @@ function getContentType(ext)
 	if (ext === '.asx' || ext === '.asf') return 'video/x-ms-asf';
 	if (ext === '.wmv') return 'video/x-ms-wmv';
 	if (ext === '.avi') return 'video/x-msvideo';
+	if (ext === '.wasm') return 'application/wasm';
 }
