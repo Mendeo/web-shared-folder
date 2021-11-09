@@ -108,14 +108,15 @@ function app(req, res)
 		let paramsGet = parseRequest(url[1]);
 		/*Post данные*/
 		let paramsPost;
-		let data = [];
+		let body = '';
 		req.on('data', chunk =>
 		{
-			data.push(chunk);
+			body += chunk;
+			if (body.length > 1e6) req.connection.destroy();
 		});
 		req.on('end', () =>
 		{
-			paramsPost = parseRequest(data.join());
+			paramsPost = parseRequest(body);
 			answer(res, urlPath, paramsGet, paramsPost);
 		});
 	}
