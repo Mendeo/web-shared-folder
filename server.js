@@ -26,7 +26,7 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 Если эти параметры заданы, то сервер будет использовать https вместо http.
 
 <username> и <password> - Включает базовую HTTP аутентификацию с заданными именем пользователя и паролем`);
-	return;
+	process.exit(0);
 }
 
 console.log('port = ' + PORT);
@@ -46,13 +46,13 @@ if (key && cert)
 else
 {
 	console.log('Start in http mode');
-	http.createServer(app).listen(PORT)
+	http.createServer(app).listen(PORT);
 }
 
 function app(req, res)
 {
 	let now = new Date();
-	if (now - _lastReqTime > 1000) console.log('*******' + now.toLocaleString('ru-RU', {hour: 'numeric', minute: 'numeric', second: 'numeric'}) + '*******');
+	if (now - _lastReqTime > 1000) console.log('*******' + now.toLocaleString('ru-RU', { hour: 'numeric', minute: 'numeric', second: 'numeric' }) + '*******');
 	_lastReqTime = now;
 	//Проводим аутентификацию
 	if (username)
@@ -85,7 +85,7 @@ function app(req, res)
 		function authForm()
 		{
 			console.log('Authentication form');
-			const msg = 'Authentication required.'
+			const msg = 'Authentication required.';
 			res.writeHead(401,
 				{
 					'WWW-Authenticate': 'Basic realm="Please input correct username and password before viewing this page."',
@@ -129,10 +129,10 @@ function parseRequest(data)
 		params = {};
 		data = data.split('&');
 		data.forEach((p) =>
-			{
-				let keyVal = p.split('=');
-				params[keyVal[0]] = keyVal[1];
-			});
+		{
+			let keyVal = p.split('=');
+			params[keyVal[0]] = keyVal[1];
+		});
 	}
 	return params;
 }
@@ -148,42 +148,40 @@ function answer(res, urlPath, paramsGet, paramsPost)
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath)
 {
-	let filePath = path.join(ROOT_PATH, urlPath);	
+	let filePath = path.join(ROOT_PATH, urlPath);
 	fs.stat(filePath, (err, stats) =>
+	{
+		if (err)
+		{
+			error(err, res);
+		}
+		else if (stats.isDirectory())
+		{
+			filePath = path.join(filePath, 'index.html');
+			fs.stat(filePath, (err, stats) =>
 			{
 				if (err)
 				{
 					error(err, res);
-				}
-				else if (stats.isDirectory()) 
-				{
-					filePath = path.join(filePath, 'index.html');
-					fs.stat(filePath, (err, stats) =>
-						{
-							if (err)
-							{
-								error(err, res);
-							}
-							else
-							{
-								sendFile(res, filePath, stats.size);
-							}
-						});
-
 				}
 				else
 				{
 					sendFile(res, filePath, stats.size);
 				}
 			});
-	
+		}
+		else
+		{
+			sendFile(res, filePath, stats.size);
+		}
+	});
 }
 
 function error(err, res)
 {
 	console.log('Not found: ' + err);
 	const msg = '404 Not Found';
-	res.writeHead(404, 
+	res.writeHead(404,
 		{
 			'Content-Length': msg.length,
 			'Content-Type': 'text/plain'
@@ -204,7 +202,7 @@ function sendFile(res, filePath)
 		}
 		else
 		{
-			res.writeHead(200, 
+			res.writeHead(200,
 			{
 				'Content-Length': Buffer.byteLength(data),
 				'Content-Type': getContentType(path.extname(filePath))
@@ -221,23 +219,23 @@ function sendFile(res, filePath, size)
 	let file = fs.ReadStream(filePath);
 	file.pipe(res);
 	file.on('error', (err) => error(err, res));
-	res.writeHead(200, 
+	res.writeHead(200,
 		{
 			'Content-Length': size,
 			'Content-Type': getContentType(path.extname(filePath))
 		});
-	res.on('close', () => 
+	res.on('close', () =>
+	{
+		if (!res.writableFinished)
 		{
-			if (!res.writableFinished)
-			{
-				file.destroy();
-				console.log('Conection lost: ' + filePath);
-			}
-		});
+			file.destroy();
+			console.log('Conection lost: ' + filePath);
+		}
+	});
 	res.on('finish', () =>
-		{
-			console.log('Sent successfully: ' + filePath);
-		});
+	{
+		console.log('Sent successfully: ' + filePath);
+	});
 
 }
 
