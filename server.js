@@ -102,12 +102,11 @@ function app(req, res)
 
 	function normalWork()
 	{
-		let url = req.url.split('?');
-		let urlPath = url[0];
+		const url = req.url.split('?');
+		const urlPath = url[0];
 		console.log('url: ' + urlPath);
-		let paramsGet = parseRequest(url[1]);
+		const paramsGet = parseRequest(url[1]);
 		/*Post данные*/
-		let paramsPost;
 		let body = '';
 		req.on('data', chunk =>
 		{
@@ -116,7 +115,7 @@ function app(req, res)
 		});
 		req.on('end', () =>
 		{
-			paramsPost = parseRequest(body);
+			const paramsPost = parseRequest(body);
 			answer(res, urlPath, paramsGet, paramsPost);
 		});
 	}
