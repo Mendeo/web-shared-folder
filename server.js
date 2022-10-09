@@ -242,16 +242,16 @@ function sendFile(res, filePath, size)
 function getContentType(ext)
 {
 	//Взял из настроек nginx
-	if (ext === '.html' || ext === '.htm' || ext === '.shtml') return 'text/html';
-	if (ext === '.css') return 'text/css';
-	if (ext === '.xml') return 'text/xml';
+	if (ext === '.html' || ext === '.htm' || ext === '.shtml') return 'text/html; charset=utf-8';
+	if (ext === '.css') return 'text/css; charset=utf-8';
+	if (ext === '.xml') return 'text/xml; charset=utf-8';
 	if (ext === '.gif') return 'image/gif';
 	if (ext === '.jpeg' || ext === '.jpg') return 'image/jpeg';
-	if (ext === '.js') return 'application/javascript';
+	if (ext === '.js') return 'text/javascript; charset=utf-8';
 	if (ext === '.atom') return 'application/atom+xml';
 	if (ext === '.rss') return 'application/rss+xml';
 	if (ext === '.mml') return 'text/mathml';
-	if (ext === '.txt') return 'text/plain';
+	if (ext === '.txt') return 'text/plain; charset=utf-8';
 	if (ext === '.jad') return 'text/vnd.sun.j2me.app-descriptor';
 	if (ext === '.wml') return 'text/vnd.wap.wml';
 	if (ext === '.htc') return 'text/x-component';
@@ -266,7 +266,7 @@ function getContentType(ext)
 	if (ext === '.woff') return 'font/woff';
 	if (ext === '.woff2') return 'font/woff2';
 	if (ext === '.jar' || ext === '.war' || ext === '.ear') return 'application/java-archive';
-	if (ext === '.json') return 'application/json';
+	if (ext === '.json') return 'application/json; charset=utf-8';
 	if (ext === '.hqx') return 'application/mac-binhex40';
 	if (ext === '.doc') return 'application/msword';
 	if (ext === '.pdf') return 'application/pdf';
