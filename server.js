@@ -32,6 +32,7 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 console.log('port = ' + PORT);
 
 let _lastReqTime = new Date(0);
+let _lastIP = '';
 
 if (key && cert)
 {
@@ -52,8 +53,10 @@ else
 function app(req, res)
 {
 	let now = new Date();
-	if (now - _lastReqTime > 1000) console.log('*******' + now.toLocaleString('ru-RU', { hour: 'numeric', minute: 'numeric', second: 'numeric' }) + '*******');
+	let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
+	if (now - _lastReqTime > 1000 || _lastIP !== ip) console.log(`*******${ip}, ${now.toLocaleString('ru-RU', { hour: 'numeric', minute: 'numeric', second: 'numeric' })} *******`);
 	_lastReqTime = now;
+	_lastIP = ip;
 	//Проводим аутентификацию
 	if (username)
 	{
