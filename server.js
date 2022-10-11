@@ -330,4 +330,5 @@ function getContentType(ext)
 	if (ext === '.wmv') return 'video/x-ms-wmv';
 	if (ext === '.avi') return 'video/x-msvideo';
 	if (ext === '.wasm') return 'application/wasm';
+	return 'text/plain; charset=utf-8';
 }
