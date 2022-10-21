@@ -31,6 +31,7 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 
 console.log('port = ' + PORT);
 let _generateIndex = false;
+let _indexHtmlbase = null;
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
@@ -50,7 +51,8 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		if (!fs.existsSync(indexFile))
 		{
 			_generateIndex = true;
-			console.log('Не существует!');
+			console.log('Directory watch mode.');
+			_indexHtmlbase = fs.readFileSync('index.html').toString().split('|');
 		}
 		start();
 	}
@@ -180,7 +182,6 @@ function answer(res, urlPath, paramsGet, paramsPost)
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath)
 {
-
 	let filePath = path.join(ROOT_PATH, urlPath);
 	fs.stat(filePath, (err, stats) =>
 	{
@@ -192,7 +193,25 @@ function sendFileByUrl(res, urlPath)
 		{
 			if (_generateIndex)
 			{
-				sendHtmlString();
+				fs.readdir(filePath, { withFileTypes: true }, (err, files) =>
+				{
+					if (err)
+					{
+						error(err, res);
+					}
+					else
+					{
+						let hrefs = [];
+						for (let file of files)
+						{
+							const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
+							const hrefName = file.isDirectory() ? `[${file.name}]` : file.name;
+							hrefs.push(`<a href=${urlHeader}/${file.name}>${hrefName}<a/>`);
+						}
+						let resultHtml = _indexHtmlbase[0] + urlPath.slice(1) + _indexHtmlbase[1] + hrefs.join('<br>') + _indexHtmlbase[2];
+						sendHtmlString(res, resultHtml);
+					}
+				});
 			}
 			else
 			{
@@ -256,7 +275,7 @@ function sendHtmlString(res, data)
 {
 	res.writeHead(200,
 		{
-			'Content-Length': data.length,
+			'Content-Length': Buffer.from(data).byteLength,
 			'Content-Type': 'text/html; charset=utf-8'
 		});
 	res.end(data);
