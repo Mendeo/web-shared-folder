@@ -31,23 +31,49 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 
 console.log('port = ' + PORT);
 
+fs.stat(ROOT_PATH, (err, stats) =>
+{
+	if (err)
+	{
+		console.log(err.message);
+		process.exit(1);
+	}
+	else if (!stats.isDirectory())
+	{
+		console.log('Переданный путь не является директорией!')
+		process.exit(1);
+	}
+	else
+	{
+		let indexFile = path.join(ROOT_PATH, 'index.html');
+		if (!fs.existsSync(indexFile))
+		{
+			console.log('Не существует!');
+		}
+		start();
+	}
+});
+
 let _lastReqTime = new Date(0);
 let _lastIP = '';
 
-if (key && cert)
+function start()
 {
-	const ssl_cert =
+	if (key && cert)
 	{
-		key: fs.readFileSync(key),
-		cert: fs.readFileSync(cert)
-	};
-	console.log('Start in https mode');
-	https.createServer(ssl_cert, app).listen(PORT);
-}
-else
-{
-	console.log('Start in http mode');
-	http.createServer(app).listen(PORT);
+		const ssl_cert =
+		{
+			key: fs.readFileSync(key),
+			cert: fs.readFileSync(cert)
+		};
+		console.log('Start in https mode');
+		https.createServer(ssl_cert, app).listen(PORT);
+	}
+	else
+	{
+		console.log('Start in http mode');
+		http.createServer(app).listen(PORT);
+	}
 }
 
 function app(req, res)
