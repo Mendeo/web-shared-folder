@@ -209,6 +209,14 @@ function sendFileByUrl(res, urlPath)
 							const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
 							hrefs.push(`<a href="${backUrl}">[..]<a/>`);
 						}
+						//Сортируем по алфавиту, но так, чтобы папки были сверху.
+						files.sort((a, b) =>
+						{
+							if (a.isDirectory() && !b.isDirectory()) return -1;
+							if (a.isDirectory() && b.isDirectory()) return a.name.localeCompare(b.name);
+							if (!a.isDirectory() && b.isDirectory()) return 1;
+							if (!a.isDirectory() && !b.isDirectory()) return a.name.localeCompare(b.name);
+						});
 						for (let file of files)
 						{
 							const hrefName = file.isDirectory() ? `[${file.name}]` : file.name;
