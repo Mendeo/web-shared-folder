@@ -42,7 +42,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 	}
 	else if (!stats.isDirectory())
 	{
-		console.log('Переданный путь не является директорией!')
+		console.log('Переданный путь не является директорией!');
 		process.exit(1);
 	}
 	else
