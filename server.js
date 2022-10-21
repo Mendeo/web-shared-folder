@@ -32,6 +32,7 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 console.log('port = ' + PORT);
 let _generateIndex = false;
 let _indexHtmlbase = null;
+let _favicon = null;
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
@@ -53,6 +54,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_generateIndex = true;
 			console.log('Directory watch mode.');
 			_indexHtmlbase = fs.readFileSync('index.html').toString().split('|');
+			_favicon = fs.readFileSync('favicon.ico');
 		}
 		start();
 	}
@@ -182,6 +184,11 @@ function answer(res, urlPath, paramsGet, paramsPost)
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath)
 {
+	if (_generateIndex && urlPath === '/favicon.ico')
+	{
+		sendIcon(res);
+		return;
+	}
 	let filePath = path.join(ROOT_PATH, urlPath);
 	fs.stat(filePath, (err, stats) =>
 	{
@@ -297,6 +304,17 @@ function sendHtmlString(res, data)
 		});
 	res.end(data);
 }
+
+function sendIcon(res)
+{
+	res.writeHead(200,
+		{
+			'Content-Length': _favicon.byteLength,
+			'Content-Type': 'image/x-icon'
+		});
+	res.end(_favicon);
+}
+
 //Отправка файлов с использованием файловых потоков.
 function sendFile(res, filePath, size)
 {
