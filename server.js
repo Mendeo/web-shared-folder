@@ -136,7 +136,7 @@ function app(req, res)
 	function normalWork()
 	{
 		const url = req.url.split('?');
-		const urlPath = url[0];
+		const urlPath = decodeURI(url[0]);
 		console.log('url: ' + urlPath);
 		if (urlPath.match(/[/\\]\.+\.[/\\]/)) error(`You can watch only ${ROOT_PATH} directory`, res);
 		const paramsGet = parseRequest(url[1]);
@@ -206,7 +206,7 @@ function sendFileByUrl(res, urlPath)
 						{
 							const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 							const hrefName = file.isDirectory() ? `[${file.name}]` : file.name;
-							hrefs.push(`<a href=${urlHeader}/${file.name}>${hrefName}<a/>`);
+							hrefs.push(`<a href="${urlHeader}/${file.name}">${hrefName}<a/>`);
 						}
 						let resultHtml = _indexHtmlbase[0] + urlPath.slice(1) + _indexHtmlbase[1] + hrefs.join('<br>') + _indexHtmlbase[2];
 						sendHtmlString(res, resultHtml);
