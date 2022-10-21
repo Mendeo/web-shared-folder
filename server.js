@@ -202,9 +202,15 @@ function sendFileByUrl(res, urlPath)
 					else
 					{
 						let hrefs = [];
+						const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
+						if (urlPath !== '/')
+						{
+							const lastField = urlHeader.lastIndexOf('/');
+							const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
+							hrefs.push(`<a href="${backUrl}">[..]<a/>`);
+						}
 						for (let file of files)
 						{
-							const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 							const hrefName = file.isDirectory() ? `[${file.name}]` : file.name;
 							hrefs.push(`<a href="${urlHeader}/${file.name}">${hrefName}<a/>`);
 						}
