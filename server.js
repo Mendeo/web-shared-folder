@@ -30,6 +30,7 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 }
 
 console.log('port = ' + PORT);
+let _generateIndex = false;
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
@@ -48,6 +49,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		let indexFile = path.join(ROOT_PATH, 'index.html');
 		if (!fs.existsSync(indexFile))
 		{
+			_generateIndex = true;
 			console.log('Не существует!');
 		}
 		start();
@@ -134,6 +136,7 @@ function app(req, res)
 		const url = req.url.split('?');
 		const urlPath = url[0];
 		console.log('url: ' + urlPath);
+		if (urlPath.match(/[/\\]\.+\.[/\\]/)) error(`You can watch only ${ROOT_PATH} directory`, res);
 		const paramsGet = parseRequest(url[1]);
 		/*Post данные*/
 		let body = '';
@@ -177,6 +180,7 @@ function answer(res, urlPath, paramsGet, paramsPost)
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath)
 {
+
 	let filePath = path.join(ROOT_PATH, urlPath);
 	fs.stat(filePath, (err, stats) =>
 	{
@@ -186,18 +190,25 @@ function sendFileByUrl(res, urlPath)
 		}
 		else if (stats.isDirectory())
 		{
-			filePath = path.join(filePath, 'index.html');
-			fs.stat(filePath, (err, stats) =>
+			if (_generateIndex)
 			{
-				if (err)
+				sendHtmlString();
+			}
+			else
+			{
+				filePath = path.join(filePath, 'index.html');
+				fs.stat(filePath, (err, stats) =>
 				{
-					error(err, res);
-				}
-				else
-				{
-					sendFile(res, filePath, stats.size);
-				}
-			});
+					if (err)
+					{
+						error(err, res);
+					}
+					else
+					{
+						sendFile(res, filePath, stats.size);
+					}
+				});
+			}
 		}
 		else
 		{
@@ -241,7 +252,15 @@ function sendFile(res, filePath)
 	});
 }
 */
-
+function sendHtmlString(res, data)
+{
+	res.writeHead(200,
+		{
+			'Content-Length': data.length,
+			'Content-Type': 'text/html; charset=utf-8'
+		});
+	res.end(data);
+}
 //Отправка файлов с использованием файловых потоков.
 function sendFile(res, filePath, size)
 {
@@ -270,6 +289,7 @@ function sendFile(res, filePath, size)
 
 function getContentType(ext)
 {
+	if (_generateIndex) return 'application/octet-stream'; //Если мы просто расшариваем папку, то все файлы отдавать как бинарники.
 	//Взял из настроек nginx
 	if (ext === '.html' || ext === '.htm' || ext === '.shtml') return 'text/html; charset=utf-8';
 	if (ext === '.css') return 'text/css; charset=utf-8';
