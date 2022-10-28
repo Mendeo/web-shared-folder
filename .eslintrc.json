@@ -37,6 +37,7 @@
         "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 1, "maxBOF": 0 }],
         "space-infix-ops": "error",
         "key-spacing": ["error", { "beforeColon": false, "mode": "minimum" }],
-        "no-inner-declarations": "off"
+        "no-inner-declarations": "off",
+        "no-constant-condition": ["error", { "checkLoops": false }]
     }
 }
