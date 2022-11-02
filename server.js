@@ -1,6 +1,6 @@
 'use strict';
-const USE_CLUSTER_MODE = process.env.USE_CLUSTER_MODE;
-const SHOULD_RESTART_WORKER = process.env.SHOULD_RESTART_WORKER;
+const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
+const SHOULD_RESTART_WORKER = process.env.SERVER_SHOULD_RESTART_WORKER;
 const http = require('http');
 const https = require('https');
 const path = require('path');
@@ -18,12 +18,12 @@ else
 	cluster = { isPrimary: true };
 }
 
-const ROOT_PATH = process.argv[2] || process.env.ROOT_PATH; //Папка относительно которой будут задаваться все папки, которые идут с адресом
-const PORT = process.argv[3] || process.env.PORT;
-const key = process.argv[4] || process.env.KEY;
-const cert = process.argv[5] || process.env.CERT;
-const username = process.argv[6] || process.env.USERNAME;
-const password = process.argv[7] || process.env.PASSWORD;
+const ROOT_PATH = process.argv[2] || process.env.SERVER_ROOT_PATH; //Папка относительно которой будут задаваться все папки, которые идут с адресом
+const PORT = process.argv[3] || process.env.SERVER_PORT;
+const key = process.argv[4] || process.env.SERVER_KEY;
+const cert = process.argv[5] || process.env.SERVER_CERT;
+const username = process.argv[6] || process.env.SERVER_USERNAME;
+const password = process.argv[7] || process.env.SERVER_PASSWORD;
 
 if (!ROOT_PATH || !PORT)
 {
@@ -38,15 +38,14 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 К серверу можно подключить ssl сертификат, чтобы он работал через https.
 <key> и <cert> - Путь к файлу закрытого ключа, и путь к файлу сертификата соответственно.
 Если эти параметры заданы, то сервер будет использовать https вместо http.
-Если сервер работает по https, то в этом случае можно задать базовую http аутентификацию, чтобы ограничить доступ.
 <username> и <password> - Включает базовую HTTP аутентификацию с заданными именем пользователя и паролем.
 
-Все параметры можно задавать также в переменных окружения: ROOT_PATH, PORT, KEY, CERT, USERNAME, PASSWORD.
+Все параметры можно задавать также в переменных окружения: SERVER_ROOT_PATH, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
 Параметры, заданные в коммандной строке имеют более высокий приоритет.
-Кроме того, сервер можно запустить в режиме кластера путём задания переменной окрежения USE_CLUSTER_MODE=1.
+Кроме того, сервер можно запустить в режиме кластера путём задания переменной окрежения SERVER_USE_CLUSTER_MODE=1.
 В этом случае будут созданы дочерние процессы nodejs по числу ядер процессора.
 Этот режим позволяет задействовать в работе сервера весь ресурс процессора, но при этом кратно возрастает потребление опертивной памяти.
-Для режима кластера имеется возможность задать переменную окружения SHOULD_RESTART_WORKER=1.
+Для режима кластера имеется возможность задать переменную окружения SERVER_SHOULD_RESTART_WORKER=1.
 Это приведёт к автоматическому перезапуску дочернего процесса в случае его непредвиденного завершения.`);
 	process.exit(0);
 }
@@ -95,6 +94,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			{
 				console.log('Start in http mode');
 			}
+			if (username && password) console.log('Using http authentication.');
 			if (USE_CLUSTER_MODE)
 			{
 				console.log(`Primary ${process.pid} is running`);
@@ -154,7 +154,7 @@ function app(req, res)
 	_lastReqTime = now;
 	_lastIP = ip;
 	//Проводим аутентификацию
-	if (username)
+	if (username && password)
 	{
 		if (req.headers.authorization)
 		{
