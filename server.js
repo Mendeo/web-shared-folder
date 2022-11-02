@@ -1,6 +1,6 @@
 'use strict';
-const USE_CLUSTER_MODE = false;
-const SHOULD_RESTART_WORKER = true;
+const USE_CLUSTER_MODE = process.env.USE_CLUSTER_MODE;
+const SHOULD_RESTART_WORKER = process.env.SHOULD_RESTART_WORKER;
 const http = require('http');
 const https = require('https');
 const path = require('path');
