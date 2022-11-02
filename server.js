@@ -1,5 +1,5 @@
 'use strict';
-const USE_CLUSTER_MODE = true;
+const USE_CLUSTER_MODE = false;
 const SHOULD_RESTART_WORKER = true;
 const http = require('http');
 const https = require('https');
@@ -196,7 +196,12 @@ function app(req, res)
 		const url = req.url.split('?');
 		const urlPath = decodeURI(url[0]);
 		console.log('url: ' + urlPath);
-		if (urlPath.match(/[/\\]\.+\.[/\\]/)) error(`You can watch only ${ROOT_PATH} directory`, res);
+		console.log(path.relative(ROOT_PATH, urlPath));
+		if (urlPath.match(/[/\\]\.+\.[/\\]/))
+		{
+			error(`You can watch only ${ROOT_PATH} directory`, res);
+			return;
+		}
 		const paramsGet = parseRequest(url[1]);
 		/*Post данные*/
 		let body = '';
