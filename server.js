@@ -1,8 +1,22 @@
 'use strict';
+const USE_CLUSTER_MODE = true;
+const SHOULD_RESTART_WORKER = true;
 const http = require('http');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
+
+const cpus = require('os').cpus;
+
+let cluster;
+if (USE_CLUSTER_MODE)
+{
+	cluster = require('cluster');
+}
+else
+{
+	cluster = { isPrimary: true };
+}
 
 const ROOT_PATH = process.argv[2]; //Папка относительно которой будут задаваться все папки, которые идут с адресом
 const PORT = process.argv[3];
@@ -29,7 +43,13 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 	process.exit(0);
 }
 
-console.log('port = ' + PORT);
+const numCPUs = cpus().length;
+if (cluster.isPrimary)
+{
+	console.log('port = ' + PORT);
+	console.log('CPUs number = ' + numCPUs);
+}
+
 let _generateIndex = false;
 let _indexHtmlbase = null;
 let _favicon = null;
@@ -52,32 +72,68 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		if (!fs.existsSync(indexFile))
 		{
 			_generateIndex = true;
-			console.log('Directory watch mode.');
+			if (cluster.isPrimary) console.log('Directory watch mode.');
 			_indexHtmlbase = fs.readFileSync('index.html').toString().split('|');
 			_favicon = fs.readFileSync('favicon.ico');
 		}
-		start();
+		let isHttps = key && cert;
+		if (cluster.isPrimary)
+		{
+			if (isHttps)
+			{
+				console.log('Start in https mode');
+			}
+			else
+			{
+				console.log('Start in http mode');
+			}
+			if (USE_CLUSTER_MODE)
+			{
+				console.log(`Primary ${process.pid} is running`);
+				// Fork workers.
+				for (let i = 0; i < numCPUs; i++)
+				{
+					cluster.fork();
+				}
+				cluster.on('exit', (worker, code, signal) =>
+				{
+					console.log(`Worker ${worker.process.pid} died. Code ${code}, signal: ${signal}`);
+					if (SHOULD_RESTART_WORKER)
+					{
+						console.log('Restarting...');
+						cluster.fork();
+					}
+				});
+			}
+			else
+			{
+				start(isHttps);
+			}
+		}
+		else
+		{
+			console.log(`Worker ${process.pid} started`);
+			start(isHttps);
+		}
 	}
 });
 
 let _lastReqTime = new Date(0);
 let _lastIP = '';
 
-function start()
+function start(isHttps)
 {
-	if (key && cert)
+	if (isHttps)
 	{
 		const ssl_cert =
 		{
 			key: fs.readFileSync(key),
 			cert: fs.readFileSync(cert)
 		};
-		console.log('Start in https mode');
 		https.createServer(ssl_cert, app).listen(PORT);
 	}
 	else
 	{
-		console.log('Start in http mode');
 		http.createServer(app).listen(PORT);
 	}
 }
