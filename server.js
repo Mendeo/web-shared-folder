@@ -196,7 +196,6 @@ function app(req, res)
 		const url = req.url.split('?');
 		const urlPath = decodeURI(url[0]);
 		console.log('url: ' + urlPath);
-		console.log(path.relative(ROOT_PATH, urlPath));
 		if (urlPath.match(/[/\\]\.+\.[/\\]/))
 		{
 			error(`You can watch only ${ROOT_PATH} directory`, res);
