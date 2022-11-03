@@ -1,12 +1,13 @@
 'use strict';
-const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
-const SHOULD_RESTART_WORKER = process.env.SERVER_SHOULD_RESTART_WORKER;
 const http = require('http');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-
 const cpus = require('os').cpus;
+
+const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
+const SHOULD_RESTART_WORKER = process.env.SERVER_SHOULD_RESTART_WORKER;
+const DIRECTORY_MODE = process.env.SERVER_DIRECTORY_MODE;
 
 let cluster;
 if (USE_CLUSTER_MODE)
@@ -33,6 +34,8 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 Путь может быть относительным или абсолютным.
 Если заданной папке не будет файла "index.html", то сервер запустится в режиме отображения содержимого директории.
 В этом случае при запросе к серверу будет отдаваться веб страница с сылками для скачивания файлов, лежащих в этой папке.
+Режим отображения содержмимого директориии можно включить принудительно, задав переменную окружения SERVER_DIRECTORY_MODE=1.
+Также этот режим можно принудительно отключить, задав SERVER_DIRECTORY_MODE=0.
 
 В квадратных скобках указаны необязательные параметры:
 К серверу можно подключить ssl сертификат, чтобы он работал через https.
@@ -76,10 +79,17 @@ fs.stat(ROOT_PATH, (err, stats) =>
 	}
 	else
 	{
-		let indexFile = path.join(ROOT_PATH, 'index.html');
-		if (!fs.existsSync(indexFile))
+		if (DIRECTORY_MODE !== undefined)
 		{
-			_generateIndex = true;
+			_generateIndex = DIRECTORY_MODE > 0;
+		}
+		else
+		{
+			let indexFile = path.join(ROOT_PATH, 'index.html');
+			_generateIndex = !fs.existsSync(indexFile);
+		}
+		if (_generateIndex)
+		{
 			if (cluster.isPrimary) console.log('Directory watch mode.');
 			_indexHtmlbase = fs.readFileSync('index.html').toString().split('|');
 			_favicon = fs.readFileSync('favicon.ico');
