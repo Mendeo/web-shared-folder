@@ -54,7 +54,7 @@ const numCPUs = cpus().length;
 if (cluster.isPrimary)
 {
 	console.log('port = ' + PORT);
-	console.log('CPUs number = ' + numCPUs);
+	if (USE_CLUSTER_MODE) console.log('CPUs number = ' + numCPUs);
 }
 
 let _generateIndex = false;
