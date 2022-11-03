@@ -18,7 +18,7 @@ else
 	cluster = { isPrimary: true };
 }
 
-const ROOT_PATH = process.argv[2] || process.env.SERVER_ROOT_PATH; //Папка относительно которой будут задаваться все папки, которые идут с адресом
+const ROOT_PATH = process.argv[2] || process.env.SERVER_ROOT; //Папка относительно которой будут задаваться все папки, которые идут с адресом
 const PORT = process.argv[3] || process.env.SERVER_PORT;
 const key = process.argv[4] || process.env.SERVER_KEY;
 const cert = process.argv[5] || process.env.SERVER_CERT;
@@ -40,7 +40,7 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 Если эти параметры заданы, то сервер будет использовать https вместо http.
 <username> и <password> - Включает базовую HTTP аутентификацию с заданными именем пользователя и паролем.
 
-Все параметры можно задавать также в переменных окружения: SERVER_ROOT_PATH, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
+Все параметры можно задавать также в переменных окружения: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
 Параметры, заданные в коммандной строке имеют более высокий приоритет.
 Кроме того, сервер можно запустить в режиме кластера путём задания переменной окрежения SERVER_USE_CLUSTER_MODE=1.
 В этом случае будут созданы дочерние процессы nodejs по числу ядер процессора.
