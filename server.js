@@ -53,7 +53,8 @@ node server.js <Путь к папке с веб сайтом> <port> [<key> <ce
 const numCPUs = cpus().length;
 if (cluster.isPrimary)
 {
-	console.log('port = ' + PORT);
+	console.log('Port = ' + PORT);
+	console.log('Root = ' + ROOT_PATH);
 	if (USE_CLUSTER_MODE) console.log('CPUs number = ' + numCPUs);
 }
 
