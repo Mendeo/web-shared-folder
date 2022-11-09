@@ -5,5 +5,17 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>
-	<body>|</body>
+	<body>
+		<div><p><b>Имя</b></p><p><b>Размер, байт</b></p><p><b>Дата изменения</b></p>|</div>
+	</body>
+	<style>
+		div
+		{
+			display: grid;
+			grid-template-columns: 2fr 1fr 1fr;
+			grid-template-rows: auto;
+			justify-content: space-around;
+			grid-auto-rows: 3rem;
+		}
+	</style>
 </html>

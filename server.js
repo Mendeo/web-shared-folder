@@ -292,10 +292,10 @@ function sendFileByUrl(res, urlPath)
 						let title = '/';
 						if (urlPath !== '/')
 						{
-							hrefs.push('<a href="/">[/]</a>');
+							hrefs.push('<a href="/">[/]</a><span></span><span></span>');
 							const lastField = urlHeader.lastIndexOf('/');
 							const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-							hrefs.push(`<a href="${backUrl}">[..]<a/>`);
+							hrefs.push(`<a href="${backUrl}">[..]<a/><span></span><span></span>`);
 							title = urlHeader.slice(lastField + 1);
 						}
 						//Сортируем по алфавиту, но так, чтобы папки были сверху.
@@ -309,9 +309,9 @@ function sendFileByUrl(res, urlPath)
 						for (let file of files)
 						{
 							const hrefName = file.isDirectory() ? `[${file.name}]` : file.name;
-							hrefs.push(`<a href="${urlHeader}/${file.name}">${hrefName}<a/>`);
+							hrefs.push(`<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${10}</span><span>10.12.31</span>`);
 						}
-						let resultHtml = _indexHtmlbase[0] + title + _indexHtmlbase[1] + hrefs.join('<br>') + _indexHtmlbase[2];
+						let resultHtml = _indexHtmlbase[0] + title + _indexHtmlbase[1] + hrefs.join('') + _indexHtmlbase[2];
 						sendHtmlString(res, resultHtml);
 					}
 				});
