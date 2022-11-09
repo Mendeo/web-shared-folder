@@ -306,13 +306,27 @@ function sendFileByUrl(res, urlPath)
 							if (!a.isDirectory() && b.isDirectory()) return 1;
 							if (!a.isDirectory() && !b.isDirectory()) return a.name.localeCompare(b.name);
 						});
+						const hrefsMinLength = hrefs.length;
 						for (let file of files)
 						{
-							const hrefName = file.isDirectory() ? `[${file.name}]` : file.name;
-							hrefs.push(`<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${10}</span><span>10.12.31</span>`);
+							fs.stat(path.join(filePath, file.name), (err, stats) =>
+							{
+								if (err)
+								{
+									console.log(err.message);
+									return;
+								}
+								const hrefName = file.isDirectory() ? `[${file.name}]` : file.name;
+								const size = file.isDirectory() ? '<папка>' : stats.size;
+								const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
+								hrefs.push(`<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${size}</span><span>${modify}</span>`);
+								if (hrefs.length - hrefsMinLength == files.length)
+								{
+									let resultHtml = _indexHtmlbase[0] + title + _indexHtmlbase[1] + hrefs.join('') + _indexHtmlbase[2];
+									sendHtmlString(res, resultHtml);
+								}
+							});
 						}
-						let resultHtml = _indexHtmlbase[0] + title + _indexHtmlbase[1] + hrefs.join('') + _indexHtmlbase[2];
-						sendHtmlString(res, resultHtml);
 					}
 				});
 			}
