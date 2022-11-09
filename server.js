@@ -290,22 +290,6 @@ function sendFileByUrl(res, urlPath)
 						let hrefs = [];
 						const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 						let title = '/';
-						if (urlPath !== '/')
-						{
-							hrefs.push('<a href="/">[/]</a><span></span><span></span>');
-							const lastField = urlHeader.lastIndexOf('/');
-							const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-							hrefs.push(`<a href="${backUrl}">[..]<a/><span></span><span></span>`);
-							title = urlHeader.slice(lastField + 1);
-						}
-						//Сортируем по алфавиту, но так, чтобы папки были сверху.
-						files.sort((a, b) =>
-						{
-							if (a.isDirectory() && !b.isDirectory()) return -1;
-							if (a.isDirectory() && b.isDirectory()) return a.name.localeCompare(b.name);
-							if (!a.isDirectory() && b.isDirectory()) return 1;
-							if (!a.isDirectory() && !b.isDirectory()) return a.name.localeCompare(b.name);
-						});
 						const hrefsMinLength = hrefs.length;
 						for (let file of files)
 						{
@@ -316,13 +300,36 @@ function sendFileByUrl(res, urlPath)
 									console.log(err.message);
 									return;
 								}
-								const hrefName = file.isDirectory() ? `[${file.name}]` : file.name;
-								const size = file.isDirectory() ? '<папка>' : stats.size;
+								const isDirectory = file.isDirectory();
+								const hrefName = isDirectory ? `[${file.name}]` : file.name;
+								const size = isDirectory ? '<папка>' : stats.size;
 								const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
-								hrefs.push(`<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${size}</span><span>${modify}</span>`);
+								hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${size}</span><span>${modify}</span>`, isDirectory, name: file.name });
 								if (hrefs.length - hrefsMinLength == files.length)
 								{
-									let resultHtml = _indexHtmlbase[0] + title + _indexHtmlbase[1] + hrefs.join('') + _indexHtmlbase[2];
+									let hrefsResult = '';
+									if (urlPath !== '/')
+									{
+										const lastField = urlHeader.lastIndexOf('/');
+										const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
+										hrefsResult = `<a href="/">[/]</a><span><папка></span><span></span><a href="${backUrl}">[..]</a><span><папка></span><span></span>`;
+										title = urlHeader.slice(lastField + 1);
+									}
+									//Сортируем по алфавиту, но так, чтобы папки были сверху.
+									hrefs.sort((a, b) =>
+									{
+										console.log(a.name);
+										console.log(b.name);
+										if (a.isDirectory && !b.isDirectory) return -1;
+										if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
+										if (!a.isDirectory && b.isDirectory) return 1;
+										if (!a.isDirectory && !b.isDirectory) return a.name.localeCompare(b.name);
+									});
+									for (let h of hrefs)
+									{
+										hrefsResult += h.value;
+									}
+									let resultHtml = _indexHtmlbase[0] + title + _indexHtmlbase[1] + hrefsResult + _indexHtmlbase[2];
 									sendHtmlString(res, resultHtml);
 								}
 							});
