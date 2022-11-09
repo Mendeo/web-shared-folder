@@ -312,14 +312,12 @@ function sendFileByUrl(res, urlPath)
 									{
 										const lastField = urlHeader.lastIndexOf('/');
 										const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-										hrefsResult = `<a href="/">[/]</a><span><папка></span><span></span><a href="${backUrl}">[..]</a><span><папка></span><span></span>`;
+										hrefsResult = `<a href="/">[/]</a><span><папка></span><span>-</span><a href="${backUrl}">[..]</a><span><папка></span><span>-</span>`;
 										title = urlHeader.slice(lastField + 1);
 									}
 									//Сортируем по алфавиту, но так, чтобы папки были сверху.
 									hrefs.sort((a, b) =>
 									{
-										console.log(a.name);
-										console.log(b.name);
 										if (a.isDirectory && !b.isDirectory) return -1;
 										if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
 										if (!a.isDirectory && b.isDirectory) return 1;
