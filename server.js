@@ -302,9 +302,9 @@ function sendFileByUrl(res, urlPath)
 								}
 								const isDirectory = file.isDirectory();
 								const hrefName = isDirectory ? `[${file.name}]` : file.name;
-								const size = isDirectory ? '<папка>' : stats.size;
+								const sizeStr = isDirectory ? '<папка>' : getStrSize(stats.size);
 								const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
-								hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${size}</span><span>${modify}</span>`, isDirectory, name: file.name });
+								hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
 								if (hrefs.length - hrefsMinLength == files.length)
 								{
 									let hrefsResult = '';
@@ -356,6 +356,34 @@ function sendFileByUrl(res, urlPath)
 			sendFile(res, filePath, stats.size);
 		}
 	});
+}
+
+function getStrSize(size)
+{
+	const sizeOfSize = Math.floor(Math.log2(size) / 10);
+	let suffix = '';
+	switch (sizeOfSize)
+	{
+	case 0:
+		suffix = 'Б';
+		break;
+	case 1:
+		suffix = 'КиБ';
+		break;
+	case 2:
+		suffix = 'МиБ';
+		break;
+	case 3:
+		suffix = 'ГиБ';
+		break;
+	case 4:
+		suffix = 'ТиБ';
+		break;
+	case 5:
+		suffix = 'ПиБ';
+		break;
+	}
+	return Math.floor(size / Math.pow(2, sizeOfSize * 10)).toString() + ' ' + suffix;
 }
 
 function error(err, res)
