@@ -383,7 +383,7 @@ function getStrSize(size)
 		suffix = 'ПиБ';
 		break;
 	}
-	return Math.floor(size / Math.pow(2, sizeOfSize * 10)).toString() + ' ' + suffix;
+	return (size / Math.pow(2, sizeOfSize * 10)).toFixed(1) + ' ' + suffix;
 }
 
 function error(err, res)
