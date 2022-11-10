@@ -279,61 +279,7 @@ function sendFileByUrl(res, urlPath)
 		{
 			if (_generateIndex)
 			{
-				fs.readdir(filePath, { withFileTypes: true }, (err, files) =>
-				{
-					if (err)
-					{
-						error(err, res);
-					}
-					else
-					{
-						let hrefs = [];
-						const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
-						let title = '/';
-						const hrefsMinLength = hrefs.length;
-						for (let file of files)
-						{
-							fs.stat(path.join(filePath, file.name), (err, stats) =>
-							{
-								if (err)
-								{
-									console.log(err.message);
-									return;
-								}
-								const isDirectory = file.isDirectory();
-								const hrefName = isDirectory ? `[${file.name}]` : file.name;
-								const sizeStr = isDirectory ? '<папка>' : getStrSize(stats.size);
-								const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
-								hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
-								if (hrefs.length - hrefsMinLength == files.length)
-								{
-									let hrefsResult = '';
-									if (urlPath !== '/')
-									{
-										const lastField = urlHeader.lastIndexOf('/');
-										const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-										hrefsResult = `<a href="/">[/]</a><span><папка></span><span>-</span><a href="${backUrl}">[..]</a><span><папка></span><span>-</span>`;
-										title = urlHeader.slice(lastField + 1);
-									}
-									//Сортируем по алфавиту, но так, чтобы папки были сверху.
-									hrefs.sort((a, b) =>
-									{
-										if (a.isDirectory && !b.isDirectory) return -1;
-										if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
-										if (!a.isDirectory && b.isDirectory) return 1;
-										if (!a.isDirectory && !b.isDirectory) return a.name.localeCompare(b.name);
-									});
-									for (let h of hrefs)
-									{
-										hrefsResult += h.value;
-									}
-									let resultHtml = _indexHtmlbase[0] + title + _indexHtmlbase[1] + hrefsResult + _indexHtmlbase[2];
-									sendHtmlString(res, resultHtml);
-								}
-							});
-						}
-					}
-				});
+				generateAndSendIndexHtml(res, urlPath, filePath);
 			}
 			else
 			{
@@ -358,6 +304,65 @@ function sendFileByUrl(res, urlPath)
 	});
 }
 
+function generateAndSendIndexHtml(res, urlPath, absolutePath)
+{
+	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
+	{
+		if (err)
+		{
+			error(err, res);
+		}
+		else
+		{
+			let hrefs = [];
+			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
+			let title = '/';
+			const hrefsMinLength = hrefs.length;
+			for (let file of files)
+			{
+				fs.stat(path.join(absolutePath, file.name), (err, stats) =>
+				{
+					if (err)
+					{
+						console.log(err.message);
+						return;
+					}
+					const isDirectory = file.isDirectory();
+					const hrefName = isDirectory ? `[${file.name}]` : file.name;
+					const sizeStr = isDirectory ? '<папка>' : getStrSize(stats.size);
+					const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
+					hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
+					if (hrefs.length - hrefsMinLength == files.length)
+					{
+						let hrefsResult = '';
+						if (urlPath !== '/')
+						{
+							const lastField = urlHeader.lastIndexOf('/');
+							const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
+							hrefsResult = `<a href="/">[/]</a><span><папка></span><span>-</span><a href="${backUrl}">[..]</a><span><папка></span><span>-</span>`;
+							title = urlHeader.slice(lastField + 1);
+						}
+						//Сортируем по алфавиту, но так, чтобы папки были сверху.
+						hrefs.sort((a, b) =>
+						{
+							if (a.isDirectory && !b.isDirectory) return -1;
+							if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
+							if (!a.isDirectory && b.isDirectory) return 1;
+							if (!a.isDirectory && !b.isDirectory) return a.name.localeCompare(b.name);
+						});
+						for (let h of hrefs)
+						{
+							hrefsResult += h.value;
+						}
+						let resultHtml = _indexHtmlbase[0] + title + _indexHtmlbase[1] + hrefsResult + _indexHtmlbase[2];
+						sendHtmlString(res, resultHtml);
+					}
+				});
+			}
+		}
+	});
+}
+
 function getStrSize(size)
 {
 	const sizeOfSize = Math.floor(Math.log2(size) / 10);
@@ -365,8 +370,7 @@ function getStrSize(size)
 	switch (sizeOfSize)
 	{
 	case 0:
-		suffix = 'Б';
-		break;
+		return size + ' ' + 'Б';
 	case 1:
 		suffix = 'КиБ';
 		break;
