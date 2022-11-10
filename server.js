@@ -9,6 +9,7 @@ const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
 const SHOULD_RESTART_WORKER = process.env.SERVER_SHOULD_RESTART_WORKER;
 const DIRECTORY_MODE = process.env.SERVER_DIRECTORY_MODE;
 const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE || 'Режим отображения директории';
+const AUTO_REDIRECT_HTTP_PORT = process.env.SERVER_AUTO_REDIRECT_HTTP_PORT || 'Режим отображения директории';
 
 let cluster;
 if (USE_CLUSTER_MODE)
@@ -151,11 +152,31 @@ function start(isHttps)
 			cert: fs.readFileSync(cert)
 		};
 		https.createServer(ssl_cert, app).listen(PORT);
+		if (AUTO_REDIRECT_HTTP_PORT)
+		{
+			http.createServer(redirectApp).listen(AUTO_REDIRECT_HTTP_PORT);
+		}
 	}
 	else
 	{
 		http.createServer(app).listen(PORT);
 	}
+}
+
+function redirectApp(req, res)
+{
+	const html = `<html>
+<head><title>301 Moved Permanently</title></head>
+<body><h1>301 Moved Permanently</h1></body>
+</html>`;
+	const url = req.url[req.url.length - 1] === '/' ? req.url.slice(0, req.url.length - 1) : req.url;
+	res.writeHead(301,
+		{
+			'Content-Type': 'text/html',
+			'Content-Length': html.length,
+			'Location': `https://${req.headers.host}${url}:${PORT}`
+		});
+	res.end(html);
 }
 
 function app(req, res)
