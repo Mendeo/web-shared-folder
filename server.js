@@ -8,6 +8,7 @@ const cpus = require('os').cpus;
 const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
 const SHOULD_RESTART_WORKER = process.env.SERVER_SHOULD_RESTART_WORKER;
 const DIRECTORY_MODE = process.env.SERVER_DIRECTORY_MODE;
+const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE || 'Режим отображения директории';
 
 let cluster;
 if (USE_CLUSTER_MODE)
@@ -316,7 +317,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 		{
 			let hrefs = [];
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
-			let title = '/';
+			let folderName = '/';
 			const hrefsMinLength = hrefs.length;
 			for (let file of files)
 			{
@@ -340,7 +341,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 							const lastField = urlHeader.lastIndexOf('/');
 							const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
 							hrefsResult = `<a href="/">[/]</a><span><папка></span><span>-</span><a href="${backUrl}">[..]</a><span><папка></span><span>-</span>`;
-							title = urlHeader.slice(lastField + 1);
+							folderName = urlHeader.slice(lastField + 1);
 						}
 						//Сортируем по алфавиту, но так, чтобы папки были сверху.
 						hrefs.sort((a, b) =>
@@ -354,7 +355,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 						{
 							hrefsResult += h.value;
 						}
-						let resultHtml = _indexHtmlbase[0] + title + _indexHtmlbase[1] + hrefsResult + _indexHtmlbase[2];
+						let resultHtml = _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + hrefsResult + _indexHtmlbase[3];
 						sendHtmlString(res, resultHtml);
 					}
 				});
