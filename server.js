@@ -330,7 +330,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 					}
 					const isDirectory = file.isDirectory();
 					const hrefName = isDirectory ? `[${file.name}]` : file.name;
-					const sizeStr = isDirectory ? '<папка>' : getStrSize(stats.size);
+					const folderSizeStub = '<папка>';
+					const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size);
 					const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
 					hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
 					if (hrefs.length - hrefsMinLength == files.length)
@@ -340,7 +341,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 						{
 							const lastField = urlHeader.lastIndexOf('/');
 							const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-							hrefsResult = `<a href="/">[/]</a><span><папка></span><span>-</span><a href="${backUrl}">[..]</a><span><папка></span><span>-</span>`;
+							hrefsResult = `<a href="/">[/]</a><span>${folderSizeStub}</span><span>-</span><a href="${backUrl}">[..]</a><span>${folderSizeStub}</span><span>-</span>`;
 							folderName = urlHeader.slice(lastField + 1);
 						}
 						//Сортируем по алфавиту, но так, чтобы папки были сверху.
