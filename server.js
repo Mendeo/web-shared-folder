@@ -345,47 +345,55 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 			let folderName = '/';
 			const hrefsMinLength = hrefs.length;
-			for (let file of files)
+			if (files.length > 0)
 			{
-				fs.stat(path.join(absolutePath, file.name), (err, stats) =>
+				for (let file of files)
 				{
-					if (err)
+					fs.stat(path.join(absolutePath, file.name), (err, stats) =>
 					{
-						console.log(err.message);
-						return;
-					}
-					const isDirectory = file.isDirectory();
-					const hrefName = isDirectory ? `[${file.name}]` : file.name;
-					const folderSizeStub = '<папка>';
-					const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size);
-					const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
-					hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
-					if (hrefs.length - hrefsMinLength == files.length)
-					{
-						let hrefsResult = '';
-						if (urlPath !== '/')
+						if (err)
 						{
-							const lastField = urlHeader.lastIndexOf('/');
-							const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-							hrefsResult = `<a href="/">[/]</a><span>${folderSizeStub}</span><span>-</span><a href="${backUrl}">[..]</a><span>${folderSizeStub}</span><span>-</span>`;
-							folderName = urlHeader.slice(lastField + 1);
+							console.log(err.message);
+							return;
 						}
-						//Сортируем по алфавиту, но так, чтобы папки были сверху.
-						hrefs.sort((a, b) =>
+						const isDirectory = file.isDirectory();
+						const hrefName = isDirectory ? `[${file.name}]` : file.name;
+						const folderSizeStub = '<папка>';
+						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size);
+						const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
+						hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
+						if (hrefs.length - hrefsMinLength == files.length)
 						{
-							if (a.isDirectory && !b.isDirectory) return -1;
-							if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
-							if (!a.isDirectory && b.isDirectory) return 1;
-							if (!a.isDirectory && !b.isDirectory) return a.name.localeCompare(b.name);
-						});
-						for (let h of hrefs)
-						{
-							hrefsResult += h.value;
+							let hrefsResult = '';
+							if (urlPath !== '/')
+							{
+								const lastField = urlHeader.lastIndexOf('/');
+								const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
+								hrefsResult = `<a href="/">[/]</a><span>${folderSizeStub}</span><span>-</span><a href="${backUrl}">[..]</a><span>${folderSizeStub}</span><span>-</span>`;
+								folderName = urlHeader.slice(lastField + 1);
+							}
+							//Сортируем по алфавиту, но так, чтобы папки были сверху.
+							hrefs.sort((a, b) =>
+							{
+								if (a.isDirectory && !b.isDirectory) return -1;
+								if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
+								if (!a.isDirectory && b.isDirectory) return 1;
+								if (!a.isDirectory && !b.isDirectory) return a.name.localeCompare(b.name);
+							});
+							for (let h of hrefs)
+							{
+								hrefsResult += h.value;
+							}
+							let resultHtml = _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + hrefsResult + _indexHtmlbase[3];
+							sendHtmlString(res, resultHtml);
 						}
-						let resultHtml = _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + hrefsResult + _indexHtmlbase[3];
-						sendHtmlString(res, resultHtml);
-					}
-				});
+					});
+				}
+			}
+			else
+			{
+				let resultHtml = _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + _indexHtmlbase[3];
+				sendHtmlString(res, resultHtml);
 			}
 		}
 	});
