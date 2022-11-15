@@ -344,7 +344,15 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 			let hrefs = [];
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 			let folderName = '/';
-			const hrefsMinLength = hrefs.length;
+			const folderSizeStub = '<папка>';
+			let hrefsResult = '';
+			if (urlPath !== '/')
+			{
+				const lastField = urlHeader.lastIndexOf('/');
+				const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
+				hrefsResult = `<a href="/">[/]</a><span>${folderSizeStub}</span><span>-</span><a href="${backUrl}">[..]</a><span>${folderSizeStub}</span><span>-</span>`;
+				folderName = urlHeader.slice(lastField + 1);
+			}
 			if (files.length > 0)
 			{
 				for (let file of files)
@@ -358,20 +366,11 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 						}
 						const isDirectory = file.isDirectory();
 						const hrefName = isDirectory ? `[${file.name}]` : file.name;
-						const folderSizeStub = '<папка>';
 						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size);
 						const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
 						hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
-						if (hrefs.length - hrefsMinLength == files.length)
+						if (hrefs.length === files.length)
 						{
-							let hrefsResult = '';
-							if (urlPath !== '/')
-							{
-								const lastField = urlHeader.lastIndexOf('/');
-								const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-								hrefsResult = `<a href="/">[/]</a><span>${folderSizeStub}</span><span>-</span><a href="${backUrl}">[..]</a><span>${folderSizeStub}</span><span>-</span>`;
-								folderName = urlHeader.slice(lastField + 1);
-							}
 							//Сортируем по алфавиту, но так, чтобы папки были сверху.
 							hrefs.sort((a, b) =>
 							{
@@ -384,16 +383,18 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 							{
 								hrefsResult += h.value;
 							}
-							let resultHtml = _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + hrefsResult + _indexHtmlbase[3];
-							sendHtmlString(res, resultHtml);
+							sendHtmlString(res, combineHtml());
 						}
 					});
 				}
 			}
 			else
 			{
-				let resultHtml = _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + _indexHtmlbase[3];
-				sendHtmlString(res, resultHtml);
+				sendHtmlString(res, combineHtml());
+			}
+			function combineHtml()
+			{
+				return _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + hrefsResult + _indexHtmlbase[3];
 			}
 		}
 	});
