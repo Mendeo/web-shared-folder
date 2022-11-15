@@ -98,8 +98,8 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		if (_generateIndex)
 		{
 			if (cluster.isPrimary) console.log('Directory watch mode.');
-			_indexHtmlbase = fs.readFileSync('index.html').toString().split('|');
-			_favicon = fs.readFileSync('favicon.ico');
+			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'index.html')).toString().split('|');
+			_favicon = fs.readFileSync(path.join(__dirname, 'favicon.ico'));
 		}
 		let isHttps = key && cert;
 		if (cluster.isPrimary)
