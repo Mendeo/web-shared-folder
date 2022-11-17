@@ -176,12 +176,13 @@ function redirectApp(req, res)
 <body><h1>301 Moved Permanently</h1></body>
 </html>`;
 	const url = req.url[req.url.length - 1] === '/' ? req.url.slice(0, req.url.length - 1) : req.url;
-	console.log('Redirect to ' + url);
+	const uri = `https://${req.headers.host}${url}:${PORT}`;
+	console.log('Redirect to ' + uri);
 	res.writeHead(301,
 		{
 			'Content-Type': 'text/html',
 			'Content-Length': html.length,
-			'Location': `https://${req.headers.host}${url}:${PORT}`
+			'Location': uri
 		});
 	res.end(html);
 }
