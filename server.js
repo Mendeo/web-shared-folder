@@ -21,7 +21,8 @@ else
 	cluster = { isPrimary: true };
 }
 
-const ROOT_PATH = (process.argv[2] || process.env.SERVER_ROOT).replace(/"/g, ''); //Папка относительно которой будут задаваться все папки, которые идут с адресом
+const ROOT_PATH_RAW = (process.argv[2] || process.env.SERVER_ROOT);
+const ROOT_PATH = ROOT_PATH_RAW ? ROOT_PATH_RAW.replace(/"/g, '') : null; //Папка относительно которой будут задаваться все папки, которые идут с адресом
 const PORT = process.argv[3] || process.env.SERVER_PORT;
 const key = process.argv[4] || process.env.SERVER_KEY;
 const cert = process.argv[5] || process.env.SERVER_CERT;
