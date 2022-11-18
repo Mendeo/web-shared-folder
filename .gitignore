@@ -3,3 +3,4 @@
 *.swo
 /ssl
 /.vscode
+/node_modules

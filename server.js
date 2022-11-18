@@ -4,6 +4,7 @@ const https = require('https');
 const path = require('path');
 const fs = require('fs');
 const cpus = require('os').cpus;
+const JSZip = require('jszip');
 
 const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
 const SHOULD_RESTART_WORKER = process.env.SERVER_SHOULD_RESTART_WORKER;
@@ -268,10 +269,9 @@ function app(req, res)
 
 function parseRequest(data)
 {
-	let params;
+	let params = {};
 	if (data)
 	{
-		params = {};
 		data = data.split('&');
 		data.forEach((p) =>
 		{
@@ -285,13 +285,13 @@ function parseRequest(data)
 function answer(res, urlPath, paramsGet, paramsPost)
 {
 
-	sendFileByUrl(res, urlPath);
+	sendFileByUrl(res, urlPath, paramsGet, paramsPost);
 	if (paramsGet) console.log(paramsGet);
 	if (paramsPost) console.log(paramsPost);
 }
 
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath)
+function sendFileByUrl(res, urlPath, paramsGet)
 {
 	if (_generateIndex && urlPath === '/favicon.ico')
 	{
@@ -309,7 +309,14 @@ function sendFileByUrl(res, urlPath)
 		{
 			if (_generateIndex)
 			{
-				generateAndSendIndexHtml(res, urlPath, filePath);
+				if (paramsGet.download)
+				{
+					zipFolder(filePath, res);
+				}
+				else
+				{
+					generateAndSendIndexHtml(res, urlPath, filePath);
+				}
 			}
 			else
 			{
@@ -397,7 +404,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 			}
 			function combineHtml()
 			{
-				return _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + hrefsResult + _indexHtmlbase[3];
+				return _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + `${urlPath}?download=true` + _indexHtmlbase[3] + hrefsResult + _indexHtmlbase[4];
 			}
 		}
 	});
@@ -501,7 +508,7 @@ function sendFile(res, filePath, size)
 		if (!res.writableFinished)
 		{
 			file.destroy();
-			console.log('Conection lost: ' + filePath);
+			console.log('Connection lost: ' + filePath);
 		}
 	});
 	res.on('finish', () =>
@@ -509,6 +516,77 @@ function sendFile(res, filePath, size)
 		console.log('Sent successfully: ' + filePath);
 	});
 
+}
+
+function zipFolder(folderPath, res)
+{
+	//const folderName = path.basename(folderPath);
+	const rootDir = path.dirname(folderPath);
+	const zip = new JSZip();
+	//let out = fs.createWriteStream(`${folderName}.zip`);
+	let allFilesInQueue = false;
+	let numberOfFile = 0;
+	readFolderRecursive(folderPath, false);
+	function readFolderRecursive(folderPath, isSubDir)
+	{
+		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
+		{
+			if (err)
+			{
+				error(err, res);
+			}
+			else if (files.length > 0)
+			{
+				for (let file of files)
+				{
+					if (file.isDirectory())
+					{
+						readFolderRecursive(path.join(folderPath, file.name), true);
+					}
+					else if (file.isFile())
+					{
+						numberOfFile++;
+						fs.readFile(path.join(folderPath, file.name), (err, data) =>
+						{
+							if (err)
+							{
+								error(err, res);
+							}
+							else
+							{
+								numberOfFile--;
+								const relativePath = path.join(path.relative(rootDir, folderPath), file.name);
+								zip.file(relativePath, data);
+								if (numberOfFile === 0 && allFilesInQueue)
+								{
+									const zipStream = zip.generateNodeStream();
+									zipStream.pipe(res);
+									zipStream.on('error', (err) => error(err, res));
+									res.writeHead(200,
+										{
+											'Content-Type': 'application/zip'
+										});
+									res.on('close', () =>
+									{
+										if (!res.writableFinished)
+										{
+											zipStream.destroy();
+											console.log('Connection lost while transferring zip archive.');
+										}
+									});
+									res.on('finish', () =>
+									{
+										console.log('Zip archive sent successfully.');
+									});
+								}
+							}
+						});
+					}
+				}
+				if (!isSubDir) allFilesInQueue = true;
+			}
+		});
+	}
 }
 
 function getContentType(ext)
