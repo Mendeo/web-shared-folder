@@ -269,9 +269,10 @@ function app(req, res)
 
 function parseRequest(data)
 {
-	let params = {};
+	let params = null;
 	if (data)
 	{
+		params = {};
 		data = data.split('&');
 		data.forEach((p) =>
 		{
@@ -309,7 +310,7 @@ function sendFileByUrl(res, urlPath, paramsGet)
 		{
 			if (_generateIndex)
 			{
-				if (paramsGet.download)
+				if (paramsGet?.download)
 				{
 					zipFolder(filePath, res);
 				}
