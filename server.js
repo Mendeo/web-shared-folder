@@ -186,8 +186,6 @@ function redirectApp(req, res)
 		}
 		if (tail !== '') tail = '/' + tail;
 	}
-	console.log(req.url);
-	console.log(tail);
 	const url = `${urlArray[0]}:${PORT}${tail}`;
 	const uri = `https://${req.headers.host}${url}`;
 	console.log('Redirect to ' + uri);
