@@ -176,8 +176,20 @@ function redirectApp(req, res)
 <head><title>301 Moved Permanently</title></head>
 <body><h1>301 Moved Permanently</h1></body>
 </html>`;
-	const url = req.url[req.url.length - 1] === '/' ? req.url.slice(0, req.url.length - 1) : req.url;
-	const uri = `https://${req.headers.host}${url}:${PORT}`;
+	const urlArray = req.url.split('/');
+	let tail = urlArray.slice(1).join('/');
+	if (tail !== '')
+	{
+		if (tail[tail.length - 1] === '/')
+		{
+			tail = tail.slice(0, tail.length - 1);
+		}
+		if (tail !== '') tail = '/' + tail;
+	}
+	console.log(req.url);
+	console.log(tail);
+	const url = `${urlArray[0]}:${PORT}${tail}`;
+	const uri = `https://${req.headers.host}${url}`;
 	console.log('Redirect to ' + uri);
 	res.writeHead(301,
 		{
