@@ -9,8 +9,8 @@ const JSZip = require('jszip');
 const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
 const SHOULD_RESTART_WORKER = process.env.SERVER_SHOULD_RESTART_WORKER;
 const DIRECTORY_MODE = process.env.SERVER_DIRECTORY_MODE;
-const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE || 'Режим отображения директории';
-const AUTO_REDIRECT_HTTP_PORT = process.env.SERVER_AUTO_REDIRECT_HTTP_PORT || 'Режим отображения директории';
+const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE;
+const AUTO_REDIRECT_HTTP_PORT = process.env.SERVER_AUTO_REDIRECT_HTTP_PORT;
 
 const DEFAULT_LANG = 'en-US';
 let DEFAULT_LOCALE_TRANSLATION = null;
@@ -458,8 +458,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 			}
 			function combineHtml()
 			{
-				//return _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + `${urlPath}?download=true` + _indexHtmlbase[3] + hrefsResult + _indexHtmlbase[4];
-				return  _indexHtmlbase[0] + DIRECTORY_MODE_TITLE +
+				return  _indexHtmlbase[0] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[1] + folderName +
 						_indexHtmlbase[2] + `${urlPath}?download=true` +
 						_indexHtmlbase[3] + getTranslation('downloadAll', localeTranslation) +
