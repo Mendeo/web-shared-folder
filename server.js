@@ -106,16 +106,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			if (cluster.isPrimary) console.log('Directory watch mode.');
 			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'index.html')).toString().split('~%~');
 			_favicon = fs.readFileSync(path.join(__dirname, 'favicon.ico'));
-			//Считываем файлы с локализациями.
-			_locales = new Map();
-			const localeDir = path.join(__dirname, 'locale');
-			const localeFiles = fs.readdirSync(localeDir);
-			for (let file of localeFiles)
-			{
-				const filePath = path.join(localeDir, file);
-				_locales.set(path.basename(file, '.json'), JSON.parse(fs.readFileSync(filePath).toString()));
-			}
-			DEFAULT_LOCALE_TRANSLATION = _locales.get(DEFAULT_LANG);
+			readTranslationFiles();
 		}
 		let isHttps = key && cert;
 		if (cluster.isPrimary)
@@ -159,6 +150,20 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		}
 	}
 });
+
+function readTranslationFiles()
+{
+	//Считываем файлы с локализациями.
+	_locales = new Map();
+	const localeDir = path.join(__dirname, 'locale');
+	const localeFiles = fs.readdirSync(localeDir);
+	for (let file of localeFiles)
+	{
+		const filePath = path.join(localeDir, file);
+		_locales.set(path.basename(file, '.json'), JSON.parse(fs.readFileSync(filePath).toString()));
+	}
+	DEFAULT_LOCALE_TRANSLATION = _locales.get(DEFAULT_LANG);
+}
 
 let _lastReqTime = new Date(0);
 let _lastIP = '';
