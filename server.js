@@ -531,7 +531,7 @@ function sendFile(res, filePath, size)
 
 function zipFolder(folderPath, res)
 {
-	//const folderName = path.basename(folderPath);
+	const folderName = path.basename(folderPath);
 	const rootDir = path.dirname(folderPath);
 	const zip = new JSZip();
 	//let out = fs.createWriteStream(`${folderName}.zip`);
@@ -587,7 +587,7 @@ function zipFolder(folderPath, res)
 									});
 									res.on('finish', () =>
 									{
-										console.log('Zip archive sent successfully.');
+										console.log(`Zip archive ${folderName}.zip sent successfully.`);
 									});
 								}
 							}
