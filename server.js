@@ -12,6 +12,8 @@ const DIRECTORY_MODE = process.env.SERVER_DIRECTORY_MODE;
 const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE || 'Режим отображения директории';
 const AUTO_REDIRECT_HTTP_PORT = process.env.SERVER_AUTO_REDIRECT_HTTP_PORT || 'Режим отображения директории';
 
+const DEFAULT_LANG = 'en-US';
+
 let cluster;
 if (USE_CLUSTER_MODE)
 {
@@ -100,7 +102,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		if (_generateIndex)
 		{
 			if (cluster.isPrimary) console.log('Directory watch mode.');
-			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'index.html')).toString().split('|');
+			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'index.html')).toString().split('~%~');
 			_favicon = fs.readFileSync(path.join(__dirname, 'favicon.ico'));
 		}
 		let isHttps = key && cert;
@@ -261,6 +263,7 @@ function app(req, res)
 			error(`You can watch only ${ROOT_PATH} directory`, res);
 			return;
 		}
+		const cookie = req.headers?.cookie;
 		const paramsGet = parseRequest(url[1]);
 		/*Post данные*/
 		let body = '';
@@ -272,7 +275,7 @@ function app(req, res)
 		req.on('end', () =>
 		{
 			const paramsPost = parseRequest(body);
-			answer(res, urlPath, paramsGet, paramsPost);
+			answer(res, urlPath, paramsGet, cookie, paramsPost);
 		});
 	}
 }
@@ -293,16 +296,16 @@ function parseRequest(data)
 	return params;
 }
 
-function answer(res, urlPath, paramsGet, paramsPost)
+function answer(res, urlPath, paramsGet, cookie, paramsPost)
 {
 
-	sendFileByUrl(res, urlPath, paramsGet, paramsPost);
+	sendFileByUrl(res, urlPath, paramsGet, cookie, paramsPost);
 	if (paramsGet) console.log(paramsGet);
 	if (paramsPost) console.log(paramsPost);
 }
 
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, paramsGet)
+function sendFileByUrl(res, urlPath, paramsGet, cookie)
 {
 	if (_generateIndex && urlPath === '/favicon.ico')
 	{
@@ -326,7 +329,7 @@ function sendFileByUrl(res, urlPath, paramsGet)
 				}
 				else
 				{
-					generateAndSendIndexHtml(res, urlPath, filePath);
+					generateAndSendIndexHtml(res, urlPath, filePath, cookie);
 				}
 			}
 			else
@@ -352,7 +355,26 @@ function sendFileByUrl(res, urlPath, paramsGet)
 	});
 }
 
-function generateAndSendIndexHtml(res, urlPath, absolutePath)
+function getLocaleFromCookie(cookie)
+{
+	let lang = DEFAULT_LANG;
+	if (cookie)
+	{
+		for (let c of cookie.split(';'))
+		{
+			const aux = c.split('=');
+			const key = aux[0];
+			const value = aux[1];
+			if (key === 'lang')
+			{
+				lang = value;
+				break;
+			}
+		}
+	}
+	return lang;
+}
+function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 {
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
@@ -362,6 +384,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 		}
 		else
 		{
+			const clientLocale = getLocaleFromCookie(cookie);
 			let hrefs = [];
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 			let folderName = '/';
@@ -388,7 +411,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath)
 						const isDirectory = file.isDirectory();
 						const hrefName = isDirectory ? `[${file.name}]` : file.name;
 						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size);
-						const modify = stats.mtime.toLocaleDateString() + ' ' + stats.mtime.toLocaleTimeString();
+						const modify = stats.mtime.toLocaleDateString(clientLocale) + ' ' + stats.mtime.toLocaleTimeString(clientLocale);
 						hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
 						if (hrefs.length === files.length)
 						{

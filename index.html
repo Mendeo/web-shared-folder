@@ -1,15 +1,36 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>|</title>
+		<title>~%~</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>
+	<script type="text/javascript">
+		const DEFAULT_LANG = 'en-US';
+		let _lang = null;
+		for (let cookie of document.cookie.split(';'))
+		{
+			const aux = cookie.split('=');
+			const key = aux[0];
+			const value = aux[1];
+			if (key === 'lang')
+			{
+				_lang = value;
+				break;
+			}
+		}
+		if (!_lang)
+		{
+			_lang = navigator.browserLanguage || navigator.language || navigator.userLanguage || DEFAULT_LANG;
+			document.cookie = `lang=${_lang}; path=/; max-age=15768000; samesite=strict`;
+			location.reload();
+		}
+	</script>
 	<body>
-		<h2>|</h2>
-		<b><a href="|">Скачать всю папку</a></b>
+		<h2>~%~</h2>
+		<b><a href="~%~">Скачать всю папку</a></b>
 		<hr>
-		<div><p><b>Имя</b></p><p><b>Размер</b></p><p><b>Дата изменения</b></p>|</div>
+		<div><p><b>Имя</b></p><p><b>Размер</b></p><p><b>Дата изменения</b></p>~%~</div>
 		<hr>
 	</body>
 	<style>
