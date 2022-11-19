@@ -1,0 +1,13 @@
+{
+	"downloadAll": "Download all folder",
+	"fileName": "Name",
+	"fileSize": "Size",
+	"modifyDate": "Modify date",
+	"folderSizeStub": "&lt;dir&gt;",
+	"sizeByte": "B",
+	"sizeKiB": "KiB",
+	"sizeMiB": "MiB",
+	"sizeGiB": "GiB",
+	"sizeTiB": "TiB",
+	"sizePiB": "PiB"
+}

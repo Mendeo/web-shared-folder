@@ -1,0 +1,13 @@
+{
+	"downloadAll": "Скачать всю папку",
+	"fileName": "Имя",
+	"fileSize": "Размер",
+	"modifyDate": "Дата изменения",
+	"folderSizeStub": "&lt;папка&gt;",
+	"sizeByte": "Б",
+	"sizeKiB": "КиБ",
+	"sizeMiB": "МиБ",
+	"sizeGiB": "ГиБ",
+	"sizeTiB": "ТиБ",
+	"sizePiB": "ПиБ"
+}

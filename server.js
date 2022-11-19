@@ -13,6 +13,7 @@ const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE || 'Реж�
 const AUTO_REDIRECT_HTTP_PORT = process.env.SERVER_AUTO_REDIRECT_HTTP_PORT || 'Режим отображения директории';
 
 const DEFAULT_LANG = 'en-US';
+let DEFAULT_LOCALE_TRANSLATION = null;
 
 let cluster;
 if (USE_CLUSTER_MODE)
@@ -75,6 +76,7 @@ if (cluster.isPrimary)
 let _generateIndex = false;
 let _indexHtmlbase = null;
 let _favicon = null;
+let _locales = null;
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
@@ -104,6 +106,16 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			if (cluster.isPrimary) console.log('Directory watch mode.');
 			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'index.html')).toString().split('~%~');
 			_favicon = fs.readFileSync(path.join(__dirname, 'favicon.ico'));
+			//Считываем файлы с локализациями.
+			_locales = new Map();
+			const localeDir = path.join(__dirname, 'locale');
+			const localeFiles = fs.readdirSync(localeDir);
+			for (let file of localeFiles)
+			{
+				const filePath = path.join(localeDir, file);
+				_locales.set(path.basename(file, '.json'), JSON.parse(fs.readFileSync(filePath).toString()));
+			}
+			DEFAULT_LOCALE_TRANSLATION = _locales.get(DEFAULT_LANG);
 		}
 		let isHttps = key && cert;
 		if (cluster.isPrimary)
@@ -355,7 +367,14 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie)
 	});
 }
 
-function getLocaleFromCookie(cookie)
+function getTranslation(value, localeTranslation)
+{
+	let locale = localeTranslation ? localeTranslation : DEFAULT_LOCALE_TRANSLATION;
+	if (locale[value]) return locale[value];
+	return DEFAULT_LOCALE_TRANSLATION[value];
+}
+
+function getLangFromCookie(cookie)
 {
 	let lang = DEFAULT_LANG;
 	if (cookie)
@@ -384,11 +403,12 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 		}
 		else
 		{
-			const clientLocale = getLocaleFromCookie(cookie);
+			const clientLang = getLangFromCookie(cookie);
+			let localeTranslation = _locales.has(clientLang) ? _locales.get(clientLang) : null;
 			let hrefs = [];
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 			let folderName = '/';
-			const folderSizeStub = '<папка>';
+			const folderSizeStub = getTranslation('folderSizeStub', localeTranslation);
 			let hrefsResult = '';
 			if (urlPath !== '/')
 			{
@@ -410,8 +430,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 						}
 						const isDirectory = file.isDirectory();
 						const hrefName = isDirectory ? `[${file.name}]` : file.name;
-						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size);
-						const modify = stats.mtime.toLocaleDateString(clientLocale) + ' ' + stats.mtime.toLocaleTimeString(clientLocale);
+						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
+						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
 						hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
 						if (hrefs.length === files.length)
 						{
@@ -438,34 +458,43 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 			}
 			function combineHtml()
 			{
-				return _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + `${urlPath}?download=true` + _indexHtmlbase[3] + hrefsResult + _indexHtmlbase[4];
+				//return _indexHtmlbase[0] + DIRECTORY_MODE_TITLE + _indexHtmlbase[1] + folderName + _indexHtmlbase[2] + `${urlPath}?download=true` + _indexHtmlbase[3] + hrefsResult + _indexHtmlbase[4];
+				return  _indexHtmlbase[0] + DIRECTORY_MODE_TITLE +
+						_indexHtmlbase[1] + folderName +
+						_indexHtmlbase[2] + `${urlPath}?download=true` +
+						_indexHtmlbase[3] + getTranslation('downloadAll', localeTranslation) +
+						_indexHtmlbase[4] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[5] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[6] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[7] + hrefsResult +
+						_indexHtmlbase[8];
 			}
 		}
 	});
 }
 
-function getStrSize(size)
+function getStrSize(size, localeTranslation)
 {
 	const sizeOfSize = Math.floor(Math.log2(size) / 10);
 	let suffix = '';
 	switch (sizeOfSize)
 	{
 	case 0:
-		return size + ' ' + 'Б';
+		return size + ' ' + getTranslation('sizeByte', localeTranslation);
 	case 1:
-		suffix = 'КиБ';
+		suffix = getTranslation('sizeKiB', localeTranslation);
 		break;
 	case 2:
-		suffix = 'МиБ';
+		suffix = getTranslation('sizeMiB', localeTranslation);
 		break;
 	case 3:
-		suffix = 'ГиБ';
+		suffix = getTranslation('sizeKiB', localeTranslation);
 		break;
 	case 4:
-		suffix = 'ТиБ';
+		suffix = getTranslation('sizeTiB', localeTranslation);
 		break;
 	case 5:
-		suffix = 'ПиБ';
+		suffix = getTranslation('sizePiB', localeTranslation);
 		break;
 	}
 	return (size / Math.pow(2, sizeOfSize * 10)).toFixed(1) + ' ' + suffix;
@@ -483,29 +512,6 @@ function error(err, res)
 	res.end(msg);
 }
 
-/*Обычная отправка считанного файла без использования файловых потоков.
-function sendFile(res, filePath)
-{
-	let file = fs.readFile(filePath, (err, data) =>
-	{
-		if (err)
-		{
-			console.log(filePath + ' not found');
-			res.writeHead(500);
-			res.end('Internal sever error');
-		}
-		else
-		{
-			res.writeHead(200,
-			{
-				'Content-Length': Buffer.byteLength(data),
-				'Content-Type': getContentType(path.extname(filePath))
-			});
-			res.end(data);
-		}
-	});
-}
-*/
 function sendHtmlString(res, data)
 {
 	res.writeHead(200,
