@@ -280,7 +280,7 @@ function app(req, res)
 			error(`You can watch only ${ROOT_PATH} directory`, res);
 			return;
 		}
-		const cookie = req.headers?.cookie;
+		const cookie = parseCookie(req.headers?.cookie);
 		const paramsGet = parseRequest(url[1]);
 		/*Post данные*/
 		let body = '';
@@ -379,25 +379,20 @@ function getTranslation(value, localeTranslation)
 	return DEFAULT_LOCALE_TRANSLATION[value];
 }
 
-function getLangFromCookie(cookie)
+function parseCookie(cookie)
 {
-	let lang = DEFAULT_LANG;
-	if (cookie)
+	if (!cookie) return null;
+	let cookieObj = {};
+	for (let c of cookie.split(';'))
 	{
-		for (let c of cookie.split(';'))
-		{
-			const aux = c.split('=');
-			const key = aux[0];
-			const value = aux[1];
-			if (key === 'lang')
-			{
-				lang = value;
-				break;
-			}
-		}
+		const aux = c.split('=');
+		const key = aux[0];
+		const value = aux[1];
+		cookieObj[key] = value;
 	}
-	return lang;
+	return cookieObj;
 }
+
 function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 {
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
@@ -408,7 +403,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 		}
 		else
 		{
-			const clientLang = getLangFromCookie(cookie);
+			const clientLang = cookie?.lang ? cookie.lang : DEFAULT_LANG;
 			let localeTranslation = _locales.has(clientLang) ? _locales.get(clientLang) : null;
 			let hrefs = [];
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
@@ -440,7 +435,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 						hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
-							sortHrefs('size', 'asc', hrefs);
+							const sortType = cookie?.sortType ? cookie.sortType : 'name';
+							const sortDirection = cookie?.sortDirection ? cookie.sortDirection : 'asc';
+							sortHrefs(sortType, sortDirection, hrefs);
 							for (let h of hrefs)
 							{
 								hrefsResult += h.value;
@@ -486,7 +483,7 @@ function sortHrefs(sortType, sortDirection, hrefs)
 			if (sortType === 'name') return a.name.localeCompare(b.name);
 			if (sortType === 'size') return a.size - b.size;
 			if (sortType === 'time') return a.modify - b.modify;
-			throw new Error('sortType must be "name", "size" or "time"');
+			return Math.random() * 2 - 1;
 		}
 	});
 	function direction(val1, val2)
@@ -504,7 +501,8 @@ function sortHrefs(sortType, sortDirection, hrefs)
 		}
 		else
 		{
-			throw new Error('sortDirection must be "asc" or "desc"');
+			a = val1;
+			b = val1;
 		}
 		return [a, b];
 	}
