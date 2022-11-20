@@ -30,11 +30,26 @@
 		<h2>~%~</h2>
 		<b><a href="~%~">~%~</a></b>
 		<hr>
-		<div><p><b>~%~</b></p><p><b>~%~</b></p><p><b>~%~</b></p>~%~</div>
+		<div>
+			<p>
+				<b>~%~</b>
+				<div>
+					<a href="">&darr;</a>
+					<a href="">&uarr;</a>
+				</div>
+			</p>
+			<p>
+				<b>~%~</b>
+			</p>
+			<p>
+				<b>~%~</b>
+			</p>
+			~%~
+		</div>
 		<hr>
 	</body>
 	<style>
-		div
+		body > div
 		{
 			display: inline-grid;
 			grid-template-columns: repeat(3, minmax(100px, auto));
@@ -42,9 +57,14 @@
 			grid-auto-rows: minmax(1.5rem, auto);
 			align-items: center;
 		}
+		div > p
+		{
+			display: flex;
+			justify-content: space-between;
+		}
 		@media screen and (max-width: 900px)
 		{
-			div
+			body > div
 			{
 				grid-template-columns: repeat(3, auto);
 			}
