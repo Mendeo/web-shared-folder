@@ -30,26 +30,34 @@
 		<h2>~%~</h2>
 		<b><a href="~%~">~%~</a></b>
 		<hr>
-		<div>
-			<p>
+		<div class="main_container">
+			<div class="main_container__head">
 				<b>~%~</b>
 				<div>
 					<a href="">&darr;</a>
 					<a href="">&uarr;</a>
 				</div>
-			</p>
-			<p>
+			</div>
+			<div class="main_container__head">
 				<b>~%~</b>
-			</p>
-			<p>
+				<div>
+					<a href="">&darr;</a>
+					<a href="">&uarr;</a>
+				</div>
+			</div>
+			<div class="main_container__head">
 				<b>~%~</b>
-			</p>
+				<div>
+					<a href="">&darr;</a>
+					<a href="">&uarr;</a>
+				</div>
+			</div>
 			~%~
 		</div>
 		<hr>
 	</body>
 	<style>
-		body > div
+		.main_container
 		{
 			display: inline-grid;
 			grid-template-columns: repeat(3, minmax(100px, auto));
@@ -57,14 +65,20 @@
 			grid-auto-rows: minmax(1.5rem, auto);
 			align-items: center;
 		}
-		div > p
+		.main_container__head
 		{
 			display: flex;
 			justify-content: space-between;
+			padding-bottom: 1rem;
+		}
+		.main_container__head a
+		{
+			text-decoration: none;
+			margin-left: 5px;
 		}
 		@media screen and (max-width: 900px)
 		{
-			body > div
+			.main_container
 			{
 				grid-template-columns: repeat(3, auto);
 			}
