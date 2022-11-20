@@ -437,17 +437,10 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 						const hrefName = isDirectory ? `[${file.name}]` : file.name;
 						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
-						hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name });
+						hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
-							//Сортируем по алфавиту, но так, чтобы папки были сверху.
-							hrefs.sort((a, b) =>
-							{
-								if (a.isDirectory && !b.isDirectory) return -1;
-								if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
-								if (!a.isDirectory && b.isDirectory) return 1;
-								if (!a.isDirectory && !b.isDirectory) return a.name.localeCompare(b.name);
-							});
+							sortHrefs('size', 'asc', hrefs);
 							for (let h of hrefs)
 							{
 								hrefsResult += h.value;
@@ -477,8 +470,49 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 	});
 }
 
+function sortHrefs(sortType, sortDirection, hrefs)
+{
+	//Сортируем, но так, чтобы папки были сверху.
+	hrefs.sort((val1, val2) =>
+	{
+		let ab = direction(val1, val2);
+		let a = ab[0];
+		let b = ab[1];
+		if (a.isDirectory && !b.isDirectory) return -1;
+		if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
+		if (!a.isDirectory && b.isDirectory) return 1;
+		if (!a.isDirectory && !b.isDirectory)
+		{
+			if (sortType === 'name') return a.name.localeCompare(b.name);
+			if (sortType === 'size') return a.size - b.size;
+			if (sortType === 'time') return a.modify - b.modify;
+			throw new Error('sortType must be "name", "size" or "time"');
+		}
+	});
+	function direction(val1, val2)
+	{
+		let a, b;
+		if (sortDirection === 'asc')
+		{
+			a = val1;
+			b = val2;
+		}
+		else if (sortDirection === 'desc')
+		{
+			a = val2;
+			b = val1;
+		}
+		else
+		{
+			throw new Error('sortDirection must be "asc" or "desc"');
+		}
+		return [a, b];
+	}
+}
+
 function getStrSize(size, localeTranslation)
 {
+	if (size === 0) return '0 ' + getTranslation('sizeByte', localeTranslation);
 	const sizeOfSize = Math.floor(Math.log2(size) / 10);
 	let suffix = '';
 	switch (sizeOfSize)
