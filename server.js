@@ -469,21 +469,26 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 
 function sortHrefs(sortType, sortDirection, hrefs)
 {
-	//Сортируем, но так, чтобы папки были сверху.
 	hrefs.sort((val1, val2) =>
 	{
 		let ab = direction(val1, val2);
 		let a = ab[0];
 		let b = ab[1];
-		if (a.isDirectory && !b.isDirectory) return -1;
-		if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
-		if (!a.isDirectory && b.isDirectory) return 1;
-		if (!a.isDirectory && !b.isDirectory)
+		if (sortType !== 'time') //Сортируем, но так, чтобы папки были сверху.
 		{
-			if (sortType === 'name') return a.name.localeCompare(b.name);
-			if (sortType === 'size') return a.size - b.size;
-			if (sortType === 'time') return a.modify - b.modify;
-			return Math.random() * 2 - 1;
+			if (a.isDirectory && !b.isDirectory) return -1;
+			if (a.isDirectory && b.isDirectory) return a.name.localeCompare(b.name);
+			if (!a.isDirectory && b.isDirectory) return 1;
+			if (!a.isDirectory && !b.isDirectory)
+			{
+				if (sortType === 'name') return a.name.localeCompare(b.name);
+				if (sortType === 'size') return a.size - b.size;
+				return Math.random() * 2 - 1;
+			}
+		}
+		else
+		{
+			return a.modify - b.modify;
 		}
 	});
 	function direction(val1, val2)
