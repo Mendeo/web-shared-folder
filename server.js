@@ -386,8 +386,8 @@ function parseCookie(cookie)
 	for (let c of cookie.split(';'))
 	{
 		const aux = c.split('=');
-		const key = aux[0];
-		const value = aux[1];
+		const key = aux[0].trim();
+		const value = aux[1].trim();
 		cookieObj[key] = value;
 	}
 	return cookieObj;
