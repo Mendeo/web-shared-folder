@@ -11,8 +11,8 @@
 		for (let cookie of document.cookie.split(';'))
 		{
 			const aux = cookie.split('=');
-			const key = aux[0];
-			const value = aux[1];
+			const key = aux[0].trim();
+			const value = aux[1].trim();
 			if (key === 'lang')
 			{
 				_lang = value;

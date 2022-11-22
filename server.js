@@ -440,7 +440,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 						if (hrefs.length === files.length)
 						{
 							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
-							const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'name', setSortCookie, null, setSortCookie);
+							const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'asc', setSortCookie, null, setSortCookie);
 							sortHrefs(sortType, sortDirection, hrefs);
 							for (let h of hrefs)
 							{
@@ -461,8 +461,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 			}
 			function setSortHref(sortType, sortDirection, sortHrefType)
 			{
-				const sortHrefUp = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=desc">&darr;</a>`;
-				const sortHrefDown = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=asc">&uarr;</a>`;
+				const sortHrefUp = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=desc">&uarr;</a>`;
+				const sortHrefDown = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=asc">&darr;</a>`;
 				return sortType === sortHrefType ? (sortDirection === 'asc' ? sortHrefUp : sortHrefDown) : sortHrefUp + sortHrefDown;
 			}
 			function setSortCookie(key, value)
