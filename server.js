@@ -347,7 +347,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie)
 				}
 				else
 				{
-					generateAndSendIndexHtml(res, urlPath, filePath, cookie);
+					generateAndSendIndexHtml(res, urlPath, filePath, cookie, paramsGet);
 				}
 			}
 			else
@@ -394,7 +394,7 @@ function parseCookie(cookie)
 	return cookieObj;
 }
 
-function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
+function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 {
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
@@ -411,10 +411,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 			let folderName = '/';
 			const folderSizeStub = getTranslation('folderSizeStub', localeTranslation);
 			let hrefsResult = '';
+			let responseCookie = [];
 			//Массив sortLinks содержит html код ссылок для сортировки.
 			const sortLinks = new Array(3);
-			const sortHrefUp = `<a href="${urlHeader}/">&uarr;</a>`;
-			const sortHrefDown = `<a href="${urlHeader}/">&darr;</a>`;
 			if (urlPath !== '/')
 			{
 				const lastField = urlHeader.lastIndexOf('/');
@@ -440,8 +439,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 						hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
-							const sortType = cookie?.sortType ? cookie.sortType : 'name';
-							const sortDirection = cookie?.sortDirection ? cookie.sortDirection : 'asc';
+							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
+							const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'name', setSortCookie, null, setSortCookie);
 							sortHrefs(sortType, sortDirection, hrefs);
 							for (let h of hrefs)
 							{
@@ -451,18 +450,24 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 							sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
 							sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
 							sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
-							sendHtmlString(res, combineHtml());
+							sendHtmlString(res, combineHtml(), responseCookie);
 						}
 					});
 				}
 			}
 			else
 			{
-				sendHtmlString(res, combineHtml());
+				sendHtmlString(res, combineHtml(), responseCookie);
 			}
 			function setSortHref(sortType, sortDirection, sortHrefType)
 			{
+				const sortHrefUp = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=desc">&darr;</a>`;
+				const sortHrefDown = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=asc">&uarr;</a>`;
 				return sortType === sortHrefType ? (sortDirection === 'asc' ? sortHrefUp : sortHrefDown) : sortHrefUp + sortHrefDown;
+			}
+			function setSortCookie(key, value)
+			{
+				responseCookie.push(`${key}=${value}; path=/; max-age=86400; samesite=strict`);
 			}
 			function combineHtml()
 			{
@@ -481,6 +486,45 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 			}
 		}
 	});
+}
+
+//Если key есть и в primary и в secondary, то вернёт из primary, иначе: вернёт из secondary.
+//Если и в secondary нет, то вернёт defaultValue.
+//Выполнятся функции ifPrimary, ifSecondary, ifDefault в зависимости от того, откуда вернулось.
+function getFromObjectsWithEqualKeys(primary, secondary, key, defaultValue, ifPrimary, ifSecondary, ifDefault)
+{
+	if (primary)
+	{
+		if (primary[key])
+		{
+			if (ifPrimary) ifPrimary(key, primary[key]);
+			return primary[key];
+		}
+		if (secondary)
+		{
+			if (secondary[key])
+			{
+				if (ifSecondary) ifSecondary(key, secondary[key]);
+				return secondary[key];
+			}
+			if (ifDefault) ifDefault(key, defaultValue);
+			return defaultValue;
+		}
+		if (ifDefault) ifDefault(key, defaultValue);
+		return defaultValue;
+	}
+	if (secondary)
+	{
+		if (secondary[key])
+		{
+			if (ifSecondary) ifSecondary(key, secondary[key]);
+			return secondary[key];
+		}
+		if (ifDefault) ifDefault(key, defaultValue);
+		return defaultValue;
+	}
+	if (ifDefault) ifDefault(key, defaultValue);
+	return defaultValue;
 }
 
 function sortHrefs(sortType, sortDirection, hrefs)
@@ -569,13 +613,21 @@ function error(err, res)
 	res.end(msg);
 }
 
-function sendHtmlString(res, data)
+function sendHtmlString(res, data, cookie)
 {
-	res.writeHead(200,
+	const head =
+	{
+		'Content-Length': Buffer.from(data).byteLength,
+		'Content-Type': 'text/html; charset=utf-8'
+	};
+	if (cookie)
+	{
+		if (cookie?.length)
 		{
-			'Content-Length': Buffer.from(data).byteLength,
-			'Content-Type': 'text/html; charset=utf-8'
-		});
+			head['Set-Cookie'] = cookie;
+		}
+	}
+	res.writeHead(200, head);
 	res.end(data);
 }
 
