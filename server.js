@@ -1,4 +1,5 @@
 'use strict';
+//web-shared-folder
 const http = require('http');
 const https = require('https');
 const path = require('path');
@@ -410,6 +411,10 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 			let folderName = '/';
 			const folderSizeStub = getTranslation('folderSizeStub', localeTranslation);
 			let hrefsResult = '';
+			//Массив sortLinks содержит html код ссылок для сортировки.
+			const sortLinks = new Array(3);
+			const sortHrefUp = `<a href="${urlHeader}/">&uarr;</a>`;
+			const sortHrefDown = `<a href="${urlHeader}/">&darr;</a>`;
 			if (urlPath !== '/')
 			{
 				const lastField = urlHeader.lastIndexOf('/');
@@ -442,6 +447,10 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 							{
 								hrefsResult += h.value;
 							}
+							//Массив sortLinks содержит html код ссылок для сортировки.
+							sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
+							sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
+							sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
 							sendHtmlString(res, combineHtml());
 						}
 					});
@@ -451,6 +460,10 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 			{
 				sendHtmlString(res, combineHtml());
 			}
+			function setSortHref(sortType, sortDirection, sortHrefType)
+			{
+				return sortType === sortHrefType ? (sortDirection === 'asc' ? sortHrefUp : sortHrefDown) : sortHrefUp + sortHrefDown;
+			}
 			function combineHtml()
 			{
 				return  _indexHtmlbase[0] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
@@ -458,10 +471,13 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie)
 						_indexHtmlbase[2] + `${urlPath}?download=true` +
 						_indexHtmlbase[3] + getTranslation('downloadAll', localeTranslation) +
 						_indexHtmlbase[4] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[6] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[7] + hrefsResult +
-						_indexHtmlbase[8];
+						_indexHtmlbase[5] + sortLinks[0] +
+						_indexHtmlbase[6] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[7] + sortLinks[1] +
+						_indexHtmlbase[8] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[9] + sortLinks[2] +
+						_indexHtmlbase[10] + hrefsResult +
+						_indexHtmlbase[11];
 			}
 		}
 	});
