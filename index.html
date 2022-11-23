@@ -6,7 +6,6 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>
 	<script type="text/javascript">
-		const DEFAULT_LANG = 'en-US';
 		let _lang = null;
 		for (let cookie of document.cookie.split(';'))
 		{
@@ -21,9 +20,12 @@
 		}
 		if (!_lang)
 		{
-			_lang = navigator.browserLanguage || navigator.language || navigator.userLanguage || DEFAULT_LANG;
-			document.cookie = `lang=${_lang}; path=/; max-age=86400; samesite=strict`;
-			location.reload();
+			_lang = navigator.browserLanguage || navigator.language || navigator.userLanguage;
+			if (_lang)
+			{
+				document.cookie = `lang=${_lang}; path=/; max-age=86400; samesite=strict`;
+				location.reload();
+			}
 		}
 	</script>
 	<body>
