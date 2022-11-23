@@ -375,7 +375,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie)
 
 function getTranslation(value, localeTranslation)
 {
-	let locale = localeTranslation ? localeTranslation : DEFAULT_LOCALE_TRANSLATION;
+	let locale = localeTranslation || DEFAULT_LOCALE_TRANSLATION;
 	if (locale[value]) return locale[value];
 	return DEFAULT_LOCALE_TRANSLATION[value];
 }
@@ -394,8 +394,26 @@ function parseCookie(cookie)
 	return cookieObj;
 }
 
+function getClientLanguageFromCookie(cookie, responseCookie)
+{
+	let clientLang = cookie?.lang;
+	if (!clientLang) return DEFAULT_LANG;
+	if (_locales.has(clientLang)) return clientLang;
+	for (let locale of _locales)
+	{
+		if (locale[0].startsWith(clientLang))
+		{
+			//Сохраним в куках найденную локаль, чтобы каждый раз не искать.
+			responseCookie.push(`lang=${locale[0]}; path=/; max-age=86400; samesite=strict`);
+			return locale[0];
+		}
+	}
+	return DEFAULT_LANG;
+}
+
 function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 {
+	const responseCookie = [];
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
 		if (err)
@@ -404,14 +422,13 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 		}
 		else
 		{
-			const clientLang = cookie?.lang ? cookie.lang : DEFAULT_LANG;
-			let localeTranslation = _locales.has(clientLang) ? _locales.get(clientLang) : null;
+			const clientLang = getClientLanguageFromCookie(cookie, responseCookie);
+			let localeTranslation = _locales.get(clientLang);
 			let hrefs = [];
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 			let folderName = '/';
 			const folderSizeStub = getTranslation('folderSizeStub', localeTranslation);
 			let hrefsResult = '';
-			let responseCookie = [];
 			//Массив sortLinks содержит html код ссылок для сортировки.
 			const sortLinks = new Array(3);
 			if (urlPath !== '/')
