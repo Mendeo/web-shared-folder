@@ -672,12 +672,13 @@ function zipFolder(folderPath, res)
 	const folderName = path.basename(folderPath);
 	const rootDir = path.dirname(folderPath);
 	const zip = new JSZip();
-	//let out = fs.createWriteStream(`${folderName}.zip`);
-	let allFilesInQueue = false;
+
 	let numberOfFile = 0;
-	readFolderRecursive(folderPath, false);
-	function readFolderRecursive(folderPath, isSubDir)
+	let numberOfRecursive = 0;
+	readFolderRecursive(folderPath);
+	function readFolderRecursive(folderPath)
 	{
+		numberOfRecursive++;
 		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
 		{
 			if (err)
@@ -706,34 +707,41 @@ function zipFolder(folderPath, res)
 								numberOfFile--;
 								const relativePath = path.join(path.relative(rootDir, folderPath), file.name);
 								zip.file(relativePath, data);
-								if (numberOfFile === 0 && allFilesInQueue)
-								{
-									const zipStream = zip.generateNodeStream();
-									zipStream.pipe(res);
-									zipStream.on('error', (err) => error(err, res));
-									res.writeHead(200,
-										{
-											'Content-Type': 'application/zip'
-										});
-									res.on('close', () =>
-									{
-										if (!res.writableFinished)
-										{
-											zipStream.destroy();
-											console.log('Connection lost while transferring zip archive.');
-										}
-									});
-									res.on('finish', () =>
-									{
-										console.log(`Zip archive ${folderName}.zip sent successfully.`);
-									});
-								}
+								if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
 							}
 						});
 					}
 				}
-				if (!isSubDir) allFilesInQueue = true;
 			}
+			else
+			{
+				const relativePath = path.join(path.relative(rootDir, folderPath));
+				zip.folder(relativePath);
+			}
+			numberOfRecursive--;
+			if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
+		});
+	}
+	function sendZip()
+	{
+		const zipStream = zip.generateNodeStream();
+		zipStream.pipe(res);
+		zipStream.on('error', (err) => error(err, res));
+		res.writeHead(200,
+			{
+				'Content-Type': 'application/zip'
+			});
+		res.on('close', () =>
+		{
+			if (!res.writableFinished)
+			{
+				zipStream.destroy();
+				console.log('Connection lost while transferring zip archive.');
+			}
+		});
+		res.on('finish', () =>
+		{
+			console.log(`Zip archive ${folderName}.zip sent successfully.`);
 		});
 	}
 }
