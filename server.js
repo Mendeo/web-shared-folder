@@ -77,6 +77,9 @@ if (cluster.isPrimary)
 let _generateIndex = false;
 let _indexHtmlbase = null;
 let _favicon = null;
+let _index_js = null;
+let _index_css = null;
+let _robots_txt = null;
 let _locales = null;
 
 fs.stat(ROOT_PATH, (err, stats) =>
@@ -105,8 +108,11 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		if (_generateIndex)
 		{
 			if (cluster.isPrimary) console.log('Directory watch mode.');
-			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'index.html')).toString().split('~%~');
-			_favicon = fs.readFileSync(path.join(__dirname, 'favicon.ico'));
+			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'app_files', 'index.html')).toString().split('~%~');
+			_favicon = fs.readFileSync(path.join(__dirname, 'app_files', 'favicon.ico'));
+			_index_js = fs.readFileSync(path.join(__dirname, 'app_files', 'index.js'));
+			_index_css = fs.readFileSync(path.join(__dirname, 'app_files', 'index.css'));
+			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
 			readTranslationFiles();
 		}
 		let isHttps = key && cert;
@@ -156,7 +162,7 @@ function readTranslationFiles()
 {
 	//Считываем файлы с локализациями.
 	_locales = new Map();
-	const localeDir = path.join(__dirname, 'locale');
+	const localeDir = path.join(__dirname, 'app_files', 'locale');
 	const localeFiles = fs.readdirSync(localeDir);
 	for (let file of localeFiles)
 	{
@@ -322,13 +328,63 @@ function answer(res, urlPath, paramsGet, cookie, paramsPost)
 	if (paramsPost) console.log(paramsPost);
 }
 
+function sendCachedFile(res, file, contentType)
+{
+	res.writeHead(200,
+		{
+			'Content-Length': file.byteLength,
+			'Content-Type': contentType,
+			'Cache-Control': 'max-age=86400'
+		});
+	res.end(file);
+}
+function isAppFile(name)
+{
+	switch (name)
+	{
+	case 'favicon.ico':
+		return true;
+	case 'index.js':
+		return true;
+	case 'index.css':
+		return true;
+	case 'robots.txt':
+		return true;
+	}
+	return false;
+}
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath, paramsGet, cookie)
 {
-	if (_generateIndex && urlPath === '/favicon.ico')
+	if (_generateIndex)
 	{
-		sendIcon(res);
-		return;
+		switch (urlPath)
+		{
+		case '/favicon.ico':
+			sendCachedFile(res, _favicon, 'image/x-icon');
+			return;
+		case '/index.js':
+			sendCachedFile(res, _index_js, 'text/javascript; charset=utf-8');
+			return;
+		case '/index.css':
+			sendCachedFile(res, _index_css, 'text/css; charset=utf-8');
+			return;
+		case '/robots.txt':
+			sendCachedFile(res, _robots_txt, 'text/plain; charset=utf-8');
+			return;
+		case '/_favicon.ico':
+			urlPath = '/favicon.ico';
+			break;
+		case '/_index.js':
+			urlPath = '/index.js';
+			break;
+		case '/_index.css':
+			urlPath = '/index.css';
+			break;
+		case '/_robots.txt':
+			urlPath = '/robots.txt';
+			break;
+		}
 	}
 	let filePath = path.join(ROOT_PATH, urlPath);
 	fs.stat(filePath, (err, stats) =>
@@ -450,10 +506,11 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 							return;
 						}
 						const isDirectory = file.isDirectory();
-						const hrefName = isDirectory ? `[${file.name}]` : file.name;
+						const linkName = isDirectory ? `[${file.name}]` : file.name;
 						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
-						hrefs.push({ value: `<a href="${urlHeader}/${file.name}">${hrefName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+						const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
+						hrefs.push({ value: `<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
 							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
@@ -648,16 +705,6 @@ function sendHtmlString(res, data, cookie)
 	res.end(data);
 }
 
-function sendIcon(res)
-{
-	res.writeHead(200,
-		{
-			'Content-Length': _favicon.byteLength,
-			'Content-Type': 'image/x-icon'
-		});
-	res.end(_favicon);
-}
-
 //Отправка файлов с использованием файловых потоков.
 function sendFile(res, filePath, size)
 {
@@ -765,7 +812,6 @@ function zipFolder(folderPath, res)
 
 function getContentType(ext)
 {
-	if (_generateIndex) return 'application/octet-stream'; //Если мы просто расшариваем папку, то все файлы отдавать как бинарники.
 	//Взял из настроек nginx
 	if (ext === '.html' || ext === '.htm' || ext === '.shtml') return 'text/html; charset=utf-8';
 	if (ext === '.css') return 'text/css; charset=utf-8';
