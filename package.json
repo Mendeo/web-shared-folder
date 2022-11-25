@@ -28,5 +28,8 @@
   "bugs": {
     "url": "https://github.com/Mendeo/StaticWebServer/issues"
   },
-  "homepage": "https://github.com/Mendeo/StaticWebServer#readme"
+  "homepage": "https://github.com/Mendeo/StaticWebServer#readme",
+  "bin": {
+    "web-shared-folder": "./server.js"
+  }
 }

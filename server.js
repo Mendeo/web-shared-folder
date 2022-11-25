@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 'use strict';
 //web-shared-folder
 const http = require('http');
