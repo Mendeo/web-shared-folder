@@ -663,7 +663,7 @@ function getStrSize(size, localeTranslation)
 		suffix = getTranslation('sizeMiB', localeTranslation);
 		break;
 	case 3:
-		suffix = getTranslation('sizeKiB', localeTranslation);
+		suffix = getTranslation('sizeGiB', localeTranslation);
 		break;
 	case 4:
 		suffix = getTranslation('sizeTiB', localeTranslation);
