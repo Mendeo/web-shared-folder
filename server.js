@@ -747,7 +747,7 @@ function zipFolder(folderPath, res)
 		{
 			if (err)
 			{
-				error(err, res);
+				zipError(err, res);
 			}
 			else if (files.length > 0)
 			{
@@ -764,7 +764,7 @@ function zipFolder(folderPath, res)
 						{
 							if (err)
 							{
-								error(err, res);
+								zipError(err, res);
 							}
 							else
 							{
@@ -785,6 +785,18 @@ function zipFolder(folderPath, res)
 			numberOfRecursive--;
 			if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
 		});
+		function zipError(err, res)
+		{
+			const commonMsg = 'Zip generate error!';
+			console.log(commonMsg + ' ' + err.message);
+			const msg = commonMsg + (err.code === 'ERR_FS_FILE_TOO_LARGE' ? ' File size is greater than 2 GiB' : '');
+			res.writeHead(500,
+				{
+					'Content-Length': msg.length,
+					'Content-Type': 'text/plain'
+				});
+			res.end(msg);
+		}
 	}
 	function sendZip()
 	{
