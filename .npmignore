@@ -1,0 +1,8 @@
+/node_modules
+*.swp
+*.swo
+*.*~
+/tmp
+/.vscode
+.eslintrc.json
+.editorconfig
