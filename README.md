@@ -1,52 +1,56 @@
 # web-shared-fodler
 
-Удобный http сервер на nodejs. Предназначен для того, чтобы расшарить папку по локальной сети или даже в интернете. Может также использоваться как веб-сервер для отдачи статических сайтов.
+Convenient http server on nodejs. Designed to share some folder on a local network or even on the Internet. It can also be used as a web server to serve static sites.
 
-Возможности
-* Страницы автоматически отображаются на нужном языке (пока доступно только два языка).
-* Возможность скачать всю папку как zip-архив.
-* Сортировка по имени, размеру и дате.
-* Возможна работа по протоколу https с автоматическим редиректом с http.
-* Возможность включить базовую HTTP аутентификацию с заданными именем пользователя и паролем.
+**Attention! A full security audit has not been conducted, so using this server directly to access from the Internet may not be secure.**
 
-## Установка
+Capabilities
+* Pages are automatically displayed in the user language (only two languages are available at the moment).
+* The user can download the entire folder as a zip archive.
+* The user can set file sorting by name, size or date.
+* It is possible to work over https protocol with an automatic redirect from http.
+* It is possible to enable basic HTTP authentication with a given username and password.
+
+## Installation
 ```
 npm i -g web-shared-folder
 ```
 
 
-## Запуск
-
+## Usage
 ```
-web-shared-folder <Путь к папке, которую нужно расшарить> <port> [<key> <cert>] [<username> <password>]
+web-shared-folder <path to the folder for sharing> <port> [<key> <cert>] [<username> <password>]
 ```
-**Если в заданной пользователем папке будет находится файл "index.html", то сервер запустится в режиме отдачи веб страниц, а не в режиме отображения папки.** Режим отображения содержмимого папки можно включить принудительно, задав переменную окружения **SERVER_DIRECTORY_MODE=1**. Также этот режим можно принудительно отключить, задав **SERVER_DIRECTORY_MODE=0**.
+**If there is the "index.html" file in the specified folder, then the server will start in the static web site mode, not in the folder viewing mode.** The folder contents viewing mode can be forced by setting the environment variable **SERVER_DIRECTORY_MODE=1**. Also, this mode can be forcibly disabled by setting **SERVER_DIRECTORY_MODE=0**.
 
-Для работы сервера по протоколу https необходимо задать путь файлу закрытого ключа, и путь к файлу сертификата. Это ключи \<key\> и \<cert\> соответственно.
-При работе сервера в этом режиме, можно включить автоматическое перенаправление с http на https. Для этого нужно в переменной окружения **SERVER_AUTO_REDIRECT_HTTP_PORT** указать номер порта, с которого будет осуществляться перенаправление (обычно 80).
+In order to start the server to work over https, you must specify the path to the private key file (\<key\>) and the path to the certificate file (\<cert\>).
+In https mode, it is posible to enable automatic redirection from http to https. To do this, in the **SERVER_AUTO_REDIRECT_HTTP_PORT** environment variable, specify the port number from which the redirection will be performed (usually 80).
 
-Задание параметров \<username\> и \<password\> - включает базовую HTTP аутентификацию с заданными именем пользователя и паролем.
+if the keys \<username\> and \<password\> are given, then HTTP authentication is enabled with the given login and password.
 
-**Все параметры коммандной строки можно задавать также в переменных окружения: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.** Параметры, заданные в коммандной строке имеют более высокий приоритет.
+**All command line options can also be set in the environment variables: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.** Options specified on the command line have higher precedence.
 
-Также в переменной окружения **SERVER_DIRECTORY_MODE_TITLE** можно задать заголовок страницы.
+Also, it is possible set the page title in the **SERVER_DIRECTORY_MODE_TITLE** environment variable.
 
-**Сервер можно запустить в режиме кластера** путём задания переменной окружения **SERVER_USE_CLUSTER_MODE=1**. В этом случае будут созданы дочерние процессы nodejs по числу ядер процессора. Этот режим позволяет задействовать в работе сервера все ресурсы процессора, но при этом кратно возрастает потребление опертивной памяти. Для режима кластера имеется возможность задать переменную окружения **SERVER_SHOULD_RESTART_WORKER=1**. Это приведёт к автоматическому перезапуску дочернего процесса в случае его непредвиденного завершения.
+**And it is possible to run server in cluster mode.** To do this, set the **SERVER_USE_CLUSTER_MODE** environment variable to 1. In cluster mode, nodejs child processes will be created according to the number of processor cores. This mode allows you to use all the processor resources, but at the same time it increases the consumption of RAM. If **SERVER_SHOULD_RESTART_WORKER=1** is given, the child process will be automatically restarted if it terminates unexpectedly.
 
-### Простой пример
-Пусть ip адрес компьютера 192.168.1.2. Требуется расшарить в локальной сети с этого компьютера папку "/home/user/shared". Выполняем:
+### Simple example
+Suppose the ip address of the computer is 192.168.1.2. It is required to share the folder "/home/user/shared" on the local network from this computer. Execute:
+
 ```
 web-shared-folder /home/user/shared 8080
 ```
-Доступ к файлам из папки "/home/user/shared" можно получить набрав в адресной строке браузера:
+Access to files from the "/home/user/shared" folder can be obtained by typing in the browser address bar:
+
 ```
 http://192.168.1.2:8080
 ```
 
-### Сложный пример
-Пусть компьютер имеет белый ip адрес в интернете. Требуется расшарить в интернете с этого компьютера папку "/home/user/shared". Нужно сделать это по защищённому протоколу, поэтому сначала требуется получить ssl сертифкат.  
-Пусть уже имеется ssl-сертификат на домен example.com и этот домен привязан к ip компьютера. Путь к файлу сертиката: "/etc/ssl/ssl.crt". Путь к файлу приватного ключа для этого сертификата: "/etc/ssl/ssl.key".  
-Для защиты от постороннего доступа зададим имя пользователя "qwerty" и пароль "123456" (не используйте простые пароли для HTTP аутентификации!). Выполняем:
+### Complex example
+Suppose the computer have a white ip address on the Internet. It is required to share the folder "/home/user/shared" on the Internet from this computer and you don't want to use a reverse proxy to work over https.  
+Suppose you already have the ssl certificate for the domain example.com and this domain is bound to the ip of the computer. Path to the certificate file: "/etc/ssl/ssl.crt". Path to the private key file for this certificate: "/etc/ssl/ssl.key".  
+To protect against unauthorized access, enable HTTP authentication. Set username "qwerty" and password "123456" (do not use simple passwords for HTTP authentication!). Execute:
+
 ```
 #Path to shared folder
 export SERVER_ROOT=/home/user/shared
@@ -84,7 +88,8 @@ export SERVER_SHOULD_RESTART_WORKER=1
 #Start server from root with preserve environment key
 sudo -E web-shared-folder
 ```
-Доступ к файлам из папки "/home/user/shared" можно получить набрав в адресной строке браузера:
+
+Access to files from the "/home/user/shared" folder can be obtained by typing in the browser address bar:
 ```
 https://example.com
 ```
