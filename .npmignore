@@ -3,6 +3,7 @@
 *.swo
 *.*~
 /tmp
+/ssl
 /.vscode
 .eslintrc.json
 .editorconfig
