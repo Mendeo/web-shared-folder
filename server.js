@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 'use strict';
-//web-shared-folder
 const http = require('http');
 const https = require('https');
 const path = require('path');
@@ -525,14 +524,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 							sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
 							sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
 							sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
-							sendHtmlString(res, combineHtml(), responseCookie);
+							sendHtmlString(res, combineHtml(true), responseCookie);
 						}
 					});
 				}
 			}
 			else
 			{
-				sendHtmlString(res, combineHtml(), responseCookie);
+				sendHtmlString(res, combineHtml(false), responseCookie);
 			}
 			function setSortHref(sortType, sortDirection, sortHrefType)
 			{
@@ -544,18 +543,18 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 			{
 				responseCookie.push(`${key}=${value}; path=/; max-age=86400; samesite=strict`);
 			}
-			function combineHtml()
+			function combineHtml(hasFiles)
 			{
 				return  _indexHtmlbase[0] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[1] + folderName +
 						_indexHtmlbase[2] + `${urlPath}?download=true` +
 						_indexHtmlbase[3] + getTranslation('downloadAll', localeTranslation) +
 						_indexHtmlbase[4] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[5] + sortLinks[0] +
+						_indexHtmlbase[5] + (hasFiles ? sortLinks[0] : '') +
 						_indexHtmlbase[6] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[7] + sortLinks[1] +
+						_indexHtmlbase[7] + (hasFiles ? sortLinks[1] : '') +
 						_indexHtmlbase[8] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[9] + sortLinks[2] +
+						_indexHtmlbase[9] + (hasFiles ? sortLinks[2] : '') +
 						_indexHtmlbase[10] + hrefsResult +
 						_indexHtmlbase[11];
 			}
