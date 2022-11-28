@@ -6,13 +6,13 @@
     "start": "node server.js"
   },
   "name": "web-shared-folder",
-  "description": "Разработал для своих нужд простой сервер на node js, чтобы он отдавал статику.",
-  "version": "1.1.1",
+  "description": "Web server for sharing folder on local network or Internet",
+  "version": "1.1.2",
   "main": "server.js",
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Mendeo/StaticWebServer.git"
+    "url": "git+https://github.com/Mendeo/web-shared-folder.git"
   },
   "keywords": [
     "web",
@@ -26,9 +26,9 @@
   "author": "Mendeo",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Mendeo/StaticWebServer/issues"
+    "url": "https://github.com/Mendeo/web-shared-folder/issues"
   },
-  "homepage": "https://github.com/Mendeo/StaticWebServer#readme",
+  "homepage": "https://github.com/Mendeo/web-shared-folder#readme",
   "bin": {
     "web-shared-folder": "./server.js"
   }
