@@ -359,7 +359,8 @@ function sendCachedFile(res, file, contentType)
 		{
 			'Content-Length': file.byteLength,
 			'Content-Type': contentType,
-			'Cache-Control': 'max-age=86400'
+			'Cache-Control': 'max-age=86400',
+			'Content-Security-Policy': 'default-src \'self\''
 		});
 	res.end(file);
 }
@@ -717,7 +718,8 @@ function sendHtmlString(res, data, cookie)
 	const head =
 	{
 		'Content-Length': Buffer.from(data).byteLength,
-		'Content-Type': 'text/html; charset=utf-8'
+		'Content-Type': 'text/html; charset=utf-8',
+		'Content-Security-Policy': 'default-src \'self\''
 	};
 	if (cookie)
 	{
