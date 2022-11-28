@@ -30,6 +30,8 @@ const https = require('https');
 const path = require('path');
 const fs = require('fs');
 const cpus = require('os').cpus;
+const zlib = require('zlib');
+const { Readable, pipeline } = require('stream');
 const JSZip = require('jszip');
 
 const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
@@ -111,7 +113,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 {
 	if (err)
 	{
-		console.log(err.message);
+		console.log(err?.message);
 		process.exit(1);
 	}
 	else if (!stats.isDirectory())
@@ -314,6 +316,7 @@ function app(req, res)
 		}
 		const cookie = parseCookie(req.headers?.cookie);
 		const paramsGet = parseRequest(url[1]);
+		const acceptEncoding = req.headers['accept-encoding'];
 		/*Post данные*/
 		let body = '';
 		req.on('data', chunk =>
@@ -324,7 +327,7 @@ function app(req, res)
 		req.on('end', () =>
 		{
 			const paramsPost = parseRequest(body);
-			answer(res, urlPath, paramsGet, cookie, paramsPost);
+			answer(res, urlPath, paramsGet, cookie, acceptEncoding, paramsPost);
 		});
 	}
 }
@@ -345,25 +348,81 @@ function parseRequest(data)
 	return params;
 }
 
-function answer(res, urlPath, paramsGet, cookie, paramsPost)
+function answer(res, urlPath, paramsGet, cookie, acceptEncoding, paramsPost)
 {
 
-	sendFileByUrl(res, urlPath, paramsGet, cookie, paramsPost);
+	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, paramsPost);
 	if (paramsGet) console.log(paramsGet);
 	if (paramsPost) console.log(paramsPost);
 }
 
-function sendCachedFile(res, file, contentType)
+function sendCachedFile(res, file, contentType, acceptEncoding)
 {
-	res.writeHead(200,
-		{
-			'Content-Length': file.byteLength,
-			'Content-Type': contentType,
-			'Cache-Control': 'max-age=86400',
-			'Content-Security-Policy': 'default-src \'self\''
-		});
-	res.end(file);
+	const headers =
+	{
+		'Content-Type': contentType,
+		'Cache-Control': 'max-age=86400',
+		'Content-Security-Policy': 'default-src \'self\''
+	};
+	sendCompressed(res, headers, file, acceptEncoding);
 }
+
+function sendCompressed(res, headers, data, acceptEncoding)
+{
+	const compress = compressPrepare(acceptEncoding);
+	if (compress)
+	{
+		headers['Content-Encoding'] = compress.compressType;
+		compress.compressFunction(data, (err, cData) =>
+		{
+			if (err) error500(err, res);
+			headers['Content-Length'] = cData.byteLength;
+			send200(res, headers, cData);
+		});
+	}
+	else
+	{
+		headers['Content-Length'] = data.byteLength;
+		send200(res, headers, data);
+	}
+}
+
+function send200(res, headers, data)
+{
+	res.writeHead(200, headers);
+	res.end(data);
+}
+
+function compressPrepare(acceptEncoding)
+{
+	let compressType = null;
+	let compressFunction = null;
+	if (acceptEncoding)
+	{
+		if (/\bdeflate\b/.test(acceptEncoding))
+		{
+			compressType = 'deflate';
+			compressFunction = zlib.deflate;
+		}
+		else if (/\bgzip\b/.test(acceptEncoding))
+		{
+			compressType = 'gzip';
+			compressFunction = zlib.gzip;
+		}
+		else if (/\bbr\b/.test(acceptEncoding))
+		{
+			compressType = 'br';
+			compressFunction = zlib.brotliCompress;
+		}
+		else
+		{
+			return null;
+		}
+		return { compressType, compressFunction };
+	}
+	return null;
+}
+
 function isAppFile(name)
 {
 	switch (name)
@@ -380,7 +439,7 @@ function isAppFile(name)
 	return false;
 }
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, paramsGet, cookie)
+function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding)
 {
 	if (_generateIndex)
 	{
@@ -390,13 +449,13 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie)
 			sendCachedFile(res, _favicon, 'image/x-icon');
 			return;
 		case '/index.js':
-			sendCachedFile(res, _index_js, 'text/javascript; charset=utf-8');
+			sendCachedFile(res, _index_js, 'text/javascript; charset=utf-8', acceptEncoding);
 			return;
 		case '/index.css':
-			sendCachedFile(res, _index_css, 'text/css; charset=utf-8');
+			sendCachedFile(res, _index_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
 		case '/robots.txt':
-			sendCachedFile(res, _robots_txt, 'text/plain; charset=utf-8');
+			sendCachedFile(res, _robots_txt, 'text/plain; charset=utf-8', acceptEncoding);
 			return;
 		case '/_favicon.ico':
 			urlPath = '/favicon.ico';
@@ -429,7 +488,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie)
 				}
 				else
 				{
-					generateAndSendIndexHtml(res, urlPath, filePath, cookie, paramsGet);
+					generateAndSendIndexHtml(res, urlPath, filePath, cookie, paramsGet, acceptEncoding);
 				}
 			}
 			else
@@ -493,7 +552,7 @@ function getClientLanguageFromCookie(cookie, responseCookie)
 	return DEFAULT_LANG;
 }
 
-function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
+function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet, acceptEncoding)
 {
 	const responseCookie = [];
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
@@ -528,7 +587,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 					{
 						if (err)
 						{
-							console.log(err.message);
+							console.log(err?.message);
 							return;
 						}
 						const isDirectory = file.isDirectory();
@@ -550,14 +609,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet)
 							sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
 							sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
 							sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
-							sendHtmlString(res, combineHtml(true), responseCookie);
+							sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
 						}
 					});
 				}
 			}
 			else
 			{
-				sendHtmlString(res, combineHtml(false), responseCookie);
+				sendHtmlString(res, combineHtml(false), responseCookie, acceptEncoding);
 			}
 			function setSortHref(sortType, sortDirection, sortHrefType)
 			{
@@ -712,10 +771,21 @@ function error(err, res)
 		});
 	res.end(msg);
 }
-
-function sendHtmlString(res, data, cookie)
+function error500(err, res)
 {
-	const head =
+	const msg = 'Internal server error!';
+	console.log(msg + ' ' + err?.message);
+	res.writeHead(500,
+		{
+			'Content-Length': msg.length,
+			'Content-Type': 'text/plain'
+		});
+	res.end(msg);
+}
+
+function sendHtmlString(res, data, cookie, acceptEncoding)
+{
+	const headers =
 	{
 		'Content-Length': Buffer.from(data).byteLength,
 		'Content-Type': 'text/html; charset=utf-8',
@@ -725,11 +795,10 @@ function sendHtmlString(res, data, cookie)
 	{
 		if (cookie?.length)
 		{
-			head['Set-Cookie'] = cookie;
+			headers['Set-Cookie'] = cookie;
 		}
 	}
-	res.writeHead(200, head);
-	res.end(data);
+	sendCompressed(res, headers, data, acceptEncoding);
 }
 
 //Отправка файлов с использованием файловых потоков.
@@ -815,8 +884,8 @@ function zipFolder(folderPath, res)
 		function zipError(err, res)
 		{
 			const commonMsg = 'Zip generate error!';
-			console.log(commonMsg + ' ' + err.message);
-			const msg = commonMsg + (err.code === 'ERR_FS_FILE_TOO_LARGE' ? ' File size is greater than 2 GiB' : '');
+			console.log(commonMsg + ' ' + err?.message);
+			const msg = commonMsg + (err?.code === 'ERR_FS_FILE_TOO_LARGE' ? ' File size is greater than 2 GiB' : '');
 			res.writeHead(500,
 				{
 					'Content-Length': msg.length,
