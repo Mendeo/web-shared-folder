@@ -34,6 +34,8 @@ Also, it is possible set the page title in the **SERVER_DIRECTORY_MODE_TITLE** e
 
 **And it is possible to run server in cluster mode.** To do this, set the **SERVER_USE_CLUSTER_MODE** environment variable to 1. In cluster mode, nodejs child processes will be created according to the number of processor cores. This mode allows you to use all the processor resources, but at the same time it increases the consumption of RAM. If **SERVER_SHOULD_RESTART_WORKER=1** is given, the child process will be automatically restarted if it terminates unexpectedly.
 
+By default, the server returns the contents of the web page in a compressed form. If you want to disable this behavior, you can set **SERVER_DISABLE_COMPRESSION=1**
+
 ### Simple example
 Suppose the ip address of the computer is 192.168.1.2. It is required to share the folder "/home/user/shared" on the local network from this computer. Execute:
 
