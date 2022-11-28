@@ -33,12 +33,12 @@ const cpus = require('os').cpus;
 const zlib = require('zlib');
 const JSZip = require('jszip');
 
-const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
-const SHOULD_RESTART_WORKER = process.env.SERVER_SHOULD_RESTART_WORKER;
-const DIRECTORY_MODE = process.env.SERVER_DIRECTORY_MODE;
+const USE_CLUSTER_MODE = Number(process.env.SERVER_USE_CLUSTER_MODE);
+const SHOULD_RESTART_WORKER = Number(process.env.SERVER_SHOULD_RESTART_WORKER);
+const DIRECTORY_MODE = Number(process.env.SERVER_DIRECTORY_MODE);
 const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE;
-const AUTO_REDIRECT_HTTP_PORT = process.env.SERVER_AUTO_REDIRECT_HTTP_PORT;
-const DISABLE_COMPRESSION = process.env.SERVER_DISABLE_COMPRESSION;
+const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_PORT);
+const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
 
 const DEFAULT_LANG = 'en-US';
 let DEFAULT_LOCALE_TRANSLATION = null;
@@ -55,7 +55,7 @@ else
 
 const ROOT_PATH_RAW = (process.argv[2] || process.env.SERVER_ROOT);
 const ROOT_PATH = ROOT_PATH_RAW ? ROOT_PATH_RAW.replace(/"/g, '') : null; //Папка относительно которой будут задаваться все папки, которые идут с адресом
-const PORT = process.argv[3] || process.env.SERVER_PORT;
+const PORT = Number(process.argv[3] || process.env.SERVER_PORT);
 const key = process.argv[4] || process.env.SERVER_KEY;
 const cert = process.argv[5] || process.env.SERVER_CERT;
 const username = process.argv[6] || process.env.SERVER_USERNAME;
@@ -123,7 +123,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 	}
 	else
 	{
-		if (DIRECTORY_MODE !== undefined)
+		if (!isNaN(DIRECTORY_MODE))
 		{
 			_generateIndex = DIRECTORY_MODE > 0;
 		}
@@ -141,6 +141,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_index_css = fs.readFileSync(path.join(__dirname, 'app_files', 'index.css'));
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
 			readTranslationFiles();
+			if (DISABLE_COMPRESSION) console.log('Compression is disable.');
 		}
 		let isHttps = key && cert;
 		if (cluster.isPrimary)
@@ -382,6 +383,7 @@ function sendCompressed(res, headers, data, acceptEncoding)
 	}
 	else
 	{
+		if (!data.byteLength) data = Buffer.from(data);
 		headers['Content-Length'] = data.byteLength;
 		send200(res, headers, data);
 	}
