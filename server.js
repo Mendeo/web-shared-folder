@@ -31,7 +31,6 @@ const path = require('path');
 const fs = require('fs');
 const cpus = require('os').cpus;
 const zlib = require('zlib');
-const { Readable, pipeline } = require('stream');
 const JSZip = require('jszip');
 
 const USE_CLUSTER_MODE = process.env.SERVER_USE_CLUSTER_MODE;
@@ -39,6 +38,7 @@ const SHOULD_RESTART_WORKER = process.env.SERVER_SHOULD_RESTART_WORKER;
 const DIRECTORY_MODE = process.env.SERVER_DIRECTORY_MODE;
 const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE;
 const AUTO_REDIRECT_HTTP_PORT = process.env.SERVER_AUTO_REDIRECT_HTTP_PORT;
+const DISABLE_COMPRESSION = process.env.SERVER_DISABLE_COMPRESSION;
 
 const DEFAULT_LANG = 'en-US';
 let DEFAULT_LOCALE_TRANSLATION = null;
@@ -395,6 +395,7 @@ function send200(res, headers, data)
 
 function compressPrepare(acceptEncoding)
 {
+	if (DISABLE_COMPRESSION) return null;
 	let compressType = null;
 	let compressFunction = null;
 	if (acceptEncoding)
