@@ -2,7 +2,7 @@
 
 Convenient http server on nodejs. Designed to share some folder on a local network or even on the Internet. It can also be used as a web server to serve static sites.
 
-**Attention! A full security audit has not been conducted, so using this server directly to access from the Internet may not be secure.**
+**A full security audit has not been conducted, so using this server directly to access from the Internet may not be secure. In this case, it is recommended to run this server in a container. See below for an example of running from docker.**
 
 Capabilities
 * Pages are automatically displayed in the user language (only two languages are available at the moment).
@@ -12,34 +12,34 @@ Capabilities
 * It is possible to enable basic HTTP authentication with a given username and password.
 
 ## Installation
-```
+```bash
 npm i -g web-shared-folder
 ```
 
 
 ## Usage
-```
+```bash
 web-shared-folder <path to the folder for sharing> <port> [<key> <cert>] [<username> <password>]
 ```
 **If there is the "index.html" file in the specified folder, then the server will start in the static web site mode, not in the folder viewing mode.** The folder contents viewing mode can be forced by setting the environment variable **SERVER_DIRECTORY_MODE=1**. Also, this mode can be forcibly disabled by setting **SERVER_DIRECTORY_MODE=0**.
 
 In order to start the server to work over https, you must specify the path to the private key file (\<key\>) and the path to the certificate file (\<cert\>).
-In https mode, it is posible to enable automatic redirection from http to https. To do this, in the **SERVER_AUTO_REDIRECT_HTTP_PORT** environment variable, specify the port number from which the redirection will be performed (usually 80).
+In https mode, it is possible to enable automatic redirection from http to https. To do this, in the **SERVER_AUTO_REDIRECT_HTTP_PORT** environment variable, specify the port number from which the redirection will be performed (usually 80).
 
-if the keys \<username\> and \<password\> are given, then HTTP authentication is enabled with the given login and password.
+If the keys \<username\> and \<password\> are given, then HTTP authentication is enabled with the given login and password.
 
 **All command line options can also be set in the environment variables: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.** Options specified on the command line have higher precedence.
 
-Also, it is possible set the page title in the **SERVER_DIRECTORY_MODE_TITLE** environment variable.
+You can set the page title in the **SERVER_DIRECTORY_MODE_TITLE** environment variable.
 
-**And it is possible to run server in cluster mode.** To do this, set the **SERVER_USE_CLUSTER_MODE** environment variable to 1. In cluster mode, nodejs child processes will be created according to the number of processor cores. This mode allows you to use all the processor resources, but at the same time it increases the consumption of RAM. If **SERVER_SHOULD_RESTART_WORKER=1** is given, the child process will be automatically restarted if it terminates unexpectedly.
+**It is possible to run server in cluster mode.** To do this, set the **SERVER_USE_CLUSTER_MODE** environment variable to 1. In cluster mode, nodejs child processes will be created according to the number of processor cores. This mode allows you to use all the processor resources, but at the same time it increases the consumption of RAM. If **SERVER_SHOULD_RESTART_WORKER=1** is given, the child process will be automatically restarted if it terminates unexpectedly.
 
 By default, the server returns the contents of the web page in a compressed form. If you want to disable this behavior, you can set **SERVER_DISABLE_COMPRESSION=1**
 
 ### Simple example
 Suppose the ip address of the computer is 192.168.1.2. It is required to share the folder "/home/user/shared" on the local network from this computer. Execute:
 
-```
+```bash
 web-shared-folder /home/user/shared 8080
 ```
 Access to files from the "/home/user/shared" folder can be obtained by typing in the browser address bar:
@@ -53,7 +53,7 @@ Suppose the computer have a white ip address on the Internet. It is required to 
 Suppose you already have the ssl certificate for the domain example.com and this domain is bound to the ip of the computer. Path to the certificate file: "/etc/ssl/ssl.crt". Path to the private key file for this certificate: "/etc/ssl/ssl.key".  
 To protect against unauthorized access, enable HTTP authentication. Set username "qwerty" and password "123456" (do not use simple passwords for HTTP authentication!). Execute:
 
-```
+```bash
 #Path to shared folder
 export SERVER_ROOT=/home/user/shared
 
@@ -94,4 +94,28 @@ sudo -E web-shared-folder
 Access to files from the "/home/user/shared" folder can be obtained by typing in the browser address bar:
 ```
 https://example.com
+```
+
+## Docker run
+
+To run the server in a docker container, you need to prepare a dockerfile. The simplest example of such a file is shown below:
+
+```dockerfile
+FROM node:latest
+WORKDIR /app
+RUN useradd -M -s /bin/false nodeserv && mkdir /var/www && npm i web-shared-folder
+USER nodeserv
+ENTRYPOINT ["node", "node_modules/web-shared-folder/server.js"]
+```
+
+Let's start building the image with the server
+
+```bash
+docker build -t web-shared-folder .
+```
+
+For the simple example above, let's create a container and run the server in it:
+
+```bash
+docker run -d -v /home/user/shared:/var/www -e SERVER_ROOT="/var/www" -e SERVER_PORT=8080 --name web-shared-folder  -p 80:8080 web-shared-folder
 ```
