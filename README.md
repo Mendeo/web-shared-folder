@@ -117,5 +117,5 @@ docker build -t web-shared-folder .
 For the simple example above, let's create a container and run the server in it:
 
 ```bash
-docker run -d -v /home/user/shared:/var/www -e SERVER_ROOT="/var/www" -e SERVER_PORT=8080 --name web-shared-folder  -p 80:8080 web-shared-folder
+docker run -d -v /home/user/shared:/var/www -e SERVER_ROOT="/var/www" -e SERVER_PORT=8080 --name web-shared-folder -p 80:8080 web-shared-folder
 ```
