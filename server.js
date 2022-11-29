@@ -63,33 +63,34 @@ const password = process.argv[7] || process.env.SERVER_PASSWORD;
 
 if (!ROOT_PATH || !PORT)
 {
-	console.log(`Для запуска требуется ввести нужные параметры:
-node server.js <Путь к папке с веб сайтом> <port> [<key> <cert>] [<username> <password>]
+	console.log(`Convenient http server on nodejs. Designed to share some folder on a local network or even on the Internet.
+It can also be used as a web server to serve static sites.
 
-Путь может быть относительным или абсолютным.
-Если в заданной папке не будет файла "index.html", то сервер запустится в режиме отображения содержимого директории.
-В этом случае при запросе к серверу будет отдаваться веб страница с сылками для скачивания файлов, лежащих в этой папке.
-Режим отображения содержмимого директориии можно включить принудительно, задав переменную окружения SERVER_DIRECTORY_MODE=1.
-Также этот режим можно принудительно отключить, задав SERVER_DIRECTORY_MODE=0.
-В режиме отображения содержимого директории можно задать заголовок страницы в переменной окружения SERVER_DIRECTORY_MODE_TITLE.
+Usage:
+web-shared-folder <path to the folder for sharing> <port> [<key> <cert>] [<username> <password>]
 
-В квадратных скобках указаны необязательные параметры:
-К серверу можно подключить ssl сертификат, чтобы он работал через https.
-<key> и <cert> - Путь к файлу закрытого ключа, и путь к файлу сертификата соответственно.
-Если эти параметры заданы, то сервер будет использовать https вместо http.
-В этом режиме, можно включить автоматическое перенаправление с http на https.
-Для этого нужно в переменной окружения SERVER_AUTO_REDIRECT_HTTP_PORT указать номер http порта, с которого будет осуществляться перенаправление (обычно 80).
+If there is the "index.html" file in the specified folder, then the server will start in the static web site mode, not in the folder viewing mode.
+The folder contents viewing mode can be forced by setting the environment variable SERVER_DIRECTORY_MODE=1.
+Also, this mode can be forcibly disabled by setting SERVER_DIRECTORY_MODE=0.
 
-<username> и <password> - Включает базовую HTTP аутентификацию с заданными именем пользователя и паролем.
+In order to start the server to work over https, you must specify the path to the private key file (<key>) and the path to the certificate file (<cert>).
+In https mode, it is possible to enable automatic redirection from http to https.
+To do this, in the SERVER_AUTO_REDIRECT_HTTP_PORT environment variable, specify the port number from which the redirection will be performed (usually 80).
 
-Все параметры коммандной строки можно задавать также в переменных окружения: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
-Параметры, заданные в коммандной строке имеют более высокий приоритет.
+If the keys <username> and <password> are given, then HTTP authentication is enabled with the given login and password.
 
-Кроме того, сервер можно запустить в режиме кластера путём задания переменной окрежения SERVER_USE_CLUSTER_MODE=1.
-В этом случае будут созданы дочерние процессы nodejs по числу ядер процессора.
-Этот режим позволяет задействовать в работе сервера весь ресурс процессора, но при этом кратно возрастает потребление опертивной памяти.
-Для режима кластера имеется возможность задать переменную окружения SERVER_SHOULD_RESTART_WORKER=1.
-Это приведёт к автоматическому перезапуску дочернего процесса в случае его непредвиденного завершения.`);
+All command line options can also be set in the environment variables: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
+Options specified on the command line have higher precedence.
+
+You can set the page title in the SERVER_DIRECTORY_MODE_TITLE environment variable.
+
+It is possible to run server in cluster mode. To do this, set the SERVER_USE_CLUSTER_MODE environment variable to 1.
+In cluster mode, nodejs child processes will be created according to the number of processor cores.
+This mode allows you to use all the processor resources, but at the same time it increases the consumption of RAM.
+If SERVER_SHOULD_RESTART_WORKER=1 is given, the child process will be automatically restarted if it terminates unexpectedly.
+
+By default, the server returns the contents of the web page in a compressed form.
+If you want to disable this behavior, you can set SERVER_DISABLE_COMPRESSION=1`);
 	process.exit(0);
 }
 
