@@ -23,7 +23,11 @@
     "https",
     "server"
   ],
-  "author": "Mendeo",
+  "author": {
+    "name": "Aleksandr Menyaylo",
+    "email": "deorathemen@gmail.com",
+    "url": "https://mendeo.ru"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/Mendeo/web-shared-folder/issues"
