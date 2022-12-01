@@ -36,6 +36,8 @@ You can set the page title in the **SERVER_DIRECTORY_MODE_TITLE** environment va
 
 By default, the server returns the contents of the web page in a compressed form. If you want to disable this behavior, you can set **SERVER_DISABLE_COMPRESSION=1**
 
+The server uses the [file-icon-vectors](https://www.npmjs.com/package/file-icon-vectors) npm package to display file icons. Three types of icons are available: "classic", "square-o", "vivid" (see the [package page](https://www.npmjs.com/package/file-icon-vectors) for more details). You can set the SERVER_ICONS_TYPE environment variable to one of these values. The default is "square-o".
+
 ### Simple example
 Suppose the ip address of the computer is 192.168.1.2. It is required to share the folder "/home/user/shared" on the local network from this computer. Execute:
 

@@ -39,6 +39,21 @@ const DIRECTORY_MODE = Number(process.env.SERVER_DIRECTORY_MODE);
 const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE;
 const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_PORT);
 const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
+let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
+
+const DEFAULT_ICON_TYPE = 'square-o';
+if (!ICONS_TYPE)
+{
+	ICONS_TYPE = DEFAULT_ICON_TYPE;
+}
+else
+{
+	if (ICONS_TYPE !== 'square-o' && ICONS_TYPE !== 'classic' && ICONS_TYPE !== 'vivid')
+	{
+		console.log(`Icon type ${ICONS_TYPE} not found. Using ${DEFAULT_ICON_TYPE}.`);
+		ICONS_TYPE = DEFAULT_ICON_TYPE;
+	}
+}
 
 const DEFAULT_LANG = 'en-US';
 let DEFAULT_LOCALE_TRANSLATION = null;
@@ -90,7 +105,11 @@ This mode allows you to use all the processor resources, but at the same time it
 If SERVER_SHOULD_RESTART_WORKER=1 is given, the child process will be automatically restarted if it terminates unexpectedly.
 
 By default, the server returns the contents of the web page in a compressed form.
-If you want to disable this behavior, you can set SERVER_DISABLE_COMPRESSION=1`);
+If you want to disable this behavior, you can set SERVER_DISABLE_COMPRESSION=1
+
+The server uses the "file-icon-vectors" npm package (https://www.npmjs.com/package/file-icon-vectors) to display file icons.
+Three types of icons are available: "classic", "square-o", "vivid" (see the package page for more details).
+You can set the SERVER_ICONS_TYPE environment variable to one of these values. The default is "square-o".`);
 	process.exit(0);
 }
 
@@ -112,7 +131,6 @@ let _locales = null;
 let _icons_css = null;
 let _icons_svg_map = new Map();
 let _icons_catalog = new Set();
-const ICONS_TYPE = 'square-o';
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
