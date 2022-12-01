@@ -5,7 +5,7 @@ for (let cookie of document.cookie.split(';'))
 	const aux = cookie.split('=');
 	const key = aux[0].trim();
 	const value = aux[1].trim();
-	if (key === 'lang')
+	if (key === 'lang' || key == 'nav_lang')
 	{
 		_lang = value;
 		break;
@@ -16,7 +16,7 @@ if (!_lang)
 	_lang = navigator.browserLanguage || navigator.language || navigator.userLanguage;
 	if (_lang)
 	{
-		document.cookie = `lang=${_lang}; path=/; max-age=86400; samesite=strict`;
+		document.cookie = `nav_lang=${_lang}; path=/; samesite=strict`;
 		location.reload();
 	}
 }

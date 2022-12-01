@@ -365,6 +365,7 @@ function app(req, res)
 		const cookie = parseCookie(req.headers?.cookie);
 		const paramsGet = parseRequest(url[1]);
 		const acceptEncoding = req.headers['accept-encoding'];
+		const acceptLanguage = req.headers['accept-language'];
 		/*Post данные*/
 		let body = '';
 		req.on('data', chunk =>
@@ -375,7 +376,7 @@ function app(req, res)
 		req.on('end', () =>
 		{
 			const paramsPost = parseRequest(body);
-			answer(res, urlPath, paramsGet, cookie, acceptEncoding, paramsPost);
+			answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, paramsPost);
 		});
 	}
 }
@@ -396,10 +397,10 @@ function parseRequest(data)
 	return params;
 }
 
-function answer(res, urlPath, paramsGet, cookie, acceptEncoding, paramsPost)
+function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, paramsPost)
 {
 
-	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, paramsPost);
+	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, paramsPost);
 	if (paramsGet) console.log(paramsGet);
 	if (paramsPost) console.log(paramsPost);
 }
@@ -491,7 +492,7 @@ function isAppFile(name)
 	return false;
 }
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding)
+function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage)
 {
 	if (_generateIndex)
 	{
@@ -554,7 +555,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding)
 				}
 				else
 				{
-					generateAndSendIndexHtml(res, urlPath, filePath, cookie, paramsGet, acceptEncoding);
+					generateAndSendIndexHtml(res, urlPath, filePath, cookie, paramsGet, acceptEncoding, acceptLanguage);
 				}
 			}
 			else
@@ -601,21 +602,39 @@ function parseCookie(cookie)
 	return cookieObj;
 }
 
-function getClientLanguageFromCookie(cookie, responseCookie)
+function getClientLanguageFromCookie(acceptLanguage, cookie, responseCookie)
 {
+	let success = true;
 	let clientLang = cookie?.lang;
-	if (!clientLang) return DEFAULT_LANG;
-	if (_locales.has(clientLang)) return clientLang;
-	for (let locale of _locales)
+	if (!clientLang && acceptLanguage) clientLang = acceptLanguage.split(',')[0];
+	if (!clientLang) clientLang = cookie?.nav_lang;
+	if (!_locales.has(clientLang))
 	{
-		if (locale[0].startsWith(clientLang))
+		success = false;
+		for (let locale of _locales)
 		{
-			//Сохраним в куках найденную локаль, чтобы каждый раз не искать.
-			responseCookie.push(`lang=${locale[0]}; path=/; max-age=86400; samesite=strict`);
-			return locale[0];
+			if (locale[0].startsWith(clientLang))
+			{
+				clientLang = locale[0];
+				success = true;
+				break;
+			}
 		}
 	}
-	return DEFAULT_LANG;
+	if (success)
+	{
+		if (!cookie?.lang)
+		{
+			//Сохраним в куках найденную локаль, чтобы каждый раз не искать.
+			responseCookie.push(`lang=${clientLang}; path=/; max-age=86400; samesite=strict`);
+			return clientLang;
+		}
+	}
+	else
+	{
+		clientLang = DEFAULT_LANG;
+	}
+	return clientLang;
 }
 
 function getIconClassName(ext)
@@ -642,7 +661,7 @@ function getIconClassName(ext)
 	return `file-icon fiv-${classPrefix} fiv-icon-blank`;
 }
 
-function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet, acceptEncoding)
+function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet, acceptEncoding, acceptLanguage)
 {
 	const responseCookie = [];
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
@@ -653,7 +672,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 		}
 		else
 		{
-			const clientLang = getClientLanguageFromCookie(cookie, responseCookie);
+			const clientLang = getClientLanguageFromCookie(acceptLanguage, cookie, responseCookie);
 			let localeTranslation = _locales.get(clientLang);
 			let hrefs = [];
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
