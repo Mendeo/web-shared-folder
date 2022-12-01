@@ -17,6 +17,10 @@
 	text-decoration: none;
 	margin-left: 5px;
 }
+.file-icon
+{
+	margin-right: 0.2rem;;
+}
 @media screen and (max-width: 900px)
 {
 	.main_container

@@ -109,6 +109,10 @@ let _index_js = null;
 let _index_css = null;
 let _robots_txt = null;
 let _locales = null;
+let _icons_css = null;
+let _icons_svg_map = new Map();
+let _icons_catalog = new Set();
+const ICONS_TYPE = 'square-o';
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
@@ -141,6 +145,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_index_js = fs.readFileSync(path.join(__dirname, 'app_files', 'index.js'));
 			_index_css = fs.readFileSync(path.join(__dirname, 'app_files', 'index.css'));
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
+			readIconsFiles();
 			readTranslationFiles();
 			if (DISABLE_COMPRESSION) console.log('Compression is disable.');
 		}
@@ -186,6 +191,29 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		}
 	}
 });
+
+function readIconsFiles()
+{
+	let pathCombined = path.join(__dirname, 'node_modules', 'file-icon-vectors', 'dist');
+	_icons_css = fs.readFileSync(path.join(pathCombined, `file-icon-${ICONS_TYPE}.min.css`));
+	pathCombined = path.join(pathCombined, 'icons', ICONS_TYPE);
+	const iconFileNames = fs.readdirSync(pathCombined);
+	for (let fileName of iconFileNames)
+	{
+		if (fileName === 'catalog.json')
+		{
+			const catalog = JSON.parse(fs.readFileSync(path.join(pathCombined, fileName)).toString());
+			for (let ext of catalog)
+			{
+				_icons_catalog.add(ext);
+			}
+		}
+		else
+		{
+			_icons_svg_map.set(`/icons/${ICONS_TYPE}/${fileName}`, fs.readFileSync(path.join(pathCombined, fileName)));
+		}
+	}
+}
 
 function readTranslationFiles()
 {
@@ -439,6 +467,8 @@ function isAppFile(name)
 		return true;
 	case 'robots.txt':
 		return true;
+	case 'icons.css':
+		return true;
 	}
 	return false;
 }
@@ -461,6 +491,9 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding)
 		case '/robots.txt':
 			sendCachedFile(res, _robots_txt, 'text/plain; charset=utf-8', acceptEncoding);
 			return;
+		case '/icons.css':
+			sendCachedFile(res, _icons_css, 'text/css; charset=utf-8', acceptEncoding);
+			return;
 		case '/_favicon.ico':
 			urlPath = '/favicon.ico';
 			break;
@@ -473,6 +506,17 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding)
 		case '/_robots.txt':
 			urlPath = '/robots.txt';
 			break;
+		case '/_icons.css':
+			urlPath = '/icons.css';
+			break;
+		}
+		if (urlPath.startsWith(`/icons/${ICONS_TYPE}`))
+		{
+			if (_icons_svg_map.has(urlPath))
+			{
+				sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
+				return;
+			}
 		}
 	}
 	let filePath = path.join(ROOT_PATH, urlPath);
@@ -556,6 +600,30 @@ function getClientLanguageFromCookie(cookie, responseCookie)
 	return DEFAULT_LANG;
 }
 
+function getIconClassName(ext)
+{
+	if (ext[0] === '.') ext = ext.slice(1, ext.length);
+	let classPrefix = '';
+	if (ICONS_TYPE === 'square-o')
+	{
+		classPrefix = 'sqo';
+	}
+	else if (ICONS_TYPE === 'classic')
+	{
+		classPrefix = 'cla';
+	}
+	else if (ICONS_TYPE === 'vivid')
+	{
+		classPrefix = 'viv';
+	}
+	else
+	{
+		throw new Error(`Don't now class prefix for icons ${ICONS_TYPE}`);
+	}
+	if (_icons_catalog.has(ext)) return `file-icon fiv-${classPrefix} fiv-icon-${ext}`;
+	return `file-icon fiv-${classPrefix} fiv-icon-blank`;
+}
+
 function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet, acceptEncoding)
 {
 	const responseCookie = [];
@@ -580,7 +648,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 			{
 				const lastField = urlHeader.lastIndexOf('/');
 				const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-				hrefsResult = `<a href="/">[/]</a><span>${folderSizeStub}</span><span>-</span><a href="${backUrl}">[..]</a><span>${folderSizeStub}</span><span>-</span>`;
+				let iconnClassName = getIconClassName('folder');
+				hrefsResult = `<div><div class = "${iconnClassName}"></div><a href="/">[/]</a></div><span>${folderSizeStub}</span><span>-</span>
+<div><div class = "${iconnClassName}"></div><a href="${backUrl}">[..]</a></div><span>${folderSizeStub}</span><span>-</span>`;
 				folderName = urlHeader.slice(lastField + 1);
 			}
 			if (files.length > 0)
@@ -599,7 +669,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
 						const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
-						hrefs.push({ value: `<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+						const ext = isDirectory ? 'folder' : path.extname(file.name);
+						hrefs.push({ value: `<div><div class="${getIconClassName(ext)}"></div><a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a></div><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
 							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
