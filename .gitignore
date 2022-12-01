@@ -2,5 +2,6 @@
 *.*~
 *.swo
 /ssl
+/tmp
 /.vscode
 /node_modules
