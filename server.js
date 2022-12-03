@@ -686,7 +686,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 				const lastField = urlHeader.lastIndexOf('/');
 				const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
 				let iconnClassName = getIconClassName('folder');
-				hrefsResult = `<div><div class = "${iconnClassName}"></div><a href="/">[/]</a></div><span>${folderSizeStub}</span><span>-</span>
+				hrefsResult = `<div class = "main_container__first_column"><div class = "${iconnClassName}"></div><a href="/">[/]</a></div><span>${folderSizeStub}</span><span>-</span>
 <div><div class = "${iconnClassName}"></div><a href="${backUrl}">[..]</a></div><span>${folderSizeStub}</span><span>-</span>`;
 				folderName = urlHeader.slice(lastField + 1);
 			}
@@ -707,7 +707,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
 						const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
 						const ext = isDirectory ? 'folder' : path.extname(file.name);
-						hrefs.push({ value: `<div><div class="${getIconClassName(ext)}"></div><a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a></div><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+						hrefs.push({ value: `<div class = "main_container__first_column"><div class="${getIconClassName(ext)}"></div><a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a></div><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
 							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
