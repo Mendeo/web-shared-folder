@@ -689,9 +689,21 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 			{
 				const lastField = urlHeader.lastIndexOf('/');
 				const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-				const iconnClassName = 'file-icon ' + getIconClassName('folder');
-				hrefsResult = `<div class="main_container__first_column"><div class="${iconnClassName}"></div><a href="/">[/]</a></div><span>${folderSizeStub}</span><span>-</span>
-<div><div class = "${iconnClassName}"></div><a href="${backUrl}">[..]</a></div><span>${folderSizeStub}</span><span>-</span>`;
+				const iconnClassName = getIconClassName('folder');
+				hrefsResult =
+`			<div class="main_container__first_column">
+				<div class="${iconnClassName}"></div>
+				<a href="/">[/]</a>
+			</div>
+			<span>${folderSizeStub}</span>
+			<span>-</span>
+			<div class="main_container__first_column">
+				<div class = "${iconnClassName}"></div>
+				<a href="${backUrl}">[..]</a>
+			</div>
+			<span>${folderSizeStub}</span>
+			<span>-</span>
+`;
 				folderName = urlHeader.slice(lastField + 1);
 			}
 			if (files.length > 0)
@@ -711,9 +723,17 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
 						const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
 						const ext = isDirectory ? 'folder' : path.extname(file.name);
-						const iconnClassName = 'file-icon ' + getIconClassName(ext);
+						const iconnClassName = getIconClassName(ext);
 						const showInBrowser = !isDirectory && canShowInBrowser(ext);
-						hrefs.push({ value: `<div class="main_container__first_column"><div class="${iconnClassName}"></div><a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `<a href="${linkHref}" class="open-in-browser-icon" target="_blank"></a>` : ''}</div><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+						hrefs.push({ value:
+`			<div class="main_container__first_column">
+				<div class="${iconnClassName}"></div>
+				<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
+				${showInBrowser ? `<a href="${linkHref}" class="open-in-browser-icon" target="_blank"></a>` : ''}
+			</div>
+			<span>${sizeStr}</span>
+			<span>${modify}</span>
+`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
 							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
