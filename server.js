@@ -231,6 +231,7 @@ function readIconsFiles()
 			_icons_svg_map.set(`/icons/${ICONS_TYPE}/${fileName}`, fs.readFileSync(path.join(pathCombined, fileName)));
 		}
 	}
+	_icons_svg_map.set('/icons/eye.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'eye.svg')));
 }
 
 function readTranslationFiles()
@@ -513,6 +514,9 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 		case '/icons.css':
 			sendCachedFile(res, _icons_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
+		case '/icons/eye.svg':
+			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
+			return;
 		case '/_favicon.ico':
 			urlPath = '/favicon.ico';
 			break;
@@ -692,7 +696,6 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 			}
 			if (files.length > 0)
 			{
-				let openInBrowserIcon = getIconClassName('browser');
 				for (let file of files)
 				{
 					fs.stat(path.join(absolutePath, file.name), (err, stats) =>
@@ -710,7 +713,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 						const ext = isDirectory ? 'folder' : path.extname(file.name);
 						const iconnClassName = 'file-icon ' + getIconClassName(ext);
 						const showInBrowser = !isDirectory && canShowInBrowser(ext);
-						hrefs.push({ value: `<div class="main_container__first_column"><div class="${iconnClassName}"></div><a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? ` <a href="${linkHref}" class="open-in-browser-icon ${openInBrowserIcon}" target="_blank"></a>` : ''}</div><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+						hrefs.push({ value: `<div class="main_container__first_column"><div class="${iconnClassName}"></div><a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `<a href="${linkHref}" class="open-in-browser-icon" target="_blank"></a>` : ''}</div><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
 							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);

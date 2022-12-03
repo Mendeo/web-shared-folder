@@ -21,7 +21,21 @@
 }
 .open-in-browser-icon
 {
-	text-decoration: none
+	text-decoration: none;
+	background-image: url("/icons/eye.svg");
+	display: inline-block;
+	height: 20px;
+	width: 20px;
+	background-size:contain;
+	background-repeat: no-repeat;
+	background-position: center;
+	margin-left: auto;
+}
+.main_container__first_column
+{
+	display: flex;
+	justify-content: flex-start;
+	width: 100%;
 }
 .file-icon
 {
