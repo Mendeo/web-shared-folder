@@ -19,6 +19,10 @@
 	text-decoration: none;
 	margin-left: 0.2rem;
 }
+.open-in-browser-icon
+{
+	text-decoration: none
+}
 .file-icon
 {
 	margin-right: 0.2rem;;

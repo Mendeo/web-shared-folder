@@ -657,8 +657,8 @@ function getIconClassName(ext)
 	{
 		throw new Error(`Don't now class prefix for icons ${ICONS_TYPE}`);
 	}
-	if (_icons_catalog.has(ext)) return `file-icon fiv-${classPrefix} fiv-icon-${ext}`;
-	return `file-icon fiv-${classPrefix} fiv-icon-blank`;
+	if (_icons_catalog.has(ext)) return `fiv-${classPrefix} fiv-icon-${ext}`;
+	return `fiv-${classPrefix} fiv-icon-blank`;
 }
 
 function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet, acceptEncoding, acceptLanguage)
@@ -685,13 +685,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 			{
 				const lastField = urlHeader.lastIndexOf('/');
 				const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-				let iconnClassName = getIconClassName('folder');
-				hrefsResult = `<div class = "main_container__first_column"><div class = "${iconnClassName}"></div><a href="/">[/]</a></div><span>${folderSizeStub}</span><span>-</span>
+				const iconnClassName = 'file-icon ' + getIconClassName('folder');
+				hrefsResult = `<div class="main_container__first_column"><div class="${iconnClassName}"></div><a href="/">[/]</a></div><span>${folderSizeStub}</span><span>-</span>
 <div><div class = "${iconnClassName}"></div><a href="${backUrl}">[..]</a></div><span>${folderSizeStub}</span><span>-</span>`;
 				folderName = urlHeader.slice(lastField + 1);
 			}
 			if (files.length > 0)
 			{
+				let openInBrowserIcon = getIconClassName('browser');
 				for (let file of files)
 				{
 					fs.stat(path.join(absolutePath, file.name), (err, stats) =>
@@ -707,7 +708,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
 						const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
 						const ext = isDirectory ? 'folder' : path.extname(file.name);
-						hrefs.push({ value: `<div class = "main_container__first_column"><div class="${getIconClassName(ext)}"></div><a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a></div><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+						const iconnClassName = 'file-icon ' + getIconClassName(ext);
+						const showInBrowser = !isDirectory && canShowInBrowser(ext);
+						hrefs.push({ value: `<div class="main_container__first_column"><div class="${iconnClassName}"></div><a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? ` <a href="${linkHref}" class="open-in-browser-icon ${openInBrowserIcon}" target="_blank"></a>` : ''}</div><span>${sizeStr}</span><span>${modify}</span>`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
 							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
@@ -1028,6 +1031,53 @@ function zipFolder(folderPath, res)
 			console.log(`Zip archive ${folderName}.zip sent successfully.`);
 		});
 	}
+}
+
+function canShowInBrowser(ext)
+{
+	switch (ext)
+	{
+	case '.html':
+	case '.htm':
+	case '.shtml':
+	case '.css':
+	case '.xml':
+	case '.gif':
+	case '.jpeg':
+	case '.jpg':
+	case '.js':
+	case '.txt':
+	case '.png':
+	case '.svg':
+	case '.svgz':
+	case '.tif':
+	case '.tiff':
+	case '.wbmp':
+	case '.webp':
+	case '.ico':
+	case '.jng':
+	case '.bmp':
+	case '.json':
+	case '.pdf':
+	case '.mp3':
+	case '.ogg':
+	case '.m4a':
+	case '.ra':
+	case '.3gpp':
+	case '.ts':
+	case '.mp4':
+	case '.mpeg':
+	case '.mov':
+	case '.webm':
+	case '.flv':
+	case '.m4v':
+	case '.mng':
+	case '.asx':
+	case '.wmv':
+	case '.avi':
+		return true;
+	}
+	return false;
 }
 
 function getContentType(ext)
