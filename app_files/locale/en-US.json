@@ -10,5 +10,6 @@
 	"sizeMiB": "MiB",
 	"sizeGiB": "GiB",
 	"sizeTiB": "TiB",
-	"sizePiB": "PiB"
+	"sizePiB": "PiB",
+	"linkToOpenInBrowser": "Link to open in browser"
 }

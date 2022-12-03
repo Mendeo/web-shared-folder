@@ -729,7 +729,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 `			<div class="main_container__first_column">
 				<div class="${iconnClassName}"></div>
 				<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
-				${showInBrowser ? `<a href="${linkHref}" class="open-in-browser-icon" target="_blank"></a>` : ''}
+				${showInBrowser ? `<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
 			</div>
 			<span>${sizeStr}</span>
 			<span>${modify}</span>

@@ -10,5 +10,6 @@
 	"sizeMiB": "МиБ",
 	"sizeGiB": "ГиБ",
 	"sizeTiB": "ТиБ",
-	"sizePiB": "ПиБ"
+	"sizePiB": "ПиБ",
+	"linkToOpenInBrowser": "Ссылка для открытия в браузере"
 }
