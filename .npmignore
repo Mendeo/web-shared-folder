@@ -4,6 +4,7 @@
 *.*~
 /tmp
 /ssl
+/img
 /.vscode
 .eslintrc.json
 .editorconfig

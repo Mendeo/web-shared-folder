@@ -11,7 +11,7 @@ Capabilities
 * It is possible to work over https protocol with an automatic redirect from http.
 * It is possible to enable basic HTTP authentication with a given username and password.
 
-![Screnenshot](img/Screenshot.png)
+![Screenshot](https://github.com/Mendeo/web-shared-folder/blob/master/img/Screenshot.png)
 
 ## Installation
 ```bash
