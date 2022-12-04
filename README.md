@@ -11,11 +11,12 @@ Capabilities
 * It is possible to work over https protocol with an automatic redirect from http.
 * It is possible to enable basic HTTP authentication with a given username and password.
 
+![Screnenshot](img/Screenshot.png)
+
 ## Installation
 ```bash
 npm i -g web-shared-folder
 ```
-
 
 ## Usage
 ```bash
