@@ -106,10 +106,11 @@ To run the server in a docker container, you need to prepare a dockerfile. The s
 ```dockerfile
 FROM node:latest
 WORKDIR /app
-RUN useradd -M -s /bin/false nodeserv && mkdir /var/www && npm i web-shared-folder
+RUN useradd -M -s /bin/false nodeserv && mkdir /var/www && npm install --global-style web-shared-folder@<current_verson>
 USER nodeserv
 ENTRYPOINT ["node", "node_modules/web-shared-folder/server.js"]
 ```
+Where \<current_verson\> is current version of web-shared-folder.
 
 Let's start building the image with the server
 
