@@ -1,3 +1,19 @@
+@media (prefers-color-scheme: dark)
+{
+	body
+	{
+		background-color: #1e1e1e;
+		color: #d4d4d4;
+	}
+	a
+	{
+		filter: invert(100%) brightness(80%) contrast(80%);
+	}
+	h2
+	{
+		color: #c8c8c8;
+	}
+}
 .main_container
 {
 	display: inline-grid;
@@ -22,14 +38,14 @@
 .open-in-browser-icon
 {
 	text-decoration: none;
-	background-image: url("/icons/eye.svg");
 	display: inline-block;
-	height: 20px;
+	margin-left: auto;
 	width: 20px;
+	height: 20px;
+	background-image: url("/icons/eye.svg");
 	background-size: contain;
 	background-repeat: no-repeat;
 	background-position: center;
-	margin-left: auto;
 }
 .main_container__first_column
 {
