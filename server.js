@@ -1193,7 +1193,7 @@ function getContentType(ext)
 	if (ext === '.wmv') return 'video/x-ms-wmv';
 	if (ext === '.avi') return 'video/x-msvideo';
 	if (ext === '.wasm') return 'application/wasm';
-	if (ext === '.md') return 'text/markdown; charset=UTF-8';
+	if (ext === '.md') return 'text/plain; charset=UTF-8';
 	if (ext === '.yml' || ext === '.yaml') return 'text/yaml; charset=UTF-8';
 	return 'application/octet-stream';
 }
