@@ -41,6 +41,8 @@ const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_POR
 const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
 let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
 
+let IS_WRITE_BUSY = false;
+
 const DEFAULT_ICON_TYPE = 'square-o';
 if (!ICONS_TYPE)
 {
@@ -368,18 +370,58 @@ function app(req, res)
 		const acceptEncoding = req.headers['accept-encoding'];
 		const acceptLanguage = req.headers['accept-language'];
 		/*Post данные*/
-		let body = '';
-		req.on('data', chunk =>
+		const contentType = req.headers['content-type']?.split(';').map((value) => value.trim());
+		if (contentType && contentType[0] === 'multipart/form-data')
 		{
-			body += chunk;
-			if (body.length > 1e6) req.connection.destroy();
-		});
-		req.on('end', () =>
+			let boundary = '';
+			for (let i = 1; i < contentType.length; i++)
+			{
+				const pair = contentType[i].split('=');
+				if (pair[0] === 'boundary')
+				{
+					boundary = pair[1];
+					break;
+				}
+			}
+			let postBody = '';
+			req.on('data', chunk =>
+			{
+				postBody += chunk;
+				//if (body.length > 1e6) req.connection.destroy();
+			});
+			req.on('end', () =>
+			{
+				const post = parseMultiPartFormData(postBody, boundary);
+				answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, post);
+			});
+		}
+		else
 		{
-			const paramsPost = parseRequest(body);
-			answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, paramsPost);
-		});
+			answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+		}
 	}
+}
+
+function parseMultiPartFormData(postBody, boundary)
+{
+	console.log(postBody);
+	const values = postBody.split('--' + boundary);
+	if (values[values.length - 1] !== '--\r\n') return null;
+	const result = [];
+	for (let i = 1; i < values.length - 1; i++)
+	{
+		const value = values[i];
+		const dataIndex = value.indexOf('\r\n\r\n', 72) + 4;
+		const startFileNameIndex = value.indexOf('filename="') + 10;
+		if (startFileNameIndex === -1 || startFileNameIndex > dataIndex) return null;
+		const endFileNameIndex = value.indexOf('"', startFileNameIndex);
+		if (endFileNameIndex === -1 || endFileNameIndex > dataIndex) return null;
+		const fileName = value.slice(startFileNameIndex, endFileNameIndex);
+
+		const data = value.slice(dataIndex, value.length - 2);
+		result.push({ fileName, data });
+	}
+	return result;
 }
 
 function parseRequest(data)
@@ -398,12 +440,12 @@ function parseRequest(data)
 	return params;
 }
 
-function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, paramsPost)
+function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, post)
 {
 
-	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, paramsPost);
+	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, post);
 	if (paramsGet) console.log(paramsGet);
-	if (paramsPost) console.log(paramsPost);
+	if (post) console.log(post);
 }
 
 function sendCachedFile(res, file, contentType, acceptEncoding)

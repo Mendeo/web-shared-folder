@@ -53,6 +53,10 @@
 	justify-content: flex-start;
 	column-gap: 0.2rem;
 }
+.upload_files
+{
+
+}
 @media screen and (max-width: 900px)
 {
 	.main_container
