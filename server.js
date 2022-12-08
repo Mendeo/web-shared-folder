@@ -41,7 +41,7 @@ const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_POR
 const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
 let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
 
-let IS_WRITE_BUSY = false;
+const MAX_STRING_LENGTH = (require('buffer')).constants.MAX_STRING_LENGTH;
 
 const DEFAULT_ICON_TYPE = 'square-o';
 if (!ICONS_TYPE)
@@ -384,11 +384,21 @@ function app(req, res)
 				}
 			}
 			let postBody = '';
-			req.on('data', chunk =>
+			req.on('data', onData);
+
+			function onData(chunk)
 			{
-				postBody += chunk.toString('binary');
-				//if (body.length > 1e6) req.connection.destroy();
-			});
+				chunk = chunk.toString('binary');
+				if (postBody.length + chunk.length > MAX_STRING_LENGTH)
+				{
+					postBody = { error: `Max upload size is about ${MAX_STRING_LENGTH} bytes` };
+					req.removeListener('data', onData);
+				}
+				else
+				{
+					postBody += chunk;
+				}
+			}
 			req.on('end', () =>
 			{
 				const postData = parseMultiPartFormData(postBody, boundary);
@@ -404,8 +414,9 @@ function app(req, res)
 
 function parseMultiPartFormData(postBody, boundary)
 {
+	if (postBody.error) return postBody;
 	const values = postBody.split('--' + boundary);
-	if (values[values.length - 1].toString() !== '--\r\n') return { error: 'Error while spliting post data by boundary.' };
+	if (values[values.length - 1].toString() !== '--\r\n') return { error: 'Post data is invalid.' };
 	const result = [];
 	for (let i = 1; i < values.length - 1; i++)
 	{
@@ -709,10 +720,10 @@ function getIconClassName(ext)
 
 function saveUserFile(absolutePath, postData, localeTranslation)
 {
-	const errorHtml = `<p class="error_message">${getTranslation('sendingFilesError', localeTranslation)}</p>`;
+	const errorHtmlPrefix = '<p class="error_message">';
 	if (postData.error)
 	{
-		return errorHtml;
+		return `${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} ${postData.error}</p>`;
 	}
 	else
 	{
@@ -723,9 +734,9 @@ function saveUserFile(absolutePath, postData, localeTranslation)
 				fs.writeFileSync(path.join(absolutePath, fileData.fileName), fileData.data);
 				console.log(`File ${fileData.fileName} was saved`);
 			}
-			catch
+			catch(err)
 			{
-				return errorHtml;
+				return `${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} Error while saving file: ${err.message}</p>`;
 			}
 		}
 		return '';

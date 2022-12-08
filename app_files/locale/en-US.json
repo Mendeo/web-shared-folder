@@ -12,5 +12,5 @@
 	"sizeTiB": "TiB",
 	"sizePiB": "PiB",
 	"linkToOpenInBrowser": "Link to open in browser",
-	"sendingFilesError": "An error occurred while transferring the file. The file was not saved."
+	"sendingFilesError": "An error occurred while transferring the file. Not all files have been saved: "
 }
