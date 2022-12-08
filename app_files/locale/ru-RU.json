@@ -11,5 +11,6 @@
 	"sizeGiB": "ГиБ",
 	"sizeTiB": "ТиБ",
 	"sizePiB": "ПиБ",
-	"linkToOpenInBrowser": "Ссылка для открытия в браузере"
+	"linkToOpenInBrowser": "Ссылка для открытия в браузере",
+	"sendingFilesError": "Произошла ошибка при передачи файла. Не все файлы были сохранены."
 }

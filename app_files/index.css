@@ -57,6 +57,10 @@
 {
 
 }
+.error_message
+{
+	color: tomato;
+}
 @media screen and (max-width: 900px)
 {
 	.main_container

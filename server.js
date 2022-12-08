@@ -386,13 +386,13 @@ function app(req, res)
 			let postBody = '';
 			req.on('data', chunk =>
 			{
-				postBody += chunk;
+				postBody += chunk.toString('binary');
 				//if (body.length > 1e6) req.connection.destroy();
 			});
 			req.on('end', () =>
 			{
-				const post = parseMultiPartFormData(postBody, boundary);
-				answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, post);
+				const postData = parseMultiPartFormData(postBody, boundary);
+				answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
 			});
 		}
 		else
@@ -404,9 +404,8 @@ function app(req, res)
 
 function parseMultiPartFormData(postBody, boundary)
 {
-	console.log(postBody);
 	const values = postBody.split('--' + boundary);
-	if (values[values.length - 1] !== '--\r\n') return null;
+	if (values[values.length - 1].toString() !== '--\r\n') return { error: 'Error while spliting post data by boundary.' };
 	const result = [];
 	for (let i = 1; i < values.length - 1; i++)
 	{
@@ -418,7 +417,8 @@ function parseMultiPartFormData(postBody, boundary)
 		if (endFileNameIndex === -1 || endFileNameIndex > dataIndex) return null;
 		const fileName = value.slice(startFileNameIndex, endFileNameIndex);
 
-		const data = value.slice(dataIndex, value.length - 2);
+		const data = Buffer.from(value.slice(dataIndex, value.length - 2), 'binary');
+		if (!fileName || fileName === '') return { error: 'No file selected!' };
 		result.push({ fileName, data });
 	}
 	return result;
@@ -440,12 +440,12 @@ function parseRequest(data)
 	return params;
 }
 
-function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, post)
+function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData)
 {
 
-	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, post);
-	if (paramsGet) console.log(paramsGet);
-	if (post) console.log(post);
+	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+	//if (paramsGet) console.log(paramsGet);
+	//if (postData) console.log(postData);
 }
 
 function sendCachedFile(res, file, contentType, acceptEncoding)
@@ -535,7 +535,7 @@ function isAppFile(name)
 	return false;
 }
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage)
+function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData)
 {
 	if (_generateIndex)
 	{
@@ -601,7 +601,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 				}
 				else
 				{
-					generateAndSendIndexHtml(res, urlPath, filePath, cookie, paramsGet, acceptEncoding, acceptLanguage);
+					generateAndSendIndexHtml(res, urlPath, filePath, cookie, paramsGet, acceptEncoding, acceptLanguage, postData);
 				}
 			}
 			else
@@ -707,9 +707,42 @@ function getIconClassName(ext)
 	return `fiv-${classPrefix} fiv-icon-blank`;
 }
 
-function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet, acceptEncoding, acceptLanguage)
+function saveUserFile(absolutePath, postData, localeTranslation)
+{
+	const errorHtml = `<p class="error_message">${getTranslation('sendingFilesError', localeTranslation)}</p>`;
+	if (postData.error)
+	{
+		return errorHtml;
+	}
+	else
+	{
+		for (let fileData of postData)
+		{
+			try
+			{
+				fs.writeFileSync(path.join(absolutePath, fileData.fileName), fileData.data);
+				console.log(`File ${fileData.fileName} was saved`);
+			}
+			catch
+			{
+				return errorHtml;
+			}
+		}
+		return '';
+	}
+}
+
+function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet, acceptEncoding, acceptLanguage, postData)
 {
 	const responseCookie = [];
+	const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
+	let localeTranslation = _locales.get(clientLang);
+
+	let errorSendingFile = '';
+	if (postData)
+	{
+		errorSendingFile = saveUserFile(absolutePath, postData, localeTranslation);
+	}
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
 		if (err)
@@ -718,8 +751,6 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 		}
 		else
 		{
-			const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
-			let localeTranslation = _locales.get(clientLang);
 			let hrefs = [];
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 			let folderName = '/';
@@ -822,7 +853,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 						_indexHtmlbase[9] + getTranslation('modifyDate', localeTranslation) +
 						_indexHtmlbase[10] + (hasFiles ? sortLinks[2] : '') +
 						_indexHtmlbase[11] + hrefsResult +
-						_indexHtmlbase[12];
+						_indexHtmlbase[12] + errorSendingFile +
+						_indexHtmlbase[13];
 			}
 		}
 	});
