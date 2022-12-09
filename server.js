@@ -390,7 +390,6 @@ function app(req, res)
 
 			function onData(chunk)
 			{
-				chunk = Buffer.from(chunk, 'binary');
 				postLength += chunk.byteLength;
 				if (postLength > MAX_BUFFER_LENGTH)
 				{
@@ -431,6 +430,38 @@ function app(req, res)
 	}
 }
 
+//Оказывается встроенный indexOf не может работать с буферами больше 2ГиБ.
+function indexOf(buf, what, start)
+{
+	const MAX_INDEXOF_BUFFER_LENGTH = 2147483647;
+	if (start === undefined) start = 0;
+	if (buf.byteLength <= MAX_INDEXOF_BUFFER_LENGTH) return buf.indexOf(what, start);
+	let chunk = buf.subarray(start);
+	if (chunk.byteLength <= MAX_INDEXOF_BUFFER_LENGTH)
+	{
+		const result = chunk.indexOf(what);
+		if (result === -1) return -1;
+		return chunk.indexOf(what) + start;
+	}
+
+	const whatBuf = Buffer.from(what);
+	const numOfSubChunks = Math.floor(chunk.byteLength / MAX_INDEXOF_BUFFER_LENGTH) + 1;
+	let indexStart = 0;
+	let indexEnd = MAX_INDEXOF_BUFFER_LENGTH;
+	for (let i = 0; i < numOfSubChunks; i++)
+	{
+		const subChunk = chunk.subarray(indexStart, indexEnd);
+		let result = subChunk.indexOf(what);
+		if (result !== -1) return result + start + indexStart;
+		const subSubChunk = chunk.subarray(indexEnd - whatBuf.byteLength, indexEnd + whatBuf.byteLength);
+		result = subSubChunk.indexOf(what);
+		if (result !== -1) return indexEnd - whatBuf.byteLength + result + start;
+		indexStart = indexEnd;
+		indexEnd = indexStart + MAX_INDEXOF_BUFFER_LENGTH;
+	}
+	return -1;
+}
+
 function parseMultiPartFormData(postBody, boundary, callback)
 {
 	if (postBody.error)
@@ -452,13 +483,18 @@ function parseMultiPartFormData(postBody, boundary, callback)
 	function split()
 	{
 		let startSearchIndex = prevBoundaryIndex + boundarySize;
-		boundaryIndex = postBody.indexOf(boundaryStart, startSearchIndex);
+		boundaryIndex = indexOf(postBody, boundaryStart, startSearchIndex);
 		if (boundaryIndex === -1)
 		{
 			getData();
 			return;
 		}
-		const entry = postBody.slice(startSearchIndex, boundaryIndex);
+		else if(boundaryIndex < 0)
+		{
+			callback({ error: 'Maximum allowed size of transferred data exceeded.' });
+			return;
+		}
+		const entry = postBody.subarray(startSearchIndex, boundaryIndex);
 		entries.push(entry);
 		prevBoundaryIndex = boundaryIndex;
 		setImmediate(split);
@@ -468,26 +504,26 @@ function parseMultiPartFormData(postBody, boundary, callback)
 		const result = [];
 		for (let entry of entries)
 		{
-			const dataIndex = entry.indexOf('\r\n\r\n', 72) + 4;
-			const startFileNameIndex = entry.indexOf('filename="') + 10;
+			const dataIndex = indexOf(entry, '\r\n\r\n', 72) + 4;
+			const startFileNameIndex = indexOf(entry, 'filename="') + 10;
 			if (startFileNameIndex === -1 || startFileNameIndex > dataIndex)
 			{
 				callback({ error: 'No file name in post data.' });
 				return;
 			}
-			const endFileNameIndex = entry.indexOf('"', startFileNameIndex);
+			const endFileNameIndex = indexOf(entry, '"', startFileNameIndex);
 			if (endFileNameIndex === -1 || endFileNameIndex > dataIndex)
 			{
 				callback({ error: 'No file name in post data.' });
 				return;
 			}
-			const fileName = entry.slice(startFileNameIndex, endFileNameIndex).toString();
+			const fileName = entry.subarray(startFileNameIndex, endFileNameIndex).toString();
 			if (!fileName || fileName === '')
 			{
 				callback({ error: 'No file selected!' });
 				return;
 			}
-			const data = entry.slice(dataIndex, entry.length - 2);
+			const data = entry.subarray(dataIndex, entry.length - 2);
 			result.push({ fileName, data });
 		}
 		callback(result);
@@ -797,7 +833,11 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 		const errorHtmlPrefix = '<p class="error_message">';
 		if (postData.error)
 		{
-			return `${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} ${postData.error}</p>`;
+			generateAndSendHtml(`${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} ${postData.error}</p>`);
+		}
+		else if (!postData?.length || postData.length === 0)
+		{
+			generateAndSendHtml(`${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} No data received.</p>`);
 		}
 		else
 		{
