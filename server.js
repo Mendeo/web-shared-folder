@@ -718,157 +718,170 @@ function getIconClassName(ext)
 	return `fiv-${classPrefix} fiv-icon-blank`;
 }
 
-function saveUserFile(absolutePath, postData, localeTranslation)
-{
-	const errorHtmlPrefix = '<p class="error_message">';
-	if (postData.error)
-	{
-		return `${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} ${postData.error}</p>`;
-	}
-	else
-	{
-		for (let fileData of postData)
-		{
-			try
-			{
-				fs.writeFileSync(path.join(absolutePath, fileData.fileName), fileData.data);
-				console.log(`File ${fileData.fileName} was saved`);
-			}
-			catch(err)
-			{
-				return `${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} Error while saving file: ${err.message}</p>`;
-			}
-		}
-		return '';
-	}
-}
-
 function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet, acceptEncoding, acceptLanguage, postData)
 {
 	const responseCookie = [];
 	const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
 	let localeTranslation = _locales.get(clientLang);
 
-	let errorSendingFile = '';
 	if (postData)
 	{
-		errorSendingFile = saveUserFile(absolutePath, postData, localeTranslation);
+		saveUserFiles();
 	}
-	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
+	else
 	{
-		if (err)
+		generateAndSendHtml('');
+	}
+
+	function saveUserFiles()
+	{
+		const errorHtmlPrefix = '<p class="error_message">';
+		if (postData.error)
 		{
-			error(err, res);
+			return `${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} ${postData.error}</p>`;
 		}
 		else
 		{
-			let hrefs = [];
-			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
-			let folderName = '/';
-			const folderSizeStub = getTranslation('folderSizeStub', localeTranslation);
-			let hrefsResult = '';
-			//Массив sortLinks содержит html код ссылок для сортировки.
-			const sortLinks = new Array(3);
-			if (urlPath !== '/')
+			let errorSendingFile = '';
+			let numOfFiles = postData.length;
+			for (let fileData of postData)
 			{
-				const lastField = urlHeader.lastIndexOf('/');
-				const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-				const iconnClassName = getIconClassName('folder');
-				hrefsResult =
-`			<div class="main_container__first_column">
-				<div class="${iconnClassName}"></div>
-				<a href="/">[/]</a>
-			</div>
-			<span>${folderSizeStub}</span>
-			<span>-</span>
-			<div class="main_container__first_column">
-				<div class = "${iconnClassName}"></div>
-				<a href="${backUrl}">[..]</a>
-			</div>
-			<span>${folderSizeStub}</span>
-			<span>-</span>
-`;
-				folderName = urlHeader.slice(lastField + 1);
-			}
-			if (files.length > 0)
-			{
-				for (let file of files)
+				fs.writeFile(path.join(absolutePath, fileData.fileName), fileData.data, (err) =>
 				{
-					fs.stat(path.join(absolutePath, file.name), (err, stats) =>
+					numOfFiles--;
+					if (err)
 					{
-						if (err)
-						{
-							console.log(err?.message);
-							return;
-						}
-						const isDirectory = file.isDirectory();
-						const linkName = isDirectory ? `[${file.name}]` : file.name;
-						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
-						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
-						const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
-						const ext = isDirectory ? 'folder' : path.extname(file.name);
-						const iconnClassName = getIconClassName(ext);
-						const showInBrowser = !isDirectory && canShowInBrowser(ext);
-						hrefs.push({ value:
-`			<div class="main_container__first_column">
-				<div class="${iconnClassName}"></div>
-				<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
-				${showInBrowser ? `<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
-			</div>
-			<span>${sizeStr}</span>
-			<span>${modify}</span>
-`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
-						if (hrefs.length === files.length)
-						{
-							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
-							const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'asc', setSortCookie, null, setSortCookie);
-							sortHrefs(sortType, sortDirection, hrefs);
-							for (let h of hrefs)
-							{
-								hrefsResult += h.value;
-							}
-							//Массив sortLinks содержит html код ссылок для сортировки.
-							sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
-							sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
-							sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
-							sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
-						}
-					});
-				}
+						errorSendingFile = `${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} Error while saving file: ${err.message}</p>`;
+						console.log(`File ${fileData.fileName} was not saved: ${err.message}`);
+					}
+					else
+					{
+						console.log(`File ${fileData.fileName} was saved`);
+					}
+					if (numOfFiles === 0) generateAndSendHtml(errorSendingFile);
+				});
+			}
+		}
+	}
+
+	function generateAndSendHtml(errorSendingFiles)
+	{
+		fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
+		{
+			if (err)
+			{
+				error(err, res);
 			}
 			else
 			{
-				sendHtmlString(res, combineHtml(false), responseCookie, acceptEncoding);
+				let hrefs = [];
+				const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
+				let folderName = '/';
+				const folderSizeStub = getTranslation('folderSizeStub', localeTranslation);
+				let hrefsResult = '';
+				//Массив sortLinks содержит html код ссылок для сортировки.
+				const sortLinks = new Array(3);
+				if (urlPath !== '/')
+				{
+					const lastField = urlHeader.lastIndexOf('/');
+					const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
+					const iconnClassName = getIconClassName('folder');
+					hrefsResult =
+	`			<div class="main_container__first_column">
+					<div class="${iconnClassName}"></div>
+					<a href="/">[/]</a>
+				</div>
+				<span>${folderSizeStub}</span>
+				<span>-</span>
+				<div class="main_container__first_column">
+					<div class = "${iconnClassName}"></div>
+					<a href="${backUrl}">[..]</a>
+				</div>
+				<span>${folderSizeStub}</span>
+				<span>-</span>
+	`;
+					folderName = urlHeader.slice(lastField + 1);
+				}
+				if (files.length > 0)
+				{
+					for (let file of files)
+					{
+						fs.stat(path.join(absolutePath, file.name), (err, stats) =>
+						{
+							if (err)
+							{
+								console.log(err?.message);
+								return;
+							}
+							const isDirectory = file.isDirectory();
+							const linkName = isDirectory ? `[${file.name}]` : file.name;
+							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
+							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
+							const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
+							const ext = isDirectory ? 'folder' : path.extname(file.name);
+							const iconnClassName = getIconClassName(ext);
+							const showInBrowser = !isDirectory && canShowInBrowser(ext);
+							hrefs.push({ value:
+	`			<div class="main_container__first_column">
+					<div class="${iconnClassName}"></div>
+					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
+					${showInBrowser ? `<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+				</div>
+				<span>${sizeStr}</span>
+				<span>${modify}</span>
+	`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+							if (hrefs.length === files.length)
+							{
+								const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
+								const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'asc', setSortCookie, null, setSortCookie);
+								sortHrefs(sortType, sortDirection, hrefs);
+								for (let h of hrefs)
+								{
+									hrefsResult += h.value;
+								}
+								//Массив sortLinks содержит html код ссылок для сортировки.
+								sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
+								sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
+								sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
+								sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
+							}
+						});
+					}
+				}
+				else
+				{
+					sendHtmlString(res, combineHtml(false), responseCookie, acceptEncoding);
+				}
+				function setSortHref(sortType, sortDirection, sortHrefType)
+				{
+					const sortHrefUp = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=desc">&uarr;</a>`;
+					const sortHrefDown = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=asc">&darr;</a>`;
+					return sortType === sortHrefType ? (sortDirection === 'asc' ? sortHrefUp : sortHrefDown) : sortHrefUp + sortHrefDown;
+				}
+				function setSortCookie(key, value)
+				{
+					responseCookie.push(`${key}=${value}; path=/; max-age=86400; samesite=strict`);
+				}
+				function combineHtml(hasFiles)
+				{
+					return  _indexHtmlbase[0] + clientLang +
+							_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
+							_indexHtmlbase[2] + folderName +
+							_indexHtmlbase[3] + `${urlPath}?download=true` +
+							_indexHtmlbase[4] + getTranslation('downloadAll', localeTranslation) +
+							_indexHtmlbase[5] + getTranslation('fileName', localeTranslation) +
+							_indexHtmlbase[6] + (hasFiles ? sortLinks[0] : '') +
+							_indexHtmlbase[7] + getTranslation('fileSize', localeTranslation) +
+							_indexHtmlbase[8] + (hasFiles ? sortLinks[1] : '') +
+							_indexHtmlbase[9] + getTranslation('modifyDate', localeTranslation) +
+							_indexHtmlbase[10] + (hasFiles ? sortLinks[2] : '') +
+							_indexHtmlbase[11] + hrefsResult +
+							_indexHtmlbase[12] + errorSendingFiles +
+							_indexHtmlbase[13];
+				}
 			}
-			function setSortHref(sortType, sortDirection, sortHrefType)
-			{
-				const sortHrefUp = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=desc">&uarr;</a>`;
-				const sortHrefDown = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=asc">&darr;</a>`;
-				return sortType === sortHrefType ? (sortDirection === 'asc' ? sortHrefUp : sortHrefDown) : sortHrefUp + sortHrefDown;
-			}
-			function setSortCookie(key, value)
-			{
-				responseCookie.push(`${key}=${value}; path=/; max-age=86400; samesite=strict`);
-			}
-			function combineHtml(hasFiles)
-			{
-				return  _indexHtmlbase[0] + clientLang +
-						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
-						_indexHtmlbase[2] + folderName +
-						_indexHtmlbase[3] + `${urlPath}?download=true` +
-						_indexHtmlbase[4] + getTranslation('downloadAll', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[6] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[7] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[8] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[9] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[10] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[11] + hrefsResult +
-						_indexHtmlbase[12] + errorSendingFile +
-						_indexHtmlbase[13];
-			}
-		}
-	});
+		});
+	}
 }
 
 //Если key есть и в primary и в secondary, то вернёт из primary, иначе: вернёт из secondary.
