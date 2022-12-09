@@ -41,7 +41,7 @@ const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_POR
 const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
 let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
 
-const MAX_BUFFER_LENGTH = (require('buffer')).constants.MAX_LENGTH;
+const MAX_FILE_LENGTH = 2147483647;
 
 const DEFAULT_ICON_TYPE = 'square-o';
 if (!ICONS_TYPE)
@@ -391,9 +391,9 @@ function app(req, res)
 			function onData(chunk)
 			{
 				postLength += chunk.byteLength;
-				if (postLength > MAX_BUFFER_LENGTH)
+				if (postLength > MAX_FILE_LENGTH)
 				{
-					postBody = { error: `Max upload size (with headers) is ${MAX_BUFFER_LENGTH} bytes` };
+					postBody = { error: `Max upload size (with headers) is ${MAX_FILE_LENGTH} bytes` };
 					req.removeListener('data', onData);
 				}
 				else
@@ -430,38 +430,6 @@ function app(req, res)
 	}
 }
 
-//Оказывается встроенный indexOf не может работать с буферами больше 2ГиБ.
-function indexOf(buf, what, start)
-{
-	const MAX_INDEXOF_BUFFER_LENGTH = 2147483647;
-	if (start === undefined) start = 0;
-	if (buf.byteLength <= MAX_INDEXOF_BUFFER_LENGTH) return buf.indexOf(what, start);
-	let chunk = buf.subarray(start);
-	if (chunk.byteLength <= MAX_INDEXOF_BUFFER_LENGTH)
-	{
-		const result = chunk.indexOf(what);
-		if (result === -1) return -1;
-		return chunk.indexOf(what) + start;
-	}
-
-	const whatBuf = Buffer.from(what);
-	const numOfSubChunks = Math.floor(chunk.byteLength / MAX_INDEXOF_BUFFER_LENGTH) + 1;
-	let indexStart = 0;
-	let indexEnd = MAX_INDEXOF_BUFFER_LENGTH;
-	for (let i = 0; i < numOfSubChunks; i++)
-	{
-		const subChunk = chunk.subarray(indexStart, indexEnd);
-		let result = subChunk.indexOf(what);
-		if (result !== -1) return result + start + indexStart;
-		const subSubChunk = chunk.subarray(indexEnd - whatBuf.byteLength, indexEnd + whatBuf.byteLength);
-		result = subSubChunk.indexOf(what);
-		if (result !== -1) return indexEnd - whatBuf.byteLength + result + start;
-		indexStart = indexEnd;
-		indexEnd = indexStart + MAX_INDEXOF_BUFFER_LENGTH;
-	}
-	return -1;
-}
-
 function parseMultiPartFormData(postBody, boundary, callback)
 {
 	if (postBody.error)
@@ -483,7 +451,7 @@ function parseMultiPartFormData(postBody, boundary, callback)
 	function split()
 	{
 		let startSearchIndex = prevBoundaryIndex + boundarySize;
-		boundaryIndex = indexOf(postBody, boundaryStart, startSearchIndex);
+		boundaryIndex = postBody.indexOf(boundaryStart, startSearchIndex);
 		if (boundaryIndex === -1)
 		{
 			getData();
@@ -504,14 +472,14 @@ function parseMultiPartFormData(postBody, boundary, callback)
 		const result = [];
 		for (let entry of entries)
 		{
-			const dataIndex = indexOf(entry, '\r\n\r\n', 72) + 4;
-			const startFileNameIndex = indexOf(entry, 'filename="') + 10;
+			const dataIndex = entry.indexOf('\r\n\r\n', 72) + 4;
+			const startFileNameIndex = entry.indexOf('filename="') + 10;
 			if (startFileNameIndex === -1 || startFileNameIndex > dataIndex)
 			{
 				callback({ error: 'No file name in post data.' });
 				return;
 			}
-			const endFileNameIndex = indexOf(entry, '"', startFileNameIndex);
+			const endFileNameIndex = entry.indexOf('"', startFileNameIndex);
 			if (endFileNameIndex === -1 || endFileNameIndex > dataIndex)
 			{
 				callback({ error: 'No file name in post data.' });
