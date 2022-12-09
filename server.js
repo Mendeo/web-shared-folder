@@ -403,7 +403,7 @@ function app(req, res)
 			}
 			req.on('end', () =>
 			{
-				console.log('all post data received');
+				//console.log('all post data received');
 				if (!postBody?.error)
 				{
 					if (postLength === 0)
@@ -418,7 +418,7 @@ function app(req, res)
 				}
 				parseMultiPartFormData(postBody, boundary, (postData) =>
 				{
-					console.log('parse complete');
+					//console.log('parse complete');
 					answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
 				});
 			});
