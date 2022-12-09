@@ -41,7 +41,7 @@ const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_POR
 const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
 let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
 
-const MAX_STRING_LENGTH = (require('buffer')).constants.MAX_STRING_LENGTH;
+const MAX_BUFFER_LENGTH = (require('buffer')).constants.MAX_LENGTH;
 
 const DEFAULT_ICON_TYPE = 'square-o';
 if (!ICONS_TYPE)
@@ -383,26 +383,28 @@ function app(req, res)
 					break;
 				}
 			}
-			let postBody = '';
+			let postBody = Buffer.from('');
 			req.on('data', onData);
 
 			function onData(chunk)
 			{
-				chunk = chunk.toString('binary');
-				if (postBody.length + chunk.length > MAX_STRING_LENGTH)
+				chunk = Buffer.from(chunk, 'binary');
+				if (postBody.byteLength + chunk.byteLength > MAX_BUFFER_LENGTH)
 				{
-					postBody = { error: `Max upload size is about ${MAX_STRING_LENGTH} bytes` };
+					postBody = { error: `Max upload size (with headers) is ${MAX_BUFFER_LENGTH} bytes` };
 					req.removeListener('data', onData);
 				}
 				else
 				{
-					postBody += chunk;
+					postBody = Buffer.concat([postBody, chunk]);
 				}
 			}
 			req.on('end', () =>
 			{
-				const postData = parseMultiPartFormData(postBody, boundary);
-				answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+				parseMultiPartFormData(postBody, boundary, (postData) =>
+				{
+					answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+				});
 			});
 		}
 		else
@@ -412,27 +414,63 @@ function app(req, res)
 	}
 }
 
-function parseMultiPartFormData(postBody, boundary)
+function parseMultiPartFormData(postBody, boundary, callback)
 {
 	if (postBody.error) return postBody;
-	const values = postBody.split('--' + boundary);
-	if (values[values.length - 1].toString() !== '--\r\n') return { error: 'Post data is invalid.' };
-	const result = [];
-	for (let i = 1; i < values.length - 1; i++)
+	let boundaryIndex = 0;
+	const boundaryStart = '--' + boundary;
+	let prevBoundaryIndex = postBody.indexOf(boundaryStart);
+	if (prevBoundaryIndex === -1)
 	{
-		const value = values[i];
-		const dataIndex = value.indexOf('\r\n\r\n', 72) + 4;
-		const startFileNameIndex = value.indexOf('filename="') + 10;
-		if (startFileNameIndex === -1 || startFileNameIndex > dataIndex) return null;
-		const endFileNameIndex = value.indexOf('"', startFileNameIndex);
-		if (endFileNameIndex === -1 || endFileNameIndex > dataIndex) return null;
-		const fileName = value.slice(startFileNameIndex, endFileNameIndex);
-
-		const data = Buffer.from(value.slice(dataIndex, value.length - 2), 'binary');
-		if (!fileName || fileName === '') return { error: 'No file selected!' };
-		result.push({ fileName, data });
+		callback({ error: 'Post data is invalid.' });
+		return;
 	}
-	return result;
+	const boundarySize = boundaryStart.length;
+	const entries = [];
+	split();
+	function split()
+	{
+		let startSearchIndex = prevBoundaryIndex + boundarySize;
+		boundaryIndex = postBody.indexOf(boundaryStart, startSearchIndex);
+		if (boundaryIndex === -1)
+		{
+			getData();
+			return;
+		}
+		const entry = postBody.slice(startSearchIndex, boundaryIndex);
+		entries.push(entry);
+		prevBoundaryIndex = boundaryIndex;
+		setImmediate(split);
+	}
+	function getData()
+	{
+		const result = [];
+		for (let entry of entries)
+		{
+			const dataIndex = entry.indexOf('\r\n\r\n', 72) + 4;
+			const startFileNameIndex = entry.indexOf('filename="') + 10;
+			if (startFileNameIndex === -1 || startFileNameIndex > dataIndex)
+			{
+				callback({ error: 'No file name in post data.' });
+				return;
+			}
+			const endFileNameIndex = entry.indexOf('"', startFileNameIndex);
+			if (endFileNameIndex === -1 || endFileNameIndex > dataIndex)
+			{
+				callback({ error: 'No file name in post data.' });
+				return;
+			}
+			const fileName = entry.slice(startFileNameIndex, endFileNameIndex).toString();
+			if (!fileName || fileName === '')
+			{
+				callback({ error: 'No file selected!' });
+				return;
+			}
+			const data = entry.slice(dataIndex, entry.length - 2);
+			result.push({ fileName, data });
+		}
+		callback(result);
+	}
 }
 
 function parseRequest(data)
