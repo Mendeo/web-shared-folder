@@ -1108,7 +1108,7 @@ function sendHtmlString(res, data, cookie, acceptEncoding)
 //Отправка файлов с использованием файловых потоков.
 function sendFile(res, filePath, size)
 {
-	let file = fs.ReadStream(filePath);
+	let file = fs.createReadStream(filePath);
 	file.pipe(res);
 	file.on('error', (err) => error(err, res));
 	res.writeHead(200,
