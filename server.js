@@ -383,26 +383,43 @@ function app(req, res)
 					break;
 				}
 			}
-			let postBody = Buffer.from('');
+			let postChunks = [];
+			let postLength = 0;
+			let postBody;
 			req.on('data', onData);
 
 			function onData(chunk)
 			{
 				chunk = Buffer.from(chunk, 'binary');
-				if (postBody.byteLength + chunk.byteLength > MAX_BUFFER_LENGTH)
+				postLength += chunk.byteLength;
+				if (postLength > MAX_BUFFER_LENGTH)
 				{
 					postBody = { error: `Max upload size (with headers) is ${MAX_BUFFER_LENGTH} bytes` };
 					req.removeListener('data', onData);
 				}
 				else
 				{
-					postBody = Buffer.concat([postBody, chunk]);
+					postChunks.push(chunk);
 				}
 			}
 			req.on('end', () =>
 			{
+				console.log('all post data received');
+				if (!postBody?.error)
+				{
+					if (postLength === 0)
+					{
+						postBody = { error: 'Size of post data is 0' };
+					}
+					else
+					{
+						postBody = Buffer.concat(postChunks);
+						postChunks = null;
+					}
+				}
 				parseMultiPartFormData(postBody, boundary, (postData) =>
 				{
+					console.log('parse complete');
 					answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
 				});
 			});
