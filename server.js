@@ -433,7 +433,11 @@ function app(req, res)
 
 function parseMultiPartFormData(postBody, boundary, callback)
 {
-	if (postBody.error) return postBody;
+	if (postBody.error)
+	{
+		callback(postBody);
+		return;
+	}
 	let boundaryIndex = 0;
 	const boundaryStart = '--' + boundary;
 	let prevBoundaryIndex = postBody.indexOf(boundaryStart);
