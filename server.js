@@ -739,7 +739,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 					{
 						if (postData.download)
 						{
-							zipFolder(res, filePath);
+							zipFolder(res, filePath, postData);
 						}
 						else if (postData.delete)
 						{
@@ -908,6 +908,121 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 	}
 }
 
+function zipFolder(res, absolutePath, postData)
+{
+	const selectedFiles = [];
+	let keys = Object.keys(postData);
+	for (let key of keys)
+	{
+		if (key === 'download') continue;
+		if (postData[key] === 'on')
+		{
+			selectedFiles.push(decodeURIComponent(decodeURIComponent(key)));
+		}
+	}
+	const zip = new JSZip();
+
+	let numberOfFile = 0;
+	let numberOfRecursive = 0;
+	let rootDir = '';
+
+	fs.stat(absolutePath, (err, stats) =>
+	{
+		if (err)
+		{
+			zipError(err, res);
+		}
+		else if (stats.isDirectory())
+		{
+			rootDir = absolutePath;
+		}
+		else
+		{
+			rootDir = path.dirname(absolutePath);
+		}
+		readFolderRecursive(absolutePath, true);
+	});
+
+	function readFolderRecursive(folderPath, isRoot)
+	{
+		numberOfRecursive++;
+		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
+		{
+			if (err)
+			{
+				zipError(err, res);
+			}
+			else if (files.length > 0)
+			{
+				for (let file of files)
+				{
+					if (isRoot && !selectedFiles.includes(file.name)) continue;
+					if (file.isDirectory())
+					{
+						readFolderRecursive(path.join(folderPath, file.name), false);
+					}
+					else if (file.isFile())
+					{
+						numberOfFile++;
+						fs.readFile(path.join(folderPath, file.name), (err, data) =>
+						{
+							if (err)
+							{
+								zipError(err, res);
+							}
+							else
+							{
+								numberOfFile--;
+								const relativePath = path.join(path.relative(rootDir, folderPath), file.name);
+								zip.file(relativePath, data);
+								if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
+							}
+						});
+					}
+				}
+			}
+			else
+			{
+				const relativePath = path.join(path.relative(rootDir, folderPath));
+				zip.folder(relativePath);
+			}
+			numberOfRecursive--;
+			if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
+		});
+	}
+
+	function zipError(err, res)
+	{
+		const commonMsg = 'Zip generate error!';
+		console.log(commonMsg + ' ' + err?.message);
+		const msg = commonMsg + (err?.code === 'ERR_FS_FILE_TOO_LARGE' ? ' File size is greater than 2 GiB' : '');
+		error500(msg, res);
+	}
+
+	function sendZip()
+	{
+		const zipStream = zip.generateNodeStream();
+		zipStream.pipe(res);
+		zipStream.on('error', (err) => error(err, res));
+		res.writeHead(200,
+			{
+				'Content-Type': 'application/zip'
+			});
+		res.on('close', () =>
+		{
+			if (!res.writableFinished)
+			{
+				zipStream.destroy();
+				console.log('Connection lost while transferring zip archive.');
+			}
+		});
+		res.on('finish', () =>
+		{
+			console.log('Zip archive sent successfully.');
+		});
+	}
+}
+
 function deleteFiles(absolutePath, postData, callback)
 {
 	let keys = Object.keys(postData);
@@ -1047,18 +1162,17 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				return  _indexHtmlbase[0] + clientLang +
 						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[2] + folderName +
-						_indexHtmlbase[3] + `${urlPath}?download=true` +
-						_indexHtmlbase[4] + getTranslation('downloadAll', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('deleteFiles', localeTranslation) +
-						_indexHtmlbase[6] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[7] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[8] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[9] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[10] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[11] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[12] + hrefsResult +
-						_indexHtmlbase[13] + errorMessage +
-						_indexHtmlbase[14];
+						_indexHtmlbase[3] + getTranslation('downloadAll', localeTranslation) +
+						_indexHtmlbase[4] + getTranslation('deleteFiles', localeTranslation) +
+						_indexHtmlbase[5] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[6] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[7] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[8] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[9] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[10] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[11] + hrefsResult +
+						_indexHtmlbase[12] + errorMessage +
+						_indexHtmlbase[13];
 			}
 		}
 	});
@@ -1242,93 +1356,6 @@ function sendFile(res, filePath, size)
 		console.log('Sent successfully: ' + filePath);
 	});
 
-}
-
-function zipFolder(res, folderPath)
-{
-	const folderName = path.basename(folderPath);
-	const rootDir = path.dirname(folderPath);
-	const zip = new JSZip();
-
-	let numberOfFile = 0;
-	let numberOfRecursive = 0;
-	readFolderRecursive(folderPath);
-	function readFolderRecursive(folderPath)
-	{
-		numberOfRecursive++;
-		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
-		{
-			if (err)
-			{
-				zipError(err, res);
-			}
-			else if (files.length > 0)
-			{
-				for (let file of files)
-				{
-					if (file.isDirectory())
-					{
-						readFolderRecursive(path.join(folderPath, file.name), true);
-					}
-					else if (file.isFile())
-					{
-						numberOfFile++;
-						fs.readFile(path.join(folderPath, file.name), (err, data) =>
-						{
-							if (err)
-							{
-								zipError(err, res);
-							}
-							else
-							{
-								numberOfFile--;
-								const relativePath = path.join(path.relative(rootDir, folderPath), file.name);
-								zip.file(relativePath, data);
-								if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
-							}
-						});
-					}
-				}
-			}
-			else
-			{
-				const relativePath = path.join(path.relative(rootDir, folderPath));
-				zip.folder(relativePath);
-			}
-			numberOfRecursive--;
-			if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
-		});
-		function zipError(err, res)
-		{
-			const commonMsg = 'Zip generate error!';
-			console.log(commonMsg + ' ' + err?.message);
-			const msg = commonMsg + (err?.code === 'ERR_FS_FILE_TOO_LARGE' ? ' File size is greater than 2 GiB' : '');
-			error500(msg, res);
-		}
-	}
-
-	function sendZip()
-	{
-		const zipStream = zip.generateNodeStream();
-		zipStream.pipe(res);
-		zipStream.on('error', (err) => error(err, res));
-		res.writeHead(200,
-			{
-				'Content-Type': 'application/zip'
-			});
-		res.on('close', () =>
-		{
-			if (!res.writableFinished)
-			{
-				zipStream.destroy();
-				console.log('Connection lost while transferring zip archive.');
-			}
-		});
-		res.on('finish', () =>
-		{
-			console.log(`Zip archive ${folderName}.zip sent successfully.`);
-		});
-	}
 }
 
 function canShowInBrowser(ext)
