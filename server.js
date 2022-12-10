@@ -423,34 +423,40 @@ function app(req, res)
 
 function getPostBody(req, callback)
 {
-	let postChunks = [];
-	let postLength = 0;
-	req.on('data', onData);
-	let hasError = false;
-
-	function onData(chunk)
+	const size = Number(req.headers['content-length']);
+	if (isNaN(size))
 	{
-		postLength += chunk.byteLength;
-		if (postLength > MAX_FILE_LENGTH)
-		{
-			req.removeListener('data', onData);
-			hasError = true;
-		}
-		else
-		{
-			postChunks.push(chunk);
-		}
+		callback({ message: 'Content-Length header is invalid' });
 	}
-	req.on('end', () =>
+	else if (size > MAX_FILE_LENGTH)
 	{
-		//console.log('all post data received');
-		if (hasError)
+		callback({ message: `Max upload size (with headers) is ${MAX_FILE_LENGTH} bytes` });
+	}
+	else
+	{
+		let postChunks = [];
+		let postLength = 0;
+		req.on('data', (chunk) =>
 		{
-			callback({ message: `Max upload size (with headers) is ${MAX_FILE_LENGTH} bytes` });
-		}
-		else
+			postLength += chunk.byteLength;
+			if (postLength > size)
+			{
+				req.destroy();
+				return;
+			}
+			else
+			{
+				postChunks.push(chunk);
+			}
+		});
+		req.on('end', () =>
 		{
-			if (postLength === 0)
+			//console.log('all post data received');
+			if (postLength !== size)
+			{
+				callback({ message: 'Not all data received' });
+			}
+			else if (postLength === 0)
 			{
 				callback({ message: 'Size of post data is 0' });
 			}
@@ -459,8 +465,8 @@ function getPostBody(req, callback)
 				let postBody = Buffer.concat(postChunks);
 				callback(null, postBody);
 			}
-		}
-	});
+		});
+	}
 }
 
 function parseMultiPartFormData(postBody, boundary, callback)
