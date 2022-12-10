@@ -742,11 +742,11 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 						{
 							if (paramsGet.download)
 							{
-								zipFolder(filePath, res);
+								zipFolder(res, filePath);
 							}
 							else
 							{
-								deleteFiles(res, filePath);
+								deleteFiles(res, filePath, postData);
 							}
 						}
 					}
@@ -908,6 +908,39 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 				}
 				if (numOfFiles === 0) callback(errorSendingFile);
 			});
+		}
+	}
+}
+
+function deleteFiles(absolutePath, postData, callback)
+{
+	let keys = Object.keys(postData);
+	let numOfFiles = keys.length;
+	for (let key of keys)
+	{
+		if (postData[key] === 'on')
+		{
+			const fileName = decodeURI(key);
+			const filePath = path.join(absolutePath, fileName);
+			fs.rm(filePath, { force: true, recursive: true }, (err) =>
+			{
+				if (err)
+				{
+					console.log(err.message);
+					callback(`Can't delete folder ${fileName}`);
+					return;
+				}
+				else
+				{
+					numOfFiles--;
+					if (numOfFiles === 0) callback(null);
+				}
+			});
+		}
+		else
+		{
+			numOfFiles--;
+			if (numOfFiles === 0) callback(null);
 		}
 	}
 }
@@ -1212,7 +1245,7 @@ function sendFile(res, filePath, size)
 
 }
 
-function zipFolder(folderPath, res)
+function zipFolder(res, folderPath)
 {
 	const folderName = path.basename(folderPath);
 	const rootDir = path.dirname(folderPath);
@@ -1271,14 +1304,10 @@ function zipFolder(folderPath, res)
 			const commonMsg = 'Zip generate error!';
 			console.log(commonMsg + ' ' + err?.message);
 			const msg = commonMsg + (err?.code === 'ERR_FS_FILE_TOO_LARGE' ? ' File size is greater than 2 GiB' : '');
-			res.writeHead(500,
-				{
-					'Content-Length': msg.length,
-					'Content-Type': 'text/plain'
-				});
-			res.end(msg);
+			error500(msg, res);
 		}
 	}
+
 	function sendZip()
 	{
 		const zipStream = zip.generateNodeStream();
