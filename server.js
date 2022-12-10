@@ -729,48 +729,41 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 				{
 					generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
 				}
-
-				if (paramsGet)
+				if (postData && !Array.isArray(postData) && typeof postData === 'object')
 				{
-					if ((paramsGet.download === 'true' || paramsGet.delete === 'true') && postData && !Array.isArray(postData) && typeof postData === 'object')
+					if (Object.keys(postData).length < 2)
 					{
-						if (Object.keys(postData).length === 0)
+						generateAndSendIndexHtmlAlias('No files selected!');
+					}
+					else
+					{
+						if (postData.download)
 						{
-							generateAndSendIndexHtmlAlias('No files selected!');
+							zipFolder(res, filePath);
+						}
+						else if (postData.delete)
+						{
+							deleteFiles(filePath, postData, (errorMessage) =>
+							{
+								generateAndSendIndexHtmlAlias(errorMessage);
+							});
 						}
 						else
 						{
-							if (paramsGet.download)
-							{
-								zipFolder(res, filePath);
-							}
-							else
-							{
-								deleteFiles(filePath, postData, (errorMessage) =>
-								{
-									generateAndSendIndexHtmlAlias(errorMessage);
-								});
-							}
+							generateAndSendIndexHtmlAlias();
 						}
 					}
-					else
+				}
+				else if (postDataHasFiles(postData))
+				{
+					saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
 					{
-						generateAndSendIndexHtmlAlias();
-					}
+						generateAndSendIndexHtmlAlias(errorMessage);
+					});
 				}
 				else
 				{
-					if (postDataHasFiles(postData))
-					{
-						saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
-						{
-							generateAndSendIndexHtmlAlias(errorMessage);
-						});
-					}
-					else
-					{
-						generateAndSendIndexHtmlAlias();
-					}
+					generateAndSendIndexHtmlAlias();
 				}
 			}
 			else
@@ -918,9 +911,10 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 function deleteFiles(absolutePath, postData, callback)
 {
 	let keys = Object.keys(postData);
-	let numOfFiles = keys.length;
+	let numOfFiles = keys.length - 1;
 	for (let key of keys)
 	{
+		if (key === 'delete') continue;
 		if (postData[key] === 'on')
 		{
 			const fileName = decodeURIComponent(decodeURIComponent(key));
@@ -930,7 +924,7 @@ function deleteFiles(absolutePath, postData, callback)
 				if (err)
 				{
 					console.log(err.message);
-					callback(`Can't delete folder ${fileName}`);
+					callback(`Can't delete ${fileName}`);
 					return;
 				}
 				else
@@ -1055,17 +1049,16 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[2] + folderName +
 						_indexHtmlbase[3] + `${urlPath}?download=true` +
 						_indexHtmlbase[4] + getTranslation('downloadAll', localeTranslation) +
-						_indexHtmlbase[5] + `${urlPath}?delete=true` +
-						_indexHtmlbase[6] + getTranslation('deleteFiles', localeTranslation) +
-						_indexHtmlbase[7] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[8] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[9] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[10] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[11] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[12] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[13] + hrefsResult +
-						_indexHtmlbase[14] + errorMessage +
-						_indexHtmlbase[15];
+						_indexHtmlbase[5] + getTranslation('deleteFiles', localeTranslation) +
+						_indexHtmlbase[6] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[7] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[8] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[9] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[10] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[11] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[12] + hrefsResult +
+						_indexHtmlbase[13] + errorMessage +
+						_indexHtmlbase[14];
 			}
 		}
 	});
