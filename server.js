@@ -42,6 +42,7 @@ const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
 let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
 
 const MAX_FILE_LENGTH = 2147483647;
+const MAX_STRING_LENGTH = require('buffer').constants.MAX_STRING_LENGTH;
 
 const DEFAULT_ICON_TYPE = 'square-o';
 if (!ICONS_TYPE)
@@ -403,7 +404,7 @@ function app(req, res)
 						}
 						else
 						{
-							const postData = parseRequest(postBody);
+							const postData = parseXwwwFormUrlEncoded(postBody);
 							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
 						}
 					}
@@ -537,14 +538,26 @@ function parseMultiPartFormData(postBody, boundary, callback)
 	}
 }
 
-function parseRequest(data)
+function parseXwwwFormUrlEncoded(postBody)
+{
+	if (postBody.byteLength > MAX_STRING_LENGTH)
+	{
+		return { error: 'Request too big' };
+	}
+	else
+	{
+		return parseRequest(postBody.toString());
+	}
+}
+
+function parseRequest(str)
 {
 	let params = null;
-	if (data)
+	if (str)
 	{
 		params = {};
-		data = data.split('&');
-		data.forEach((p) =>
+		str = str.split('&');
+		str.forEach((p) =>
 		{
 			let keyVal = p.split('=');
 			params[keyVal[0]] = keyVal[1];
@@ -557,7 +570,7 @@ function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage,
 {
 
 	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
-	//if (paramsGet) console.log(paramsGet);
+	if (paramsGet) console.log(paramsGet);
 	if (postData) console.log(postData);
 }
 
@@ -934,7 +947,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 							const showInBrowser = !isDirectory && canShowInBrowser(ext);
 							hrefs.push({ value:
 `				<div class="main_container__first_column">
-					<input type="checkbox" name="">
+					<input type="checkbox" name="q">
 					<div class="${iconnClassName}"></div>
 					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `
 					<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
