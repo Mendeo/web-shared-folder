@@ -725,25 +725,43 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 				const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
 				let localeTranslation = _locales.get(clientLang);
 
-				function generateAndSendIndexHtmlAlias(errorHtml)
+				function generateAndSendIndexHtmlAlias(errorMessage)
 				{
-					generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorHtml);
+					generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
 				}
 
 				if (paramsGet)
 				{
-					if (paramsGet.download === 'true')
+					if ((paramsGet.download === 'true' || paramsGet.delete === 'true') && postData && !Array.isArray(postData) && typeof postData === 'object')
 					{
-						zipFolder(filePath, res);
+						if (Object.keys(postData).length === 0)
+						{
+							generateAndSendIndexHtmlAlias('No files selected!');
+						}
+						else
+						{
+							if (paramsGet.download)
+							{
+								zipFolder(filePath, res);
+							}
+							else
+							{
+								deleteFiles(res, filePath);
+							}
+						}
+					}
+					else
+					{
+						generateAndSendIndexHtmlAlias();
 					}
 				}
 				else
 				{
 					if (postDataHasFiles(postData))
 					{
-						saveUserFiles(postData, filePath, localeTranslation, (errorHtml) =>
+						saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
 						{
-							generateAndSendIndexHtmlAlias(errorHtml);
+							generateAndSendIndexHtmlAlias(errorMessage);
 						});
 					}
 					else
@@ -862,14 +880,13 @@ function postDataHasFiles(postData)
 
 function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 {
-	const errorHtmlPrefix = '<p class="error_message">';
 	if (postData.error)
 	{
-		callback(`${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} ${postData.error}</p>`);
+		callback(`${getTranslation('sendingFilesError', localeTranslation)} ${postData.error}`);
 	}
 	else if (!postData?.length || postData.length === 0)
 	{
-		callback(`${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} No data received.</p>`);
+		callback(`${getTranslation('sendingFilesError', localeTranslation)} No data received.`);
 	}
 	else
 	{
@@ -882,7 +899,7 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 				numOfFiles--;
 				if (err)
 				{
-					errorSendingFile = `${errorHtmlPrefix}${getTranslation('sendingFilesError', localeTranslation)} Error while saving file: ${err.message}</p>`;
+					errorSendingFile = `${getTranslation('sendingFilesError', localeTranslation)} Error while saving file: ${err.message}`;
 					console.log(`File ${fileData.fileName} was not saved: ${err.message}`);
 				}
 				else
@@ -895,7 +912,7 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 	}
 }
 
-function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorHtml)
+function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
 {
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
@@ -1008,7 +1025,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[9] + getTranslation('modifyDate', localeTranslation) +
 						_indexHtmlbase[10] + (hasFiles ? sortLinks[2] : '') +
 						_indexHtmlbase[11] + hrefsResult +
-						_indexHtmlbase[12] + errorHtml +
+						_indexHtmlbase[12] + errorMessage +
 						_indexHtmlbase[13];
 			}
 		}
