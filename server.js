@@ -730,9 +730,12 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 					generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorHtml);
 				}
 
-				if (paramsGet?.download)
+				if (paramsGet)
 				{
-					zipFolder(filePath, res);
+					if (paramsGet.download === 'true')
+					{
+						zipFolder(filePath, res);
+					}
 				}
 				else
 				{
