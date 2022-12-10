@@ -826,13 +826,18 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 	const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
 	let localeTranslation = _locales.get(clientLang);
 
-	if (postData)
+	if (postDataHasFiles(postData))
 	{
 		saveUserFiles();
 	}
 	else
 	{
 		generateAndSendHtml('');
+	}
+
+	function postDataHasFiles(postData)
+	{
+		return Array.isArray(postData) && postData.length > 0 && postData.reduce((hasFileName, item) => hasFileName & (item.fileName && item.fileName !== '' && item.data !== undefined), true);
 	}
 
 	function saveUserFiles()
