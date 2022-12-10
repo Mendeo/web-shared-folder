@@ -746,7 +746,10 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 							}
 							else
 							{
-								deleteFiles(res, filePath, postData);
+								deleteFiles(filePath, postData, (errorMessage) =>
+								{
+									generateAndSendIndexHtmlAlias(errorMessage);
+								});
 							}
 						}
 					}
@@ -947,6 +950,7 @@ function deleteFiles(absolutePath, postData, callback)
 
 function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
 {
+	if (!errorMessage) errorMessage = '';
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
 		if (err)
@@ -1051,15 +1055,17 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[2] + folderName +
 						_indexHtmlbase[3] + `${urlPath}?download=true` +
 						_indexHtmlbase[4] + getTranslation('downloadAll', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[6] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[7] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[8] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[9] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[10] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[11] + hrefsResult +
-						_indexHtmlbase[12] + errorMessage +
-						_indexHtmlbase[13];
+						_indexHtmlbase[5] + `${urlPath}?delete=true` +
+						_indexHtmlbase[6] + getTranslation('deleteFiles', localeTranslation) +
+						_indexHtmlbase[7] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[8] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[9] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[10] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[11] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[12] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[13] + hrefsResult +
+						_indexHtmlbase[14] + errorMessage +
+						_indexHtmlbase[15];
 			}
 		}
 	});
