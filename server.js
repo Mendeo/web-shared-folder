@@ -373,19 +373,9 @@ function app(req, res)
 		const contentType = req.headers['content-type']?.split(';').map((value) => value.trim());
 		if (contentType)
 		{
-			if (contentType[0] === 'multipart/form-data')
+			if (contentType[0] === 'multipart/form-data' || contentType[0] === 'application/x-www-form-urlencoded')
 			{
-				let boundary = '';
-				for (let i = 1; i < contentType.length; i++)
-				{
-					const pair = contentType[i].split('=');
-					if (pair[0] === 'boundary')
-					{
-						boundary = pair[1];
-						break;
-					}
-				}
-				getPostData(req, (err, postBody) =>
+				getPostBody(req, (err, postBody) =>
 				{
 					if (err)
 					{
@@ -393,13 +383,35 @@ function app(req, res)
 					}
 					else
 					{
-						parseMultiPartFormData(postBody, boundary, (postData) =>
+						if (contentType[0] === 'multipart/form-data')
 						{
-							//console.log('parse complete');
+							let boundary = '';
+							for (let i = 1; i < contentType.length; i++)
+							{
+								const pair = contentType[i].split('=');
+								if (pair[0] === 'boundary')
+								{
+									boundary = pair[1];
+									break;
+								}
+							}
+							parseMultiPartFormData(postBody, boundary, (postData) =>
+							{
+								//console.log('parse complete');
+								answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+							});
+						}
+						else
+						{
+							const postData = parseRequest(postBody);
 							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
-						});
+						}
 					}
 				});
+			}
+			else
+			{
+				answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
 			}
 		}
 		else
@@ -409,7 +421,7 @@ function app(req, res)
 	}
 }
 
-function getPostData(req, callback)
+function getPostBody(req, callback)
 {
 	let postChunks = [];
 	let postLength = 0;
@@ -540,7 +552,7 @@ function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage,
 
 	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
 	//if (paramsGet) console.log(paramsGet);
-	//if (postData) console.log(postData);
+	if (postData) console.log(postData);
 }
 
 function sendCachedFile(res, file, contentType, acceptEncoding)
