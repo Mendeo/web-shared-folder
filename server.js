@@ -371,63 +371,84 @@ function app(req, res)
 		const acceptLanguage = req.headers['accept-language'];
 		/*Post данные*/
 		const contentType = req.headers['content-type']?.split(';').map((value) => value.trim());
-		if (contentType && contentType[0] === 'multipart/form-data')
+		if (contentType)
 		{
-			let boundary = '';
-			for (let i = 1; i < contentType.length; i++)
+			if (contentType[0] === 'multipart/form-data')
 			{
-				const pair = contentType[i].split('=');
-				if (pair[0] === 'boundary')
+				let boundary = '';
+				for (let i = 1; i < contentType.length; i++)
 				{
-					boundary = pair[1];
-					break;
-				}
-			}
-			let postChunks = [];
-			let postLength = 0;
-			let postBody;
-			req.on('data', onData);
-
-			function onData(chunk)
-			{
-				postLength += chunk.byteLength;
-				if (postLength > MAX_FILE_LENGTH)
-				{
-					postBody = { error: `Max upload size (with headers) is ${MAX_FILE_LENGTH} bytes` };
-					req.removeListener('data', onData);
-				}
-				else
-				{
-					postChunks.push(chunk);
-				}
-			}
-			req.on('end', () =>
-			{
-				//console.log('all post data received');
-				if (!postBody?.error)
-				{
-					if (postLength === 0)
+					const pair = contentType[i].split('=');
+					if (pair[0] === 'boundary')
 					{
-						postBody = { error: 'Size of post data is 0' };
+						boundary = pair[1];
+						break;
+					}
+				}
+				getPostData(req, (err, postBody) =>
+				{
+					if (err)
+					{
+						answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, { error: err.message });
 					}
 					else
 					{
-						postBody = Buffer.concat(postChunks);
-						postChunks = null;
+						parseMultiPartFormData(postBody, boundary, (postData) =>
+						{
+							//console.log('parse complete');
+							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+						});
 					}
-				}
-				parseMultiPartFormData(postBody, boundary, (postData) =>
-				{
-					//console.log('parse complete');
-					answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
 				});
-			});
+			}
 		}
 		else
 		{
 			answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
 		}
 	}
+}
+
+function getPostData(req, callback)
+{
+	let postChunks = [];
+	let postLength = 0;
+	req.on('data', onData);
+	let hasError = false;
+
+	function onData(chunk)
+	{
+		postLength += chunk.byteLength;
+		if (postLength > MAX_FILE_LENGTH)
+		{
+			req.removeListener('data', onData);
+			hasError = true;
+		}
+		else
+		{
+			postChunks.push(chunk);
+		}
+	}
+	req.on('end', () =>
+	{
+		//console.log('all post data received');
+		if (hasError)
+		{
+			callback({ message: `Max upload size (with headers) is ${MAX_FILE_LENGTH} bytes` });
+		}
+		else
+		{
+			if (postLength === 0)
+			{
+				callback({ message: 'Size of post data is 0' });
+			}
+			else
+			{
+				let postBody = Buffer.concat(postChunks);
+				callback(null, postBody);
+			}
+		}
+	});
 }
 
 function parseMultiPartFormData(postBody, boundary, callback)
@@ -889,13 +910,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 							const iconnClassName = getIconClassName(ext);
 							const showInBrowser = !isDirectory && canShowInBrowser(ext);
 							hrefs.push({ value:
-`			<div class="main_container__first_column">
-				<div class="${iconnClassName}"></div>
-				<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `
-				<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
-			</div>
-			<span>${sizeStr}</span>
-			<span>${modify}</span>
+`				<div class="main_container__first_column">
+					<input type="checkbox" name="">
+					<div class="${iconnClassName}"></div>
+					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `
+					<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+				</div>
+				<span>${sizeStr}</span>
+				<span>${modify}</span>
 `, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 							if (hrefs.length === files.length)
 							{
