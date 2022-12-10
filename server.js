@@ -854,19 +854,19 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 					const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
 					const iconnClassName = getIconClassName('folder');
 					hrefsResult =
-	`			<div class="main_container__first_column">
-					<div class="${iconnClassName}"></div>
-					<a href="/">[/]</a>
-				</div>
-				<span>${folderSizeStub}</span>
-				<span>-</span>
-				<div class="main_container__first_column">
-					<div class = "${iconnClassName}"></div>
-					<a href="${backUrl}">[..]</a>
-				</div>
-				<span>${folderSizeStub}</span>
-				<span>-</span>
-	`;
+`			<div class="main_container__first_column">
+				<div class="${iconnClassName}"></div>
+				<a href="/">[/]</a>
+			</div>
+			<span>${folderSizeStub}</span>
+			<span>-</span>
+			<div class="main_container__first_column">
+				<div class = "${iconnClassName}"></div>
+				<a href="${backUrl}">[..]</a>
+			</div>
+			<span>${folderSizeStub}</span>
+			<span>-</span>
+`;
 					folderName = urlHeader.slice(lastField + 1);
 				}
 				if (files.length > 0)
@@ -889,14 +889,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 							const iconnClassName = getIconClassName(ext);
 							const showInBrowser = !isDirectory && canShowInBrowser(ext);
 							hrefs.push({ value:
-	`			<div class="main_container__first_column">
-					<div class="${iconnClassName}"></div>
-					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
-					${showInBrowser ? `<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
-				</div>
-				<span>${sizeStr}</span>
-				<span>${modify}</span>
-	`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+`			<div class="main_container__first_column">
+				<div class="${iconnClassName}"></div>
+				<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `
+				<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+			</div>
+			<span>${sizeStr}</span>
+			<span>${modify}</span>
+`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 							if (hrefs.length === files.length)
 							{
 								const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
