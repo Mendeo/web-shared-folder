@@ -39,6 +39,8 @@ const DIRECTORY_MODE = Number(process.env.SERVER_DIRECTORY_MODE);
 const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE;
 const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_PORT);
 const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
+const UPLOAD_ENABLE = Number(process.env.SERVER_UPLOAD_ENABLE);
+
 let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
 
 const MAX_FILE_LENGTH = 2147483647;
@@ -384,7 +386,7 @@ function app(req, res)
 					}
 					else
 					{
-						if (contentType[0] === 'multipart/form-data')
+						if (UPLOAD_ENABLE && contentType[0] === 'multipart/form-data')
 						{
 							let boundary = '';
 							for (let i = 1; i < contentType.length; i++)
@@ -402,10 +404,14 @@ function app(req, res)
 								answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
 							});
 						}
-						else
+						else if (contentType[0] === 'application/x-www-form-urlencoded')
 						{
 							const postData = parseXwwwFormUrlEncoded(postBody);
 							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+						}
+						else
+						{
+							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
 						}
 					}
 				});
@@ -570,8 +576,8 @@ function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage,
 {
 
 	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
-	if (paramsGet) console.log(paramsGet);
-	if (postData) console.log(postData);
+	//if (paramsGet) console.log(paramsGet);
+	//if (postData) console.log(postData);
 }
 
 function sendCachedFile(res, file, contentType, acceptEncoding)
@@ -732,10 +738,17 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 					}
 					else if (postData.dir)
 					{
-						createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
+						if (UPLOAD_ENABLE)
 						{
-							generateAndSendIndexHtmlAlias(errorMessage);
-						});
+							createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
+							{
+								generateAndSendIndexHtmlAlias(errorMessage);
+							});
+						}
+						else
+						{
+							generateAndSendIndexHtmlAlias();
+						}
 					}
 					else if (Object.keys(postData).length < 2)
 					{
@@ -749,10 +762,17 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 						}
 						else if (postData.delete)
 						{
-							deleteFiles(filePath, postData, (errorMessage) =>
+							if (UPLOAD_ENABLE)
 							{
-								generateAndSendIndexHtmlAlias(errorMessage);
-							});
+								deleteFiles(filePath, postData, (errorMessage) =>
+								{
+									generateAndSendIndexHtmlAlias(errorMessage);
+								});
+							}
+							else
+							{
+								generateAndSendIndexHtmlAlias();
+							}
 						}
 						else
 						{
@@ -1181,21 +1201,25 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				return  _indexHtmlbase[0] + clientLang +
 						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[2] + folderName +
-						_indexHtmlbase[3] + getTranslation('downloadZip', localeTranslation) +
-						_indexHtmlbase[4] + getTranslation('deleteFiles', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('selectAll', localeTranslation) +
-						_indexHtmlbase[6] + getTranslation('deselectAll', localeTranslation) +
-						_indexHtmlbase[7] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[8] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[9] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[10] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[11] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[12] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[13] + hrefsResult +
-						_indexHtmlbase[14] + getTranslation('createFolder', localeTranslation) +
-						_indexHtmlbase[15] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[16] + errorMessage +
-						_indexHtmlbase[17];
+						_indexHtmlbase[3] + getTranslation('selectAll', localeTranslation) +
+						_indexHtmlbase[4] + getTranslation('deselectAll', localeTranslation) +
+						_indexHtmlbase[5] + getTranslation('downloadZip', localeTranslation) +
+						_indexHtmlbase[6] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
+						_indexHtmlbase[8]) : ''}` +
+						_indexHtmlbase[9] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[10] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[11] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[12] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[13] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[14] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[15] + hrefsResult +
+						_indexHtmlbase[16] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[17] + getTranslation('createFolder', localeTranslation) +
+						_indexHtmlbase[18] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[19]) : ''}` +
+						_indexHtmlbase[20] + errorMessage +
+						_indexHtmlbase[21];
 			}
 		}
 	});
