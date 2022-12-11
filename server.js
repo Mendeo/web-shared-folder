@@ -1162,8 +1162,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[10] + getTranslation('modifyDate', localeTranslation) +
 						_indexHtmlbase[11] + (hasFiles ? sortLinks[2] : '') +
 						_indexHtmlbase[12] + hrefsResult +
-						_indexHtmlbase[13] + errorMessage +
-						_indexHtmlbase[14];
+						_indexHtmlbase[13] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[14] + errorMessage +
+						_indexHtmlbase[15];
 			}
 		}
 	});
