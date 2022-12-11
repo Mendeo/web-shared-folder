@@ -61,6 +61,20 @@
 {
 	color: tomato;
 }
+.controls
+{
+	display: flex;
+	flex-wrap: wrap;
+	max-width: 300px;
+	justify-content: space-between;
+	row-gap: 0.2rem;
+}
+
+.controls > *
+{
+	width: 47%;
+}
+
 @media screen and (max-width: 900px)
 {
 	.main_container
