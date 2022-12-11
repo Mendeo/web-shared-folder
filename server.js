@@ -724,12 +724,11 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 				const responseCookie = [];
 				const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
 				let localeTranslation = _locales.get(clientLang);
-
-				function generateAndSendIndexHtmlAlias(errorMessage)
+				if (postData?.error)
 				{
-					generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
+					generateAndSendIndexHtmlAlias(postData.error);
 				}
-				if (postData && !Array.isArray(postData) && typeof postData === 'object')
+				else if (postData && !Array.isArray(postData) && typeof postData === 'object')
 				{
 					if (Object.keys(postData).length < 2)
 					{
@@ -764,6 +763,11 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 				else
 				{
 					generateAndSendIndexHtmlAlias();
+				}
+
+				function generateAndSendIndexHtmlAlias(errorMessage)
+				{
+					generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
 				}
 			}
 			else
