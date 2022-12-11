@@ -29,9 +29,11 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const cpus = require('os').cpus;
+const os = require('os');
 const zlib = require('zlib');
 const JSZip = require('jszip');
+const cpus = os.cpus;
+const net = os.networkInterfaces();
 
 const USE_CLUSTER_MODE = Number(process.env.SERVER_USE_CLUSTER_MODE);
 const SHOULD_RESTART_WORKER = Number(process.env.SERVER_SHOULD_RESTART_WORKER);
@@ -124,6 +126,30 @@ if (cluster.isPrimary)
 	console.log('Port = ' + PORT);
 	console.log('Root = ' + ROOT_PATH);
 	if (USE_CLUSTER_MODE) console.log('CPUs number = ' + numCPUs);
+	console.log();
+	console.log('Available on:');
+	getIpV4().forEach((ip) => console.log(ip));
+	console.log();
+}
+
+function getIpV4()
+{
+	const ips = [];
+	for (let iface in net)
+	{
+		const ifaceData = net[iface];
+		if (Array.isArray(ifaceData) && ifaceData.length > 0)
+		{
+			for (let ip of ifaceData)
+			{
+				if (ip.family === 'IPv4' || Number(ip.family) === 4)
+				{
+					ips.push(ip.address);
+				}
+			}
+		}
+	}
+	return ips;
 }
 
 let _generateIndex = false;
@@ -162,7 +188,12 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		}
 		if (_generateIndex)
 		{
-			if (cluster.isPrimary) console.log('Directory watch mode.');
+			if (cluster.isPrimary)
+			{
+				console.log('Directory watch mode.');
+				if (DISABLE_COMPRESSION) console.log('Compression is disable.');
+				if (UPLOAD_ENABLE) console.log('\x1b[31m%s\x1b[0m', 'Upload to server is enabled!');
+			}
 			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'app_files', 'index.html')).toString().split('~%~');
 			_favicon = fs.readFileSync(path.join(__dirname, 'app_files', 'favicon.ico'));
 			_index_js = fs.readFileSync(path.join(__dirname, 'app_files', 'index.js'));
@@ -170,7 +201,6 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
 			readIconsFiles();
 			readTranslationFiles();
-			if (DISABLE_COMPRESSION) console.log('Compression is disable.');
 		}
 		let isHttps = key && cert;
 		if (cluster.isPrimary)
