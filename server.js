@@ -724,13 +724,20 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 				const responseCookie = [];
 				const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
 				let localeTranslation = _locales.get(clientLang);
-				if (postData?.error)
+				if (postData && !Array.isArray(postData) && typeof postData === 'object')
 				{
-					generateAndSendIndexHtmlAlias(postData.error);
-				}
-				else if (postData && !Array.isArray(postData) && typeof postData === 'object')
-				{
-					if (Object.keys(postData).length < 2)
+					if (postData.error)
+					{
+						generateAndSendIndexHtmlAlias(postData.error);
+					}
+					else if (postData.dir)
+					{
+						createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
+						{
+							generateAndSendIndexHtmlAlias(errorMessage);
+						});
+					}
+					else if (Object.keys(postData).length < 2)
 					{
 						generateAndSendIndexHtmlAlias('No files selected!');
 					}
@@ -878,13 +885,31 @@ function postDataHasFiles(postData)
 	return Array.isArray(postData) && postData.length > 0 && postData.reduce((hasFileName, item) => hasFileName & (item.fileName && item.fileName !== '' && item.data !== undefined), true);
 }
 
+function createUserDir(postData, absolutePath, localeTranslation, callback)
+{
+	if (!postData.dir || postData.dir.length === 0)
+	{
+		callback(`${getTranslation('createFolderError', localeTranslation)}`);
+	}
+	else
+	{
+		fs.mkdir(path.join(absolutePath, postData.dir), { recursive: true }, (err) =>
+		{
+			if (err)
+			{
+				callback(`${getTranslation('createFolderError', localeTranslation)}`);
+			}
+			else
+			{
+				callback(null);
+			}
+		});
+	}
+}
+
 function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 {
-	if (postData.error)
-	{
-		callback(`${getTranslation('sendingFilesError', localeTranslation)} ${postData.error}`);
-	}
-	else if (!postData?.length || postData.length === 0)
+	if (!postData?.length || postData.length === 0)
 	{
 		callback(`${getTranslation('sendingFilesError', localeTranslation)} No data received.`);
 	}
@@ -1156,19 +1181,19 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				return  _indexHtmlbase[0] + clientLang +
 						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[2] + folderName +
-						_indexHtmlbase[3] + urlPath +
-						_indexHtmlbase[4] + getTranslation('downloadZip', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('deleteFiles', localeTranslation) +
-						_indexHtmlbase[6] + getTranslation('selectAll', localeTranslation) +
-						_indexHtmlbase[7] + getTranslation('deselectAll', localeTranslation) +
-						_indexHtmlbase[8] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[9] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[10] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[11] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[12] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[13] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[14] + hrefsResult +
-						_indexHtmlbase[15] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[3] + getTranslation('downloadZip', localeTranslation) +
+						_indexHtmlbase[4] + getTranslation('deleteFiles', localeTranslation) +
+						_indexHtmlbase[5] + getTranslation('selectAll', localeTranslation) +
+						_indexHtmlbase[6] + getTranslation('deselectAll', localeTranslation) +
+						_indexHtmlbase[7] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[8] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[9] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[10] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[11] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[12] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[13] + hrefsResult +
+						_indexHtmlbase[14] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[15] + getTranslation('createFolder', localeTranslation) +
 						_indexHtmlbase[16] + errorMessage +
 						_indexHtmlbase[17];
 			}
@@ -1386,7 +1411,6 @@ function canShowInBrowser(ext)
 	case '.ogg':
 	case '.m4a':
 	case '.ra':
-	case '.3gpp':
 	case '.ts':
 	case '.mp4':
 	case '.mpeg':
@@ -1396,8 +1420,6 @@ function canShowInBrowser(ext)
 	case '.m4v':
 	case '.mng':
 	case '.asx':
-	case '.wmv':
-	case '.avi':
 	case '.md':
 		return true;
 	}

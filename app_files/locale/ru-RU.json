@@ -16,5 +16,7 @@
 	"deleteFiles": "Удалить выбранное",
 	"uploadFiles": "Загрузить файлы на сервер",
 	"selectAll": "Выбрать всё",
-	"deselectAll": "Убрать всё"
+	"deselectAll": "Убрать всё",
+	"createFolder": "Создать папку",
+	"createFolderError": "Не удалось создать папку"
 }

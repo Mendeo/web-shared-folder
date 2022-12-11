@@ -16,5 +16,7 @@
 	"deleteFiles": "Delete selected",
 	"uploadFiles": "Upload files",
 	"selectAll": "Select all",
-	"deselectAll": "Deselect all"
+	"deselectAll": "Deselect all",
+	"createFolder": "Create folder",
+	"createFolderError": "Failed to create folder"
 }

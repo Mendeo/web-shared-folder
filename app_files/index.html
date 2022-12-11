@@ -12,7 +12,7 @@
 	<body>
 		<!--Current path-->
 		<h2>~%~</h2>
-		<form  method="post" action="~%~" enctype="application/x-www-form-urlencoded" name="select_files">
+		<form  method="post" enctype="application/x-www-form-urlencoded" name="select_files">
 			<div class="controls">
 				<!--Download files submit-->
 				<input type="submit" name="download" value="~%~">
@@ -58,6 +58,11 @@
 			<input type="file" name="upload" multiple>
 			<!--Upload files-->
 			<input type="submit" value="~%~">
+		</form>
+		<form class="mk_dir" method="post" enctype="application/x-www-form-urlencoded" name="mk_dir">
+			<!--Create folder files-->
+			<input type="submit" value="~%~">
+			<input type="text" name="dir">
 		</form>
 		<!--Error while sending file-->
 		<p class="error_message">~%~</p>
