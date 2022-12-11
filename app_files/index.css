@@ -3,41 +3,6 @@
 	--main-bg-color-dark: #1e1e1e;
 	--main-bg-color-light: white;
 }
-@media (prefers-color-scheme: dark)
-{
-	body
-	{
-		background-color: var(--main-bg-color-dark);
-		color: #d4d4d4;
-	}
-	.header
-	{
-		background-color: var(--main-bg-color-dark);
-	}
-	.footer
-	{
-		background-color: var(--main-bg-color-dark);
-	}
-	a
-	{
-		filter: invert(100%) brightness(80%) contrast(80%);
-	}
-	h2
-	{
-		color: #c8c8c8;
-	}
-}
-@media (prefers-color-scheme: light)
-{
-	.header
-	{
-		background-color: var(--main-bg-color-light);
-	}
-	.footer
-	{
-		background-color: var(--main-bg-color-light);
-	}
-}
 
 .main_container
 {
@@ -76,6 +41,7 @@
 {
 	display: flex;
 	justify-content: flex-start;
+	flex-wrap: nowrap;
 	column-gap: 0.2rem;
 }
 .error_message
@@ -90,25 +56,28 @@
 	justify-content: space-between;
 	row-gap: 0.2rem;
 }
-
 .controls > *
 {
 	width: 47%;
 }
-
 .header
 {
-	position: -webkit-sticky; /* Safari */
 	position: sticky;
 	top: 0px;
+	left: 0px;
+	width: 100%;
 	z-index: 1;
 }
-
 .footer
 {
-	position: -webkit-sticky; /* Safari */
 	position: sticky;
 	bottom: 0px;
+	left: 0px;
+	width: 100%;
+}
+.footer div:last-child
+{
+	height: 0.3rem;
 }
 
 @media screen and (max-width: 900px)
@@ -116,5 +85,49 @@
 	.main_container
 	{
 		grid-template-columns: max-content repeat(2, auto);
+	}
+	.header
+	{
+		position: static;
+	}
+	.footer
+	{
+		position: static;
+	}
+}
+
+@media (prefers-color-scheme: dark)
+{
+	body
+	{
+		background-color: var(--main-bg-color-dark);
+		color: #d4d4d4;
+	}
+	.header
+	{
+		background-color: var(--main-bg-color-dark);
+	}
+	.footer
+	{
+		background-color: var(--main-bg-color-dark);
+	}
+	a
+	{
+		filter: invert(100%) brightness(80%) contrast(80%);
+	}
+	h2
+	{
+		color: #c8c8c8;
+	}
+}
+@media (prefers-color-scheme: light)
+{
+	.header
+	{
+		background-color: var(--main-bg-color-light);
+	}
+	.footer
+	{
+		background-color: var(--main-bg-color-light);
 	}
 }
