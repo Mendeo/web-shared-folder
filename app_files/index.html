@@ -10,19 +10,21 @@
 		<link rel="stylesheet" href="/index.css">
 	</head>
 	<body>
-		<!--Current path-->
-		<h2>~%~</h2>
 		<form  method="post" enctype="application/x-www-form-urlencoded" name="select_files">
-			<div class="controls">
-				<!--Download files submit-->
-				<input type="submit" name="download" value="~%~">
-				<!--Delete files submit-->
-				<input type="submit" name="delete" value="~%~">
-				<!--If JS is enabled, then the "Select all" and "Deselect all" buttons appears below.-->
-				<button id="selectAll" hidden>~%~</button>
-				<button id="deselectAll" hidden>~%~</button>
+			<div class="header">
+				<!--Current path-->
+				<h2>~%~</h2>
+				<div class="controls">
+					<!--Download files submit-->
+					<input type="submit" name="download" value="~%~">
+					<!--Delete files submit-->
+					<input type="submit" name="delete" value="~%~">
+					<!--If JS is enabled, then the "Select all" and "Deselect all" buttons appears below.-->
+					<button id="selectAll" hidden>~%~</button>
+					<button id="deselectAll" hidden>~%~</button>
+				</div>
+				<hr>
 			</div>
-			<hr>
 			<div class="main_container">
 				<div class="main_container__head">
 					<!--Name-->
@@ -52,20 +54,24 @@
 ~%~
 			</div>
 		</form>
-		<hr>
-		<!--Upload files form-->
-		<form class="upload_files" method="post" enctype="multipart/form-data" name="upload_files">
-			<input type="file" name="upload" multiple>
-			<!--Upload files-->
-			<input type="submit" value="~%~">
-		</form>
-		<form class="mk_dir" method="post" enctype="application/x-www-form-urlencoded" name="mk_dir">
-			<!--Create folder files-->
-			<input type="submit" value="~%~">
-			<input type="text" name="dir">
-		</form>
-		<!--Error while sending file-->
-		<p class="error_message">~%~</p>
+		<div class="footer">
+			<hr>
+			<!--Create folder form-->
+			<form class="mk_dir" method="post" enctype="application/x-www-form-urlencoded" name="mk_dir">
+				<!--Create folder files-->
+				<input type="submit" value="~%~">
+				<input type="text" name="dir">
+			</form>
+			<br>
+			<!--Upload files form-->
+			<form class="upload_files" method="post" enctype="multipart/form-data" name="upload_files">
+				<input type="file" name="upload" multiple>
+				<!--Upload files-->
+				<input type="submit" value="~%~">
+			</form>
+			<!--Error while sending file-->
+			<p class="error_message">~%~</p>
+		</div>
 		<script type="text/javascript" src="/index.js"></script>
 	</body>
 </html>

@@ -1192,8 +1192,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[11] + getTranslation('modifyDate', localeTranslation) +
 						_indexHtmlbase[12] + (hasFiles ? sortLinks[2] : '') +
 						_indexHtmlbase[13] + hrefsResult +
-						_indexHtmlbase[14] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[15] + getTranslation('createFolder', localeTranslation) +
+						_indexHtmlbase[14] + getTranslation('createFolder', localeTranslation) +
+						_indexHtmlbase[15] + getTranslation('uploadFiles', localeTranslation) +
 						_indexHtmlbase[16] + errorMessage +
 						_indexHtmlbase[17];
 			}

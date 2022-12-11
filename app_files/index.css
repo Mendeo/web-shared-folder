@@ -1,9 +1,22 @@
+:root
+{
+	--main-bg-color-dark: #1e1e1e;
+	--main-bg-color-light: white;
+}
 @media (prefers-color-scheme: dark)
 {
 	body
 	{
-		background-color: #1e1e1e;
+		background-color: var(--main-bg-color-dark);
 		color: #d4d4d4;
+	}
+	.header
+	{
+		background-color: var(--main-bg-color-dark);
+	}
+	.footer
+	{
+		background-color: var(--main-bg-color-dark);
 	}
 	a
 	{
@@ -14,6 +27,18 @@
 		color: #c8c8c8;
 	}
 }
+@media (prefers-color-scheme: light)
+{
+	.header
+	{
+		background-color: var(--main-bg-color-light);
+	}
+	.footer
+	{
+		background-color: var(--main-bg-color-light);
+	}
+}
+
 .main_container
 {
 	display: inline-grid;
@@ -73,6 +98,21 @@
 .controls > *
 {
 	width: 47%;
+}
+
+.header
+{
+	position: -webkit-sticky; /* Safari */
+	position: sticky;
+	top: 0px;
+	z-index: 1;
+}
+
+.footer
+{
+	position: -webkit-sticky; /* Safari */
+	position: sticky;
+	bottom: 0px;
 }
 
 @media screen and (max-width: 900px)
