@@ -1072,8 +1072,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				const iconnClassName = getIconClassName('folder');
 				hrefsResult =
 `			<div class="main_container__first_column">
-			<div class="${iconnClassName}"></div>
-			<a href="/">[/]</a>
+				<div class="${iconnClassName}"></div>
+				<a href="/">[/]</a>
 			</div>
 			<span>${folderSizeStub}</span>
 			<span>-</span>
@@ -1107,10 +1107,10 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						const showInBrowser = !isDirectory && canShowInBrowser(ext);
 						hrefs.push({ value:
 `				<div class="main_container__first_column">
-				<input type="checkbox" name="${encodeURIComponent(file.name)}">
-				<div class="${iconnClassName}"></div>
-				<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `
-				<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+					<input type="checkbox" name="${encodeURIComponent(file.name)}">
+					<div class="${iconnClassName}"></div>
+					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `
+					<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
 				</div>
 				<span>${sizeStr}</span>
 				<span>${modify}</span>
@@ -1155,16 +1155,18 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[3] + urlPath +
 						_indexHtmlbase[4] + getTranslation('downloadZip', localeTranslation) +
 						_indexHtmlbase[5] + getTranslation('deleteFiles', localeTranslation) +
-						_indexHtmlbase[6] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[7] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[8] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[9] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[10] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[11] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[12] + hrefsResult +
-						_indexHtmlbase[13] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[14] + errorMessage +
-						_indexHtmlbase[15];
+						_indexHtmlbase[6] + getTranslation('selectAll', localeTranslation) +
+						_indexHtmlbase[7] + getTranslation('deselectAll', localeTranslation) +
+						_indexHtmlbase[8] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[9] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[10] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[11] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[12] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[13] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[14] + hrefsResult +
+						_indexHtmlbase[15] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[16] + errorMessage +
+						_indexHtmlbase[17];
 			}
 		}
 	});

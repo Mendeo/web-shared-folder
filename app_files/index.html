@@ -8,18 +8,21 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="stylesheet" href="/icons.css">
 		<link rel="stylesheet" href="/index.css">
-		<script type="text/javascript" src="/index.js"></script>
 	</head>
 	<body>
 		<!--Current path-->
 		<h2>~%~</h2>
 		<form  method="post" action="~%~" enctype="application/x-www-form-urlencoded" name="select_files">
-			<b>
+			<div class="controls">
 				<!--Download files submit-->
 				<input type="submit" name="download" value="~%~">
 				<!--Delete files submit-->
 				<input type="submit" name="delete" value="~%~">
-			</b>
+				<!--If JS is enabled, then the "Select all" and "Deselect all" buttons appears below.-->
+				<br>
+				<button id="selectAll" hidden>~%~</button>
+				<button id="deselectAll" hidden>~%~</button>
+			</div>
 			<hr>
 			<div class="main_container">
 				<div class="main_container__head">
@@ -59,5 +62,6 @@
 		</form>
 		<!--Error while sending file-->
 		<p class="error_message">~%~</p>
+		<script type="text/javascript" src="/index.js"></script>
 	</body>
 </html>
