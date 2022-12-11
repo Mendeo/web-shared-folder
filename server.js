@@ -1152,17 +1152,18 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				return  _indexHtmlbase[0] + clientLang +
 						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[2] + folderName +
-						_indexHtmlbase[3] + getTranslation('downloadZip', localeTranslation) +
-						_indexHtmlbase[4] + getTranslation('deleteFiles', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[6] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[7] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[8] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[9] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[10] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[11] + hrefsResult +
-						_indexHtmlbase[12] + errorMessage +
-						_indexHtmlbase[13];
+						_indexHtmlbase[3] + urlPath +
+						_indexHtmlbase[4] + getTranslation('downloadZip', localeTranslation) +
+						_indexHtmlbase[5] + getTranslation('deleteFiles', localeTranslation) +
+						_indexHtmlbase[6] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[7] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[8] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[9] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[10] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[11] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[12] + hrefsResult +
+						_indexHtmlbase[13] + errorMessage +
+						_indexHtmlbase[14];
 			}
 		}
 	});
