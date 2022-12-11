@@ -78,10 +78,6 @@
 	justify-content: flex-start;
 	column-gap: 0.2rem;
 }
-.upload_files
-{
-
-}
 .error_message
 {
 	color: tomato;
