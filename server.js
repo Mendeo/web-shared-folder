@@ -739,7 +739,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 					{
 						if (postData.download)
 						{
-							zipFolder(res, filePath, postData);
+							zipFolder(res, urlPath, filePath, postData);
 						}
 						else if (postData.delete)
 						{
@@ -908,7 +908,7 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 	}
 }
 
-function zipFolder(res, absolutePath, postData)
+function zipFolder(res, urlPath, absolutePath, postData)
 {
 	const selectedFiles = [];
 	let keys = Object.keys(postData);
@@ -924,24 +924,14 @@ function zipFolder(res, absolutePath, postData)
 
 	let numberOfFile = 0;
 	let numberOfRecursive = 0;
-	let rootDir = '';
 
-	fs.stat(absolutePath, (err, stats) =>
+	let rootDir = path.dirname(absolutePath);
+	if (urlPath === '/')
 	{
-		if (err)
-		{
-			zipError(err, res);
-		}
-		else if (stats.isDirectory())
-		{
-			rootDir = absolutePath;
-		}
-		else
-		{
-			rootDir = path.dirname(absolutePath);
-		}
-		readFolderRecursive(absolutePath, true);
-	});
+		rootDir = ROOT_PATH;
+	}
+
+	readFolderRecursive(absolutePath, true);
 
 	function readFolderRecursive(folderPath, isRoot)
 	{
