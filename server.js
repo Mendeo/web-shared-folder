@@ -1152,7 +1152,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				return  _indexHtmlbase[0] + clientLang +
 						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[2] + folderName +
-						_indexHtmlbase[3] + getTranslation('downloadAll', localeTranslation) +
+						_indexHtmlbase[3] + getTranslation('downloadZip', localeTranslation) +
 						_indexHtmlbase[4] + getTranslation('deleteFiles', localeTranslation) +
 						_indexHtmlbase[5] + getTranslation('fileName', localeTranslation) +
 						_indexHtmlbase[6] + (hasFiles ? sortLinks[0] : '') +
