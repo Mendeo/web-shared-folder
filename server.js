@@ -555,7 +555,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			{
 				if (paramsGet?.download)
 				{
-					zipFolder(filePath, res);
+					zipFolder(filePath, res, urlPath);
 				}
 				else
 				{
@@ -966,10 +966,15 @@ function sendFile(res, filePath, size)
 
 }
 
-function zipFolder(folderPath, res)
+function zipFolder(folderPath, res, urlPath)
 {
-	const folderName = path.basename(folderPath);
-	const rootDir = path.dirname(folderPath);
+	let folderName = path.basename(folderPath);
+	let rootDir = path.dirname(folderPath);
+	if (urlPath === '/')
+	{
+		folderName = '';
+		rootDir = ROOT_PATH;
+	}
 	const zip = new JSZip();
 
 	let numberOfFile = 0;
