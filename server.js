@@ -996,7 +996,8 @@ function zipFolder(res, urlPath, absolutePath, postData)
 		if (key === 'download') continue;
 		if (postData[key] === 'on')
 		{
-			selectedFiles.push(decodeURIComponent(decodeURIComponent(key)));
+			const file = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key))
+			selectedFiles.push(file);
 		}
 	}
 	const zip = new JSZip();
@@ -1101,7 +1102,7 @@ function deleteFiles(absolutePath, postData, callback)
 		if (key === 'delete') continue;
 		if (postData[key] === 'on')
 		{
-			const fileName = decodeURIComponent(decodeURIComponent(key));
+			const fileName = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key));
 			const filePath = path.join(absolutePath, fileName);
 			fs.rm(filePath, { force: true, recursive: true }, (err) =>
 			{
@@ -1188,7 +1189,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						const showInBrowser = !isDirectory && canShowInBrowser(ext);
 						hrefs.push({ value:
 `				<div class="main_container__first_column">
-					<input type="checkbox" name="${encodeURIComponent(file.name)}">
+					<input type="checkbox" name="${Buffer.from(file.name).toString('base64url')}">
 					<div class="${iconnClassName}"></div>
 					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `
 					<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
