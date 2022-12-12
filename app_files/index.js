@@ -1,6 +1,7 @@
 'use strict';
 setClientLanguage();
-showSelectButtons();
+performSelectButtons();
+deleteFilesWarningDialog();
 
 function setClientLanguage()
 {
@@ -27,7 +28,7 @@ function setClientLanguage()
 	}
 }
 
-function showSelectButtons()
+function performSelectButtons()
 {
 	const selectAllButton = document.getElementById('selectAll');
 	const deselectAllButton = document.getElementById('deselectAll');
@@ -57,5 +58,52 @@ function showSelectButtons()
 		{
 			checkbox.checked = false;
 		}
+	}
+}
+
+function deleteFilesWarningDialog()
+{
+	if (sessionStorage.getItem('deleteWithoutAsk')) return;
+	const dialog = document.getElementById('delete-warning-dialog');
+	if (!dialog) return;
+	const filesForm = document.getElementById('filesForm');
+	const deleteButton = document.querySelector('#filesForm input[name="delete"');
+	deleteButton.addEventListener('click', (event) =>
+	{
+		event.preventDefault();
+		if (dialog.showModal)
+		{
+			dialog.showModal();
+		}
+		else
+		{
+			const message = document.getElementById('diaolog_message').innerText;
+			if (confirm(message)) submit();
+		}
+	});
+	if (dialog.showModal)
+	{
+		const doNotAsk = document.querySelector('#delete-warning-dialog input[type="checkbox"]');
+		dialog.addEventListener('close', () =>
+		{
+			if (dialog.returnValue === 'yes')
+			{
+				if (doNotAsk.checked)
+				{
+					sessionStorage.setItem('deleteWithoutAsk', true);
+				}
+				submit();
+			}
+		});
+	}
+
+	function submit()
+	{
+		const deleteInput = document.createElement('input');
+		deleteInput.type = 'hidden';
+		deleteInput.name = 'delete';
+		deleteInput.value = true;
+		filesForm.append(deleteInput);
+		filesForm.submit();
 	}
 }

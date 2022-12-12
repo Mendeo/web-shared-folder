@@ -18,5 +18,9 @@
 	"selectAll": "Select all",
 	"deselectAll": "Deselect all",
 	"createFolder": "Create folder",
-	"createFolderError": "Failed to create folder"
+	"createFolderError": "Failed to create folder",
+	"yes": "Yes",
+	"no": "No",
+	"deleteFilesWarning": "Are you sure you want to delete the selected files? <br>This operation cannot be undone.",
+	"deleteWithoutAsk": "Delete without confirmation"
 }

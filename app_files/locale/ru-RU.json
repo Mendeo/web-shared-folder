@@ -18,5 +18,9 @@
 	"selectAll": "Выбрать всё",
 	"deselectAll": "Убрать всё",
 	"createFolder": "Создать папку",
-	"createFolderError": "Не удалось создать папку"
+	"createFolderError": "Не удалось создать папку",
+	"yes": "Да",
+	"no": "Нет",
+	"deleteFilesWarning": "Вы действительно хотите удалить выбранные файлы? <br>Эту операцию нельзя отменить.",
+	"deleteWithoutAsk": "Удалять без подтверждения"
 }

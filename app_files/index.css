@@ -85,6 +85,22 @@
 	height: 0.3rem;
 }
 
+.dialog p
+{
+	text-align: center;
+}
+.dialog__buttons
+{
+	display: flex;
+	flex-wrap: nowrap;
+	justify-content: space-around;
+	margin-bottom: 0.5rem;
+}
+.dialog__buttons button
+{
+	min-width: 45%;
+}
+
 @media screen and (max-width: 900px)
 {
 	.main_container
@@ -98,6 +114,12 @@
 	.footer
 	{
 		position: static;
+	}
+	.dialog
+	{
+		left: 0px;
+		top: 0px;
+		position: absolute;
 	}
 }
 

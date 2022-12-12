@@ -10,7 +10,7 @@
 		<link rel="stylesheet" href="/index.css">
 	</head>
 	<body>
-		<form  method="post" enctype="application/x-www-form-urlencoded" name="select_files">
+		<form id="filesForm" method="post" enctype="application/x-www-form-urlencoded" name="filesForm">
 			<div class="header">
 				<!--Current path-->
 				<h2>~%~</h2>
@@ -70,7 +70,18 @@
 				<input type="submit" value="~%~">
 			</form>
 			<div></div>
-		</div>~%~
+		</div>
+		<dialog id="delete-warning-dialog" class="dialog">
+			<p><b id="diaolog_message">~%~</b></p>
+			<form method="dialog">
+				<div class="dialog__buttons">
+					<button value="yes">~%~</button>
+					<button value="no">~%~</button>
+				</div>
+				<input type="checkbox" name="doNotAsk">
+				<label for="doNotAsk">~%~</label>
+			</form>
+		</dialog>~%~
 		<!--Error while sending file-->
 		<p class="error_message footer">~%~</p>
 		<script type="text/javascript" src="/index.js"></script>
