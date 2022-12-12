@@ -4,6 +4,11 @@
 	--main-bg-color-light: white;
 }
 
+.hidden-in-flow
+{
+	visibility: hidden;
+}
+
 .main_container
 {
 	display: inline-grid;

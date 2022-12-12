@@ -32,7 +32,6 @@ function showSelectButtons()
 	const selectAllButton = document.getElementById('selectAll');
 	const deselectAllButton = document.getElementById('deselectAll');
 	const checkboxes = document.querySelectorAll('.main_container__first_column > input[type="checkbox"]');
-	console.log(checkboxes);
 
 	selectAllButton.addEventListener('click', (event) =>
 	{
