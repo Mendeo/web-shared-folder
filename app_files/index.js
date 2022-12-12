@@ -88,10 +88,7 @@ function deleteFilesWarningDialog()
 		{
 			if (dialog.returnValue === 'yes')
 			{
-				if (doNotAsk.checked)
-				{
-					sessionStorage.setItem('deleteWithoutAsk', true);
-				}
+				if (doNotAsk.checked) sessionStorage.setItem('deleteWithoutAsk', true);
 				submit();
 			}
 		});
