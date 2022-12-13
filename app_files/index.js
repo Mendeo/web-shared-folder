@@ -67,8 +67,8 @@ function deleteFilesWarningDialog()
 	if (sessionStorage.getItem('deleteWithoutAsk')) return;
 	const dialog = document.getElementById('delete-warning-dialog');
 	if (!dialog) return;
-	const filesForm = document.getElementById('filesForm');
-	const deleteButton = document.querySelector('#filesForm input[name="delete"');
+	const selectForm = document.getElementById('select_form');
+	const deleteButton = document.querySelector('#select_form input[name="delete"');
 	deleteButton.addEventListener('click', (event) =>
 	{
 		event.preventDefault();
@@ -101,8 +101,8 @@ function deleteFilesWarningDialog()
 		deleteInput.type = 'hidden';
 		deleteInput.name = 'delete';
 		deleteInput.value = true;
-		filesForm.append(deleteInput);
-		filesForm.submit();
+		selectForm.append(deleteInput);
+		selectForm.submit();
 	}
 }
 
@@ -114,7 +114,7 @@ function uploadProgressBar()
 	const errorFiled = document.querySelector('.error_message');
 	const MAX_FILE_LENGTH = 2147483647;
 
-	const progressBar = document.getElementById('progressBar');
+	const progressBar = document.querySelector('#upload_files + progress');
 
 	function showProgressBar()
 	{
