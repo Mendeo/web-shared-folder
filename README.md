@@ -6,11 +6,12 @@ Convenient http server on nodejs. Designed to share some folder on a local netwo
 
 Capabilities
 * Pages are automatically displayed in the user language (only two languages are available at the moment).
-* User can download the selected files and folders as a zip archive.
+* User can download the selected files and folders at once as a zip archive.
 * User can upload files to the server (if it is enabled on the server).
 * User can set file sorting by name, size or date.
 * It is possible to work over https protocol with an automatic redirect from http.
 * It is possible to enable basic HTTP authentication with a given username and password.
+* Can work without javascript enabled on the client side.
 
 ![Screenshot with files upload disabled](https://media.githubusercontent.com/media/Mendeo/web-shared-folder/upload/img/screenshot_upload_enabled.png)
 *Screenshot with files upload disabled*
