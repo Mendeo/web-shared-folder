@@ -13,10 +13,10 @@ Capabilities
 * It is possible to enable basic HTTP authentication with a given username and password.
 * Can work without javascript enabled on the client side.
 
-![Screenshot with files upload disabled](https://media.githubusercontent.com/media/Mendeo/web-shared-folder/upload/img/screenshot_upload_enabled.png)
+![Screenshot with files upload disabled](https://media.githubusercontent.com/media/Mendeo/web-shared-folder/upload/img/screenshot_upload_enabled.png)  
 *Screenshot with files upload disabled*
 
-![Screenshot with files upload enabled](https://media.githubusercontent.com/media/Mendeo/web-shared-folder/upload/img/screenshot_upload_disabled.png)
+![Screenshot with files upload enabled](https://media.githubusercontent.com/media/Mendeo/web-shared-folder/upload/img/screenshot_upload_disabled.png)  
 *Screenshot with files upload enabled*
 
 ## Installation
