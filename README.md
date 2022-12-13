@@ -12,10 +12,10 @@ Capabilities
 * It is possible to work over https protocol with an automatic redirect from http.
 * It is possible to enable basic HTTP authentication with a given username and password.
 
-![Screenshot with files upload disabled](https://github.com/Mendeo/web-shared-folder/blob/master/img/screenshot_upload_disabled.png)
+![Screenshot with files upload disabled](https://media.githubusercontent.com/media/Mendeo/web-shared-folder/upload/img/screenshot_upload_enabled.png)
 *Screenshot with files upload disabled*
 
-![Screenshot with files upload enabled](https://github.com/Mendeo/web-shared-folder/blob/master/img/screenshot_upload_enabled.png)
+![Screenshot with files upload enabled](https://media.githubusercontent.com/media/Mendeo/web-shared-folder/upload/img/screenshot_upload_disabled.png)
 *Screenshot with files upload enabled*
 
 ## Installation
