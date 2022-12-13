@@ -101,6 +101,16 @@
 	min-width: 45%;
 }
 
+.progress-bar-background
+{
+	background-color: rgba(48, 48, 48, 0.6);
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	z-index: 1;
+}
+
 @media screen and (max-width: 900px)
 {
 	.main_container

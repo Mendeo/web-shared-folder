@@ -2,6 +2,7 @@
 setClientLanguage();
 performSelectButtons();
 deleteFilesWarningDialog();
+uploadProgressBar();
 
 function setClientLanguage()
 {
@@ -102,5 +103,81 @@ function deleteFilesWarningDialog()
 		deleteInput.value = true;
 		filesForm.append(deleteInput);
 		filesForm.submit();
+	}
+}
+
+function uploadProgressBar()
+{
+	const uploadForm = document.getElementById('upload_files');
+	if (!uploadForm) return;
+	const inputFiles = document.querySelector('#upload_files input[type=file]');
+	const errorFiled = document.querySelector('.error_message');
+	const MAX_FILE_LENGTH = 2147483647;
+
+	const progressBar = document.getElementById('progressBar');
+	removeProgressBar();
+
+	function showProgressBar()
+	{
+		progressBar.hidden = false;
+	}
+
+	function removeProgressBar()
+	{
+		progressBar.hidden = true;
+	}
+
+	const xhr = new XMLHttpRequest();
+	xhr.upload.addEventListener('progress', (event) =>
+	{
+		if (event.total > MAX_FILE_LENGTH)
+		{
+			errorFiled.innerHTML = 'Maximum files upload size exceeded';
+			removeProgressBar();
+			xhr.abort();
+			return;
+		}
+		const percentLoaded = Math.round((event.loaded / event.total) * 100);
+		//console.log(percentLoaded);
+		progressBar.value = percentLoaded;
+	});
+	xhr.addEventListener('load', () =>
+	{
+		progressBar.value = 0;
+		removeProgressBar();
+		window.location = window.location.href;
+	});
+
+	xhr.addEventListener('error', () =>
+	{
+		progressBar.value = 0;
+		removeProgressBar();
+		errorFiled.innerHTML = 'Error occurred!';
+	});
+
+	uploadForm.addEventListener('submit', (event) =>
+	{
+		event.preventDefault();
+		const formData = new FormData(uploadForm);
+		if (inputFiles.files.length === 0) return;
+		const totalSize = filesSize(inputFiles.files);
+		if (totalSize <= 5242880)
+		{
+			uploadForm.submit();
+			return;
+		}
+		showProgressBar();
+		xhr.open('post', location.href, true);
+		xhr.send(formData);
+	});
+
+	function filesSize(files)
+	{
+		let size = 0;
+		for (let file of files)
+		{
+			size += file.size;
+		}
+		return size;
 	}
 }

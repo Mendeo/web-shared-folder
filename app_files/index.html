@@ -64,11 +64,12 @@
 			</form>
 			<br>
 			<!--Upload files form-->
-			<form class="upload_files" method="post" enctype="multipart/form-data" name="upload_files">
+			<form id="upload_files" class="upload_files" method="post" enctype="multipart/form-data" name="upload_files">
 				<input type="file" name="upload" multiple>
 				<!--Upload files-->
 				<input type="submit" value="~%~">
 			</form>
+			<progress id="progressBar" max="100"></progress>
 			<div></div>
 		</div>
 		<dialog id="delete-warning-dialog" class="dialog">
