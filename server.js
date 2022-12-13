@@ -104,6 +104,8 @@ If the keys <username> and <password> are given, then HTTP authentication is ena
 All command line options can also be set in the environment variables: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
 Options specified on the command line have higher precedence.
 
+In order to allow users not only download files and folders from server, but also upload it to the server, it is necessary to set the environment variable SERVER_UPLOAD_ENABLE to 1.
+
 You can set the page title in the SERVER_DIRECTORY_MODE_TITLE environment variable.
 
 It is possible to run server in cluster mode. To do this, set the SERVER_USE_CLUSTER_MODE environment variable to 1.
