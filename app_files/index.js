@@ -115,7 +115,6 @@ function uploadProgressBar()
 	const MAX_FILE_LENGTH = 2147483647;
 
 	const progressBar = document.getElementById('progressBar');
-	removeProgressBar();
 
 	function showProgressBar()
 	{
