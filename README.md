@@ -6,12 +6,18 @@ Convenient http server on nodejs. Designed to share some folder on a local netwo
 
 Capabilities
 * Pages are automatically displayed in the user language (only two languages are available at the moment).
-* The user can download the entire folder as a zip archive.
-* The user can set file sorting by name, size or date.
+* User can download the selected files and folders at once as a zip archive.
+* User can upload files to the server (if it is enabled on the server).
+* User can set file sorting by name, size or date.
 * It is possible to work over https protocol with an automatic redirect from http.
 * It is possible to enable basic HTTP authentication with a given username and password.
+* Can work without javascript enabled on the client side.
 
-![Screenshot](https://github.com/Mendeo/web-shared-folder/blob/master/img/Screenshot.png)
+![Screenshot with files upload disabled](https://media.githubusercontent.com/media/Mendeo/web-shared-folder/upload/img/screenshot_upload_enabled.png)  
+*Screenshot with files upload disabled*
+
+![Screenshot with files upload enabled](https://media.githubusercontent.com/media/Mendeo/web-shared-folder/upload/img/screenshot_upload_disabled.png)  
+*Screenshot with files upload enabled*
 
 ## Installation
 ```bash
@@ -30,6 +36,8 @@ In https mode, it is possible to enable automatic redirection from http to https
 If the keys \<username\> and \<password\> are given, then HTTP authentication is enabled with the given login and password.
 
 **All command line options can also be set in the environment variables: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.** Options specified on the command line have higher precedence.
+
+In order to allow users not only download files and folders from server, but also upload it to the server, it is necessary to set the environment variable **SERVER_UPLOAD_ENABLE** to 1.
 
 You can set the page title in the **SERVER_DIRECTORY_MODE_TITLE** environment variable.
 

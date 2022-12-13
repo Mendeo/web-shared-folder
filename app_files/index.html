@@ -1,38 +1,89 @@
 <!DOCTYPE html>
+<!--Language-->
 <html lang="~%~">
 	<head>
+		<!--Title-->
 		<title>~%~</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="stylesheet" href="/icons.css">
 		<link rel="stylesheet" href="/index.css">
 	</head>
-	<script type="text/javascript" src="/index.js"></script>
 	<body>
-		<h2>~%~</h2>
-		<b><a href="~%~">~%~</a></b>
-		<hr>
-		<div class="main_container">
-			<div class="main_container__head">
-				<b>~%~</b>
-				<div>
-					~%~
+		<form id="filesForm" method="post" enctype="application/x-www-form-urlencoded" name="filesForm">
+			<div class="header">
+				<!--Current path-->
+				<h2>~%~</h2>
+				<div class="controls">
+					<!--If JS is enabled, then the "Select all" and "Deselect all" buttons appears below.-->
+					<button id="selectAll" hidden>~%~</button>
+					<button id="deselectAll" hidden>~%~</button>
+					<!--Download files submit-->
+					<input type="submit" name="download" value="~%~">~%~
+					<!--Delete files submit-->
+					<input type="submit" name="delete" value="~%~">~%~
 				</div>
+				<hr>
 			</div>
-			<div class="main_container__head">
-				<b>~%~</b>
-				<div>
-					~%~
+			<div class="main_container">
+				<div class="main_container__head">
+					<!--Name-->
+					<b>~%~</b>
+					<div>
+						<!--Sort arrows-->
+						~%~
+					</div>
 				</div>
-			</div>
-			<div class="main_container__head">
-				<b>~%~</b>
-				<div>
-					~%~
+				<div class="main_container__head">
+					<!--Size-->
+					<b>~%~</b>
+					<div>
+						<!--Sort arrows-->
+						~%~
+					</div>
 				</div>
-			</div>
+				<div class="main_container__head">
+					<!--Date-->
+					<b>~%~</b>
+					<div>
+						<!--Sort arrows-->
+						~%~
+					</div>
+				</div>
+				<!--Links to files and folders-->
 ~%~
+			</div>
+		</form>~%~
+		<div class="footer">
+			<hr>
+			<!--Create folder form-->
+			<form class="mk_dir" method="post" enctype="application/x-www-form-urlencoded" name="mk_dir">
+				<!--Create folder files-->
+				<input type="submit" value="~%~">
+				<input type="text" name="dir">
+			</form>
+			<br>
+			<!--Upload files form-->
+			<form class="upload_files" method="post" enctype="multipart/form-data" name="upload_files">
+				<input type="file" name="upload" multiple>
+				<!--Upload files-->
+				<input type="submit" value="~%~">
+			</form>
+			<div></div>
 		</div>
-		<hr>
+		<dialog id="delete-warning-dialog" class="dialog">
+			<p><b id="diaolog_message">~%~</b></p>
+			<form method="dialog">
+				<div class="dialog__buttons">
+					<button value="yes">~%~</button>
+					<button value="no">~%~</button>
+				</div>
+				<input type="checkbox" name="doNotAsk">
+				<label for="doNotAsk">~%~</label>
+			</form>
+		</dialog>~%~
+		<!--Error while sending file-->
+		<p class="error_message footer">~%~</p>
+		<script type="text/javascript" src="/index.js"></script>
 	</body>
 </html>

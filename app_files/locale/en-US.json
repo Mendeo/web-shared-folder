@@ -1,5 +1,5 @@
 {
-	"downloadAll": "Download all folder",
+	"downloadZip": "Download selected",
 	"fileName": "Name",
 	"fileSize": "Size",
 	"modifyDate": "Modify date",
@@ -11,5 +11,16 @@
 	"sizeGiB": "GiB",
 	"sizeTiB": "TiB",
 	"sizePiB": "PiB",
-	"linkToOpenInBrowser": "Link to open in browser"
+	"linkToOpenInBrowser": "Link to open in browser",
+	"sendingFilesError": "An error occurred while transferring the file. Not all files have been saved: ",
+	"deleteFiles": "Delete selected",
+	"uploadFiles": "Upload files",
+	"selectAll": "Select all",
+	"deselectAll": "Deselect all",
+	"createFolder": "Create folder",
+	"createFolderError": "Failed to create folder",
+	"yes": "Yes",
+	"no": "No",
+	"deleteFilesWarning": "Are you sure you want to delete the selected files? <br>This operation cannot be undone.",
+	"deleteWithoutAsk": "Delete without confirmation"
 }

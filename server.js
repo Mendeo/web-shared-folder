@@ -29,9 +29,11 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 const fs = require('fs');
-const cpus = require('os').cpus;
+const os = require('os');
 const zlib = require('zlib');
 const JSZip = require('jszip');
+const cpus = os.cpus;
+const net = os.networkInterfaces();
 
 const USE_CLUSTER_MODE = Number(process.env.SERVER_USE_CLUSTER_MODE);
 const SHOULD_RESTART_WORKER = Number(process.env.SERVER_SHOULD_RESTART_WORKER);
@@ -39,7 +41,12 @@ const DIRECTORY_MODE = Number(process.env.SERVER_DIRECTORY_MODE);
 const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE;
 const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_PORT);
 const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
+const UPLOAD_ENABLE = Number(process.env.SERVER_UPLOAD_ENABLE);
+
 let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
+
+const MAX_FILE_LENGTH = 2147483647;
+const MAX_STRING_LENGTH = require('buffer').constants.MAX_STRING_LENGTH;
 
 const DEFAULT_ICON_TYPE = 'square-o';
 if (!ICONS_TYPE)
@@ -97,6 +104,8 @@ If the keys <username> and <password> are given, then HTTP authentication is ena
 All command line options can also be set in the environment variables: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
 Options specified on the command line have higher precedence.
 
+In order to allow users not only download files and folders from server, but also upload it to the server, it is necessary to set the environment variable SERVER_UPLOAD_ENABLE to 1.
+
 You can set the page title in the SERVER_DIRECTORY_MODE_TITLE environment variable.
 
 It is possible to run server in cluster mode. To do this, set the SERVER_USE_CLUSTER_MODE environment variable to 1.
@@ -119,6 +128,30 @@ if (cluster.isPrimary)
 	console.log('Port = ' + PORT);
 	console.log('Root = ' + ROOT_PATH);
 	if (USE_CLUSTER_MODE) console.log('CPUs number = ' + numCPUs);
+	console.log();
+	console.log('Available on:');
+	getIpV4().forEach((ip) => console.log(ip));
+	console.log();
+}
+
+function getIpV4()
+{
+	const ips = [];
+	for (let iface in net)
+	{
+		const ifaceData = net[iface];
+		if (Array.isArray(ifaceData) && ifaceData.length > 0)
+		{
+			for (let ip of ifaceData)
+			{
+				if (ip.family === 'IPv4' || Number(ip.family) === 4)
+				{
+					ips.push(ip.address);
+				}
+			}
+		}
+	}
+	return ips;
 }
 
 let _generateIndex = false;
@@ -157,7 +190,12 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		}
 		if (_generateIndex)
 		{
-			if (cluster.isPrimary) console.log('Directory watch mode.');
+			if (cluster.isPrimary)
+			{
+				console.log('Directory watch mode.');
+				if (DISABLE_COMPRESSION) console.log('Compression is disable.');
+				if (UPLOAD_ENABLE) console.log('\x1b[31m%s\x1b[0m', 'Upload to server is enabled!');
+			}
 			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'app_files', 'index.html')).toString().split('~%~');
 			_favicon = fs.readFileSync(path.join(__dirname, 'app_files', 'favicon.ico'));
 			_index_js = fs.readFileSync(path.join(__dirname, 'app_files', 'index.js'));
@@ -165,7 +203,6 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
 			readIconsFiles();
 			readTranslationFiles();
-			if (DISABLE_COMPRESSION) console.log('Compression is disable.');
 		}
 		let isHttps = key && cert;
 		if (cluster.isPrimary)
@@ -368,28 +405,197 @@ function app(req, res)
 		const acceptEncoding = req.headers['accept-encoding'];
 		const acceptLanguage = req.headers['accept-language'];
 		/*Post данные*/
-		let body = '';
-		req.on('data', chunk =>
+		const contentType = req.headers['content-type']?.split(';').map((value) => value.trim());
+		if (contentType)
 		{
-			body += chunk;
-			if (body.length > 1e6) req.connection.destroy();
+			if (contentType[0] === 'multipart/form-data' || contentType[0] === 'application/x-www-form-urlencoded')
+			{
+				getPostBody(req, (err, postBody) =>
+				{
+					if (err)
+					{
+						answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, { error: err.message });
+					}
+					else
+					{
+						if (UPLOAD_ENABLE && contentType[0] === 'multipart/form-data')
+						{
+							let boundary = '';
+							for (let i = 1; i < contentType.length; i++)
+							{
+								const pair = contentType[i].split('=');
+								if (pair[0] === 'boundary')
+								{
+									boundary = pair[1];
+									break;
+								}
+							}
+							parseMultiPartFormData(postBody, boundary, (postData) =>
+							{
+								//console.log('parse complete');
+								answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+							});
+						}
+						else if (contentType[0] === 'application/x-www-form-urlencoded')
+						{
+							const postData = parseXwwwFormUrlEncoded(postBody);
+							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+						}
+						else
+						{
+							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+						}
+					}
+				});
+			}
+			else
+			{
+				answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+			}
+		}
+		else
+		{
+			answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+		}
+	}
+}
+
+function getPostBody(req, callback)
+{
+	const size = Number(req.headers['content-length']);
+	if (isNaN(size))
+	{
+		callback({ message: 'Content-Length header is invalid' });
+	}
+	else if (size > MAX_FILE_LENGTH)
+	{
+		callback({ message: `Max upload size (with headers) is ${MAX_FILE_LENGTH} bytes` });
+	}
+	else
+	{
+		let postChunks = [];
+		let postLength = 0;
+		req.on('data', (chunk) =>
+		{
+			postLength += chunk.byteLength;
+			if (postLength > size)
+			{
+				req.destroy();
+				return;
+			}
+			else
+			{
+				postChunks.push(chunk);
+			}
 		});
 		req.on('end', () =>
 		{
-			const paramsPost = parseRequest(body);
-			answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, paramsPost);
+			//console.log('all post data received');
+			if (postLength !== size)
+			{
+				callback({ message: 'Not all data received' });
+			}
+			else if (postLength === 0)
+			{
+				callback({ message: 'Size of post data is 0' });
+			}
+			else
+			{
+				let postBody = Buffer.concat(postChunks);
+				callback(null, postBody);
+			}
 		});
 	}
 }
 
-function parseRequest(data)
+function parseMultiPartFormData(postBody, boundary, callback)
+{
+	if (postBody.error)
+	{
+		callback(postBody);
+		return;
+	}
+	let boundaryIndex = 0;
+	const boundaryStart = '--' + boundary;
+	let prevBoundaryIndex = postBody.indexOf(boundaryStart);
+	if (prevBoundaryIndex === -1)
+	{
+		callback({ error: 'Post data is invalid.' });
+		return;
+	}
+	const boundarySize = boundaryStart.length;
+	const entries = [];
+	split();
+	function split()
+	{
+		let startSearchIndex = prevBoundaryIndex + boundarySize;
+		boundaryIndex = postBody.indexOf(boundaryStart, startSearchIndex);
+		if (boundaryIndex === -1)
+		{
+			getData();
+			return;
+		}
+		else if(boundaryIndex < 0)
+		{
+			callback({ error: 'Maximum allowed size of transferred data exceeded.' });
+			return;
+		}
+		const entry = postBody.subarray(startSearchIndex, boundaryIndex);
+		entries.push(entry);
+		prevBoundaryIndex = boundaryIndex;
+		setImmediate(split);
+	}
+	function getData()
+	{
+		const result = [];
+		for (let entry of entries)
+		{
+			const dataIndex = entry.indexOf('\r\n\r\n', 72) + 4;
+			const startFileNameIndex = entry.indexOf('filename="') + 10;
+			if (startFileNameIndex === -1 || startFileNameIndex > dataIndex)
+			{
+				callback({ error: 'No file name in post data.' });
+				return;
+			}
+			const endFileNameIndex = entry.indexOf('"', startFileNameIndex);
+			if (endFileNameIndex === -1 || endFileNameIndex > dataIndex)
+			{
+				callback({ error: 'No file name in post data.' });
+				return;
+			}
+			const fileName = entry.subarray(startFileNameIndex, endFileNameIndex).toString();
+			if (!fileName || fileName === '')
+			{
+				callback({ error: 'No file selected!' });
+				return;
+			}
+			const data = entry.subarray(dataIndex, entry.length - 2);
+			result.push({ fileName, data });
+		}
+		callback(result);
+	}
+}
+
+function parseXwwwFormUrlEncoded(postBody)
+{
+	if (postBody.byteLength > MAX_STRING_LENGTH)
+	{
+		return { error: 'Request too big' };
+	}
+	else
+	{
+		return parseRequest(postBody.toString());
+	}
+}
+
+function parseRequest(str)
 {
 	let params = null;
-	if (data)
+	if (str)
 	{
 		params = {};
-		data = data.split('&');
-		data.forEach((p) =>
+		str = str.split('&');
+		str.forEach((p) =>
 		{
 			let keyVal = p.split('=');
 			params[keyVal[0]] = keyVal[1];
@@ -398,12 +604,12 @@ function parseRequest(data)
 	return params;
 }
 
-function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, paramsPost)
+function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData)
 {
 
-	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, paramsPost);
-	if (paramsGet) console.log(paramsGet);
-	if (paramsPost) console.log(paramsPost);
+	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+	//if (paramsGet) console.log(paramsGet);
+	//if (postData) console.log(postData);
 }
 
 function sendCachedFile(res, file, contentType, acceptEncoding)
@@ -493,7 +699,7 @@ function isAppFile(name)
 	return false;
 }
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage)
+function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData)
 {
 	if (_generateIndex)
 	{
@@ -553,13 +759,74 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 		{
 			if (_generateIndex)
 			{
-				if (paramsGet?.download)
+				const responseCookie = [];
+				const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
+				let localeTranslation = _locales.get(clientLang);
+				if (postData && !Array.isArray(postData) && typeof postData === 'object')
 				{
-					zipFolder(filePath, res, urlPath);
+					if (postData.error)
+					{
+						generateAndSendIndexHtmlAlias(postData.error);
+					}
+					else if (postData.dir)
+					{
+						if (UPLOAD_ENABLE)
+						{
+							createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
+							{
+								generateAndSendIndexHtmlAlias(errorMessage);
+							});
+						}
+						else
+						{
+							generateAndSendIndexHtmlAlias();
+						}
+					}
+					else if (Object.keys(postData).length < 2)
+					{
+						generateAndSendIndexHtmlAlias('No files selected!');
+					}
+					else
+					{
+						if (postData.download)
+						{
+							zipFolder(res, urlPath, filePath, postData);
+						}
+						else if (postData.delete)
+						{
+							if (UPLOAD_ENABLE)
+							{
+								deleteFiles(filePath, postData, (errorMessage) =>
+								{
+									generateAndSendIndexHtmlAlias(errorMessage);
+								});
+							}
+							else
+							{
+								generateAndSendIndexHtmlAlias();
+							}
+						}
+						else
+						{
+							generateAndSendIndexHtmlAlias();
+						}
+					}
+				}
+				else if (postDataHasFiles(postData))
+				{
+					saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
+					{
+						generateAndSendIndexHtmlAlias(errorMessage);
+					});
 				}
 				else
 				{
-					generateAndSendIndexHtml(res, urlPath, filePath, cookie, paramsGet, acceptEncoding, acceptLanguage);
+					generateAndSendIndexHtmlAlias();
+				}
+
+				function generateAndSendIndexHtmlAlias(errorMessage)
+				{
+					generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
 				}
 			}
 			else
@@ -665,9 +932,206 @@ function getIconClassName(ext)
 	return `fiv-${classPrefix} fiv-icon-blank`;
 }
 
-function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet, acceptEncoding, acceptLanguage)
+function postDataHasFiles(postData)
 {
-	const responseCookie = [];
+	return Array.isArray(postData) && postData.length > 0 && postData.reduce((hasFileName, item) => hasFileName & (item.fileName && item.fileName !== '' && item.data !== undefined), true);
+}
+
+function createUserDir(postData, absolutePath, localeTranslation, callback)
+{
+	if (!postData.dir || postData.dir.length === 0)
+	{
+		callback(`${getTranslation('createFolderError', localeTranslation)}`);
+	}
+	else
+	{
+		fs.mkdir(path.join(absolutePath, postData.dir), { recursive: true }, (err) =>
+		{
+			if (err)
+			{
+				callback(`${getTranslation('createFolderError', localeTranslation)}`);
+			}
+			else
+			{
+				callback(null);
+			}
+		});
+	}
+}
+
+function saveUserFiles(postData, absolutePath, localeTranslation, callback)
+{
+	if (!postData?.length || postData.length === 0)
+	{
+		callback(`${getTranslation('sendingFilesError', localeTranslation)} No data received.`);
+	}
+	else
+	{
+		let errorSendingFile = '';
+		let numOfFiles = postData.length;
+		for (let fileData of postData)
+		{
+			fs.writeFile(path.join(absolutePath, fileData.fileName), fileData.data, (err) =>
+			{
+				numOfFiles--;
+				if (err)
+				{
+					errorSendingFile = `${getTranslation('sendingFilesError', localeTranslation)} Error while saving file: ${err.message}`;
+					console.log(`File ${fileData.fileName} was not saved: ${err.message}`);
+				}
+				else
+				{
+					console.log(`File ${fileData.fileName} was saved`);
+				}
+				if (numOfFiles === 0) callback(errorSendingFile);
+			});
+		}
+	}
+}
+
+function zipFolder(res, urlPath, absolutePath, postData)
+{
+	const selectedFiles = [];
+	let keys = Object.keys(postData);
+	for (let key of keys)
+	{
+		if (key === 'download') continue;
+		if (postData[key] === 'on')
+		{
+			const file = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key))
+			selectedFiles.push(file);
+		}
+	}
+	const zip = new JSZip();
+
+	let numberOfFile = 0;
+	let numberOfRecursive = 0;
+
+	let rootDir = path.dirname(absolutePath);
+	if (urlPath === '/')
+	{
+		rootDir = ROOT_PATH;
+	}
+
+	readFolderRecursive(absolutePath, true);
+
+	function readFolderRecursive(folderPath, isRoot)
+	{
+		numberOfRecursive++;
+		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
+		{
+			if (err)
+			{
+				zipError(err, res);
+			}
+			else if (files.length > 0)
+			{
+				for (let file of files)
+				{
+					if (isRoot && !selectedFiles.includes(file.name)) continue;
+					if (file.isDirectory())
+					{
+						readFolderRecursive(path.join(folderPath, file.name), false);
+					}
+					else if (file.isFile())
+					{
+						numberOfFile++;
+						fs.readFile(path.join(folderPath, file.name), (err, data) =>
+						{
+							if (err)
+							{
+								zipError(err, res);
+							}
+							else
+							{
+								numberOfFile--;
+								const relativePath = path.join(path.relative(rootDir, folderPath), file.name);
+								zip.file(relativePath, data);
+								if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
+							}
+						});
+					}
+				}
+			}
+			else
+			{
+				const relativePath = path.join(path.relative(rootDir, folderPath));
+				zip.folder(relativePath);
+			}
+			numberOfRecursive--;
+			if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
+		});
+	}
+
+	function zipError(err, res)
+	{
+		const commonMsg = 'Zip generate error!';
+		console.log(commonMsg + ' ' + err?.message);
+		const msg = commonMsg + (err?.code === 'ERR_FS_FILE_TOO_LARGE' ? ' File size is greater than 2 GiB' : '');
+		error500(msg, res);
+	}
+
+	function sendZip()
+	{
+		const zipStream = zip.generateNodeStream();
+		zipStream.pipe(res);
+		zipStream.on('error', (err) => error(err, res));
+		res.writeHead(200,
+			{
+				'Content-Type': 'application/zip'
+			});
+		res.on('close', () =>
+		{
+			if (!res.writableFinished)
+			{
+				zipStream.destroy();
+				console.log('Connection lost while transferring zip archive.');
+			}
+		});
+		res.on('finish', () =>
+		{
+			console.log('Zip archive sent successfully.');
+		});
+	}
+}
+
+function deleteFiles(absolutePath, postData, callback)
+{
+	let keys = Object.keys(postData);
+	let numOfFiles = keys.length - 1;
+	for (let key of keys)
+	{
+		if (key === 'delete') continue;
+		if (postData[key] === 'on')
+		{
+			const fileName = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key));
+			const filePath = path.join(absolutePath, fileName);
+			fs.rm(filePath, { force: true, recursive: true }, (err) =>
+			{
+				if (err)
+				{
+					console.log(err.message);
+					callback(`Can't delete ${fileName}`);
+					return;
+				}
+				else
+				{
+					numOfFiles--;
+					if (numOfFiles === 0) callback(null);
+				}
+			});
+		}
+		else
+		{
+			numOfFiles--;
+			if (numOfFiles === 0) callback(null);
+		}
+	}
+}
+
+function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
+{
+	if (!errorMessage) errorMessage = '';
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
 		if (err)
@@ -676,8 +1140,6 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 		}
 		else
 		{
-			const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
-			let localeTranslation = _locales.get(clientLang);
 			let hrefs = [];
 			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
 			let folderName = '/';
@@ -692,12 +1154,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 				const iconnClassName = getIconClassName('folder');
 				hrefsResult =
 `			<div class="main_container__first_column">
+				<input type="checkbox" class="hidden-in-flow">
 				<div class="${iconnClassName}"></div>
 				<a href="/">[/]</a>
 			</div>
 			<span>${folderSizeStub}</span>
 			<span>-</span>
 			<div class="main_container__first_column">
+			<input type="checkbox" class="hidden-in-flow">
 				<div class = "${iconnClassName}"></div>
 				<a href="${backUrl}">[..]</a>
 			</div>
@@ -726,13 +1190,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 						const iconnClassName = getIconClassName(ext);
 						const showInBrowser = !isDirectory && canShowInBrowser(ext);
 						hrefs.push({ value:
-`			<div class="main_container__first_column">
-				<div class="${iconnClassName}"></div>
-				<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
-				${showInBrowser ? `<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
-			</div>
-			<span>${sizeStr}</span>
-			<span>${modify}</span>
+`				<div class="main_container__first_column">
+					<input type="checkbox" name="${Buffer.from(file.name).toString('base64url')}">
+					<div class="${iconnClassName}"></div>
+					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `
+					<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+				</div>
+				<span>${sizeStr}</span>
+				<span>${modify}</span>
 `, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
 						if (hrefs.length === files.length)
 						{
@@ -771,16 +1236,29 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, cookie, paramsGet,
 				return  _indexHtmlbase[0] + clientLang +
 						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[2] + folderName +
-						_indexHtmlbase[3] + `${urlPath}?download=true` +
-						_indexHtmlbase[4] + getTranslation('downloadAll', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[6] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[7] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[8] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[9] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[10] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[11] + hrefsResult +
-						_indexHtmlbase[12];
+						_indexHtmlbase[3] + getTranslation('selectAll', localeTranslation) +
+						_indexHtmlbase[4] + getTranslation('deselectAll', localeTranslation) +
+						_indexHtmlbase[5] + getTranslation('downloadZip', localeTranslation) +
+						_indexHtmlbase[6] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
+						_indexHtmlbase[8]) : ''}` +
+						_indexHtmlbase[9] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[10] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[11] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[12] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[13] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[14] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[15] + hrefsResult +
+						_indexHtmlbase[16] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[17] + getTranslation('createFolder', localeTranslation) +
+						_indexHtmlbase[18] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[19] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[20] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[21] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[23]) : ''}` +
+						_indexHtmlbase[24] + errorMessage +
+						_indexHtmlbase[25];
 			}
 		}
 	});
@@ -943,7 +1421,7 @@ function sendHtmlString(res, data, cookie, acceptEncoding)
 //Отправка файлов с использованием файловых потоков.
 function sendFile(res, filePath, size)
 {
-	let file = fs.ReadStream(filePath);
+	let file = fs.createReadStream(filePath);
 	file.pipe(res);
 	file.on('error', (err) => error(err, res));
 	res.writeHead(200,
@@ -964,102 +1442,6 @@ function sendFile(res, filePath, size)
 		console.log('Sent successfully: ' + filePath);
 	});
 
-}
-
-function zipFolder(folderPath, res, urlPath)
-{
-	let folderName = path.basename(folderPath);
-	let rootDir = path.dirname(folderPath);
-	if (urlPath === '/')
-	{
-		folderName = '';
-		rootDir = ROOT_PATH;
-	}
-	const zip = new JSZip();
-
-	let numberOfFile = 0;
-	let numberOfRecursive = 0;
-	readFolderRecursive(folderPath);
-	function readFolderRecursive(folderPath)
-	{
-		numberOfRecursive++;
-		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
-		{
-			if (err)
-			{
-				zipError(err, res);
-			}
-			else if (files.length > 0)
-			{
-				for (let file of files)
-				{
-					if (file.isDirectory())
-					{
-						readFolderRecursive(path.join(folderPath, file.name), true);
-					}
-					else if (file.isFile())
-					{
-						numberOfFile++;
-						fs.readFile(path.join(folderPath, file.name), (err, data) =>
-						{
-							if (err)
-							{
-								zipError(err, res);
-							}
-							else
-							{
-								numberOfFile--;
-								const relativePath = path.join(path.relative(rootDir, folderPath), file.name);
-								zip.file(relativePath, data);
-								if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
-							}
-						});
-					}
-				}
-			}
-			else
-			{
-				const relativePath = path.join(path.relative(rootDir, folderPath));
-				zip.folder(relativePath);
-			}
-			numberOfRecursive--;
-			if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
-		});
-		function zipError(err, res)
-		{
-			const commonMsg = 'Zip generate error!';
-			console.log(commonMsg + ' ' + err?.message);
-			const msg = commonMsg + (err?.code === 'ERR_FS_FILE_TOO_LARGE' ? ' File size is greater than 2 GiB' : '');
-			res.writeHead(500,
-				{
-					'Content-Length': msg.length,
-					'Content-Type': 'text/plain'
-				});
-			res.end(msg);
-		}
-	}
-	function sendZip()
-	{
-		const zipStream = zip.generateNodeStream();
-		zipStream.pipe(res);
-		zipStream.on('error', (err) => error(err, res));
-		res.writeHead(200,
-			{
-				'Content-Type': 'application/zip'
-			});
-		res.on('close', () =>
-		{
-			if (!res.writableFinished)
-			{
-				zipStream.destroy();
-				console.log('Connection lost while transferring zip archive.');
-			}
-		});
-		res.on('finish', () =>
-		{
-			console.log(`Zip archive ${folderName}.zip sent successfully.`);
-		});
-	}
 }
 
 function canShowInBrowser(ext)
@@ -1092,7 +1474,6 @@ function canShowInBrowser(ext)
 	case '.ogg':
 	case '.m4a':
 	case '.ra':
-	case '.3gpp':
 	case '.ts':
 	case '.mp4':
 	case '.mpeg':
@@ -1102,8 +1483,6 @@ function canShowInBrowser(ext)
 	case '.m4v':
 	case '.mng':
 	case '.asx':
-	case '.wmv':
-	case '.avi':
 	case '.md':
 		return true;
 	}

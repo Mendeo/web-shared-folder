@@ -1,19 +1,14 @@
-@media (prefers-color-scheme: dark)
+:root
 {
-	body
-	{
-		background-color: #1e1e1e;
-		color: #d4d4d4;
-	}
-	a
-	{
-		filter: invert(100%) brightness(80%) contrast(80%);
-	}
-	h2
-	{
-		color: #c8c8c8;
-	}
+	--main-bg-color-dark: #1e1e1e;
+	--main-bg-color-light: white;
 }
+
+.hidden-in-flow
+{
+	visibility: hidden;
+}
+
 .main_container
 {
 	display: inline-grid;
@@ -51,12 +46,115 @@
 {
 	display: flex;
 	justify-content: flex-start;
+	flex-wrap: nowrap;
 	column-gap: 0.2rem;
 }
+.error_message
+{
+	color: tomato;
+}
+.controls
+{
+	display: flex;
+	flex-wrap: wrap;
+	max-width: 300px;
+	justify-content: space-between;
+	row-gap: 0.2rem;
+}
+.controls > *
+{
+	width: 47%;
+}
+.header
+{
+	position: sticky;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	z-index: 1;
+}
+.footer
+{
+	position: sticky;
+	bottom: 0px;
+	left: 0px;
+	width: 100%;
+}
+.footer div:last-child
+{
+	height: 0.3rem;
+}
+
+.dialog p
+{
+	text-align: center;
+}
+.dialog__buttons
+{
+	display: flex;
+	flex-wrap: nowrap;
+	justify-content: space-around;
+	margin-bottom: 0.5rem;
+}
+.dialog__buttons button
+{
+	min-width: 45%;
+}
+
 @media screen and (max-width: 900px)
 {
 	.main_container
 	{
 		grid-template-columns: max-content repeat(2, auto);
+	}
+	.header
+	{
+		position: static;
+	}
+	.footer
+	{
+		position: static;
+	}
+	.dialog
+	{
+		left: 0px;
+		top: 0px;
+		position: absolute;
+	}
+}
+
+@media (prefers-color-scheme: dark)
+{
+	body
+	{
+		background-color: var(--main-bg-color-dark);
+		color: #d4d4d4;
+	}
+	.header
+	{
+		background-color: var(--main-bg-color-dark);
+	}
+	.footer
+	{
+		background-color: var(--main-bg-color-dark);
+	}
+	a
+	{
+		filter: invert(100%) brightness(80%) contrast(80%);
+	}
+	h2
+	{
+		color: #c8c8c8;
+	}
+}
+@media (prefers-color-scheme: light)
+{
+	.header
+	{
+		background-color: var(--main-bg-color-light);
+	}
+	.footer
+	{
+		background-color: var(--main-bg-color-light);
 	}
 }

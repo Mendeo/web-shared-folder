@@ -1,5 +1,5 @@
 {
-	"downloadAll": "Скачать всю папку",
+	"downloadZip": "Скачать выбранное",
 	"fileName": "Имя",
 	"fileSize": "Размер",
 	"modifyDate": "Дата изменения",
@@ -11,5 +11,16 @@
 	"sizeGiB": "ГиБ",
 	"sizeTiB": "ТиБ",
 	"sizePiB": "ПиБ",
-	"linkToOpenInBrowser": "Ссылка для открытия в браузере"
+	"linkToOpenInBrowser": "Ссылка для открытия в браузере",
+	"sendingFilesError": "Произошла ошибка при передачи файла. Не все файлы были сохранены: ",
+	"deleteFiles": "Удалить выбранное",
+	"uploadFiles": "Загрузить файлы на сервер",
+	"selectAll": "Выбрать всё",
+	"deselectAll": "Убрать всё",
+	"createFolder": "Создать папку",
+	"createFolderError": "Не удалось создать папку",
+	"yes": "Да",
+	"no": "Нет",
+	"deleteFilesWarning": "Вы действительно хотите удалить выбранные файлы? <br>Эту операцию нельзя отменить.",
+	"deleteWithoutAsk": "Удалять без подтверждения"
 }
