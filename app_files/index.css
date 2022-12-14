@@ -104,6 +104,10 @@
 {
 	width:100%;
 	align-self: stretch;
+	margin-left: 0.5rem;
+	border-radius: 1rem;
+	border-style: dashed;
+	border-width: 0.15rem;
 	background-color:rgb(182, 235, 160);
 }
 .footer > div:last-child
@@ -172,6 +176,10 @@
 		background-color: var(--main-bg-color-dark);
 		color: #d4d4d4;
 	}
+	.footer__drag_and_drop
+	{
+		border-color: white;
+	}
 	.header
 	{
 		background-color: var(--main-bg-color-dark);
@@ -198,5 +206,9 @@
 	.footer
 	{
 		background-color: var(--main-bg-color-light);
+	}
+	.footer__drag_and_drop
+	{
+		border-color: black;
 	}
 }

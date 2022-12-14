@@ -22,5 +22,6 @@
 	"yes": "Yes",
 	"no": "No",
 	"deleteFilesWarning": "Are you sure you want to delete the selected files? <br>This operation cannot be undone.",
-	"deleteWithoutAsk": "Delete without confirmation"
+	"deleteWithoutAsk": "Delete without confirmation",
+	"dragAndDropText": "Drag files here."
 }

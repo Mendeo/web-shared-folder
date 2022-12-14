@@ -1252,13 +1252,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[16] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[17] + getTranslation('createFolder', localeTranslation) +
 						_indexHtmlbase[18] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[19] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[20] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[21] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[23]) : ''}` +
-						_indexHtmlbase[24] + errorMessage +
-						_indexHtmlbase[25];
+						_indexHtmlbase[19] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[20] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[21] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[23] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[24]) : ''}` +
+						_indexHtmlbase[25] + errorMessage +
+						_indexHtmlbase[26];
 			}
 		}
 	});
