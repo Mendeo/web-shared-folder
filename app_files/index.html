@@ -55,20 +55,25 @@
 			</div>
 		</form>~%~
 		<div class="footer">
-			<hr>
-			<!--Create folder form-->
-			<form class="mk_dir" method="post" enctype="application/x-www-form-urlencoded" name="mk_dir">
-				<!--Create folder files-->
-				<input type="submit" value="~%~">
-				<input type="text" name="dir">
-			</form>
-			<!--Upload files form-->
-			<form id="upload_files" method="post" enctype="multipart/form-data" name="upload_files">
-				<input type="file" name="upload" multiple>
-				<!--Upload files-->
-				<input type="submit" value="~%~">
-			</form>
-			<progress max="100" hidden></progress>
+			<div class="footer__dnd_placer">
+				<div class="footer__controls">
+					<hr>
+					<!--Create folder form-->
+					<form class="mk_dir" method="post" enctype="application/x-www-form-urlencoded" name="mk_dir">
+						<!--Create folder files-->
+						<input type="submit" value="~%~">
+						<input type="text" name="dir">
+					</form>
+					<!--Upload files form-->
+					<form id="upload_files" method="post" enctype="multipart/form-data" name="upload_files">
+						<input type="file" name="upload" multiple>
+						<!--Upload files-->
+						<input type="submit" value="~%~">
+					</form>
+					<progress max="100" hidden></progress>
+				</div>
+				<div class="footer__drag_and_drop"></div>
+			</div>
 			<div></div>
 		</div>
 		<dialog id="delete-warning-dialog" class="dialog">

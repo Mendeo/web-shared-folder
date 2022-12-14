@@ -3,6 +3,7 @@ setClientLanguage();
 performSelectButtons();
 deleteFilesWarningDialog();
 uploadProgressBar();
+dragAndDropFiles();
 
 function setClientLanguage()
 {
@@ -179,4 +180,9 @@ function uploadProgressBar()
 		}
 		return size;
 	}
+}
+
+function dragAndDropFiles()
+{
+	
 }

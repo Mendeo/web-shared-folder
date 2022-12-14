@@ -79,18 +79,37 @@
 	bottom: 0px;
 	left: 0px;
 	width: 100%;
+}
+.footer__controls
+{
 	display: flex;
 	flex-direction: column;
 	row-gap: 0.5rem;
+	min-width: max-content;
+
 }
-.footer hr
+.footer__controls hr
 {
 	width: 100%;
 	margin-bottom: 0.2rem;
 }
-.footer div:last-child
+.footer__dnd_placer
+{
+	display: flex;
+	justify-content: flex-start;
+	flex-wrap: nowrap;
+	align-items:center;
+}
+.footer__drag_and_drop
+{
+	width:100%;
+	align-self: stretch;
+	background-color:rgb(182, 235, 160);
+}
+.footer > div:last-child
 {
 	height: 0.3rem;
+	background: red;
 }
 
 .dialog p
@@ -112,6 +131,7 @@
 {
 	max-width: 500px;
 }
+
 
 @media screen and (max-width: 900px)
 {
@@ -138,6 +158,10 @@
 		width: 90vw;
 		max-width: 100%;
 		align-self: center;
+	}
+	.footer__drag_and_drop
+	{
+		display: none;
 	}
 }
 
