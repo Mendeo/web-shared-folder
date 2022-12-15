@@ -1,8 +1,9 @@
 'use strict';
+
 setClientLanguage();
 performSelectButtons();
 deleteFilesWarningDialog();
-uploadProgressBar();
+filesSubmit();
 dragAndDropFiles();
 
 function setClientLanguage()
@@ -107,26 +108,17 @@ function deleteFilesWarningDialog()
 	}
 }
 
-function uploadProgressBar()
+function filesSubmit(formData)
 {
-	const uploadForm = document.getElementById('upload_files');
-	if (!uploadForm) return;
-	const inputFiles = document.querySelector('#upload_files input[type=file]');
+	let uploadForm = null;
+	if (!formData)
+	{
+		uploadForm = document.getElementById('upload_files');
+		if (!uploadForm) return;
+	}
 	const errorFiled = document.querySelector('.error_message');
 	const MAX_FILE_LENGTH = 2147483647;
-
 	const progressBar = document.querySelector('#upload_files + progress');
-
-	function showProgressBar()
-	{
-		progressBar.hidden = false;
-	}
-
-	function removeProgressBar()
-	{
-		progressBar.hidden = true;
-	}
-
 	const xhr = new XMLHttpRequest();
 	xhr.upload.addEventListener('progress', (event) =>
 	{
@@ -138,16 +130,24 @@ function uploadProgressBar()
 			return;
 		}
 		const percentLoaded = Math.round((event.loaded / event.total) * 100);
-		//console.log(percentLoaded);
 		progressBar.value = percentLoaded;
 	});
-	xhr.addEventListener('load', () =>
+	xhr.addEventListener('readystatechange', () =>
 	{
-		progressBar.value = 0;
-		removeProgressBar();
-		window.location = window.location.href;
+		if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200)
+		{
+			progressBar.value = 0;
+			removeProgressBar();
+			if (xhr.response)
+			{
+				errorFiled.innerHTML = xhr.response;
+			}
+			else
+			{
+				window.location = window.location.href;
+			}
+		}
 	});
-
 	xhr.addEventListener('error', () =>
 	{
 		progressBar.value = 0;
@@ -155,21 +155,34 @@ function uploadProgressBar()
 		errorFiled.innerHTML = 'Error occurred!';
 	});
 
-	uploadForm.addEventListener('submit', (event) =>
+	if (!formData)
 	{
-		event.preventDefault();
-		const formData = new FormData(uploadForm);
-		if (inputFiles.files.length === 0) return;
-		const totalSize = filesSize(inputFiles.files);
-		if (totalSize <= 5242880)
+		uploadForm.addEventListener('submit', (event) =>
 		{
-			uploadForm.submit();
-			return;
-		}
+			event.preventDefault();
+			const inputFiles = document.querySelector('#upload_files input[type=file]');
+			if (inputFiles.files.length === 0) return;
+			const totalSize = filesSize(inputFiles.files);
+			if (totalSize <= 5242880)
+			{
+				uploadForm.submit();
+				return;
+			}
+			formData = new FormData(uploadForm);
+			submit(formData);
+		});
+	}
+	else
+	{
+		submit(formData);
+	}
+
+	function submit(formData)
+	{
 		showProgressBar();
-		xhr.open('post', location.href, true);
+		xhr.open('post', location.href + '?xhr=true', true);
 		xhr.send(formData);
-	});
+	}
 
 	function filesSize(files)
 	{
@@ -180,9 +193,42 @@ function uploadProgressBar()
 		}
 		return size;
 	}
+
+	function showProgressBar()
+	{
+		progressBar.hidden = false;
+	}
+
+	function removeProgressBar()
+	{
+		progressBar.hidden = true;
+	}
 }
 
 function dragAndDropFiles()
 {
-	
+	const dropZoneClass = 'footer__drag_and_drop__dragenter';
+	const dragField = document.querySelector('.footer__drag_and_drop');
+	dragField.addEventListener('dragenter', (e) =>
+	{
+		e.preventDefault();
+		dragField.classList.add(dropZoneClass);
+	});
+	dragField.addEventListener('dragleave', (e) =>
+	{
+		e.preventDefault();
+		dragField.classList.remove(dropZoneClass);
+	});
+	dragField.addEventListener('dragover', (e) => e.preventDefault());
+	dragField.addEventListener('drop', (e)=>
+	{
+		e.preventDefault();
+		dragField.classList.remove(dropZoneClass);
+		const formData = new FormData();
+		for (let file of e.dataTransfer.files)
+		{
+			formData.append('upload_xhr', file);
+		}
+		filesSubmit(formData);
+	});
 }

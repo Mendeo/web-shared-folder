@@ -511,7 +511,7 @@ function getPostBody(req, callback)
 
 function parseMultiPartFormData(postBody, boundary, callback)
 {
-	console.log(postBody.toString());
+	//console.log(postBody.toString());
 	if (postBody.error)
 	{
 		callback(postBody);
@@ -610,8 +610,8 @@ function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage,
 {
 
 	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
-	if (paramsGet) console.log(paramsGet);
-	if (postData) console.log(postData);
+	//if (paramsGet) console.log(paramsGet);
+	//if (postData) console.log(postData);
 }
 
 function sendCachedFile(res, file, contentType, acceptEncoding)

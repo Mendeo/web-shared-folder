@@ -2,6 +2,8 @@
 {
 	--main-bg-color-dark: #1e1e1e;
 	--main-bg-color-light: white;
+	--text-color-dark: #d4d4d4;
+	--dragenter-color: rgb(182, 235, 160);
 }
 
 .hidden-in-flow
@@ -53,7 +55,7 @@
 {
 	color: tomato;
 }
-.controls
+.heade__controls
 {
 	display: flex;
 	flex-wrap: wrap;
@@ -61,7 +63,7 @@
 	justify-content: space-between;
 	row-gap: 0.2rem;
 }
-.controls > *
+.heade__controls > *
 {
 	width: 47%;
 }
@@ -108,12 +110,20 @@
 	border-radius: 1rem;
 	border-style: dashed;
 	border-width: 0.15rem;
-	background-color:rgb(182, 235, 160);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
 }
+.footer__drag_and_drop__dragenter
+{
+	background-color: var(--dragenter-color);
+	color: black;
+}
+
 .footer > div:last-child
 {
 	height: 0.3rem;
-	background: red;
 }
 
 .dialog p
@@ -174,7 +184,7 @@
 	body
 	{
 		background-color: var(--main-bg-color-dark);
-		color: #d4d4d4;
+		color: var(--text-color-dark);
 	}
 	.footer__drag_and_drop
 	{
