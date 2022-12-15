@@ -2,6 +2,8 @@
 {
 	--main-bg-color-dark: #1e1e1e;
 	--main-bg-color-light: white;
+	--text-color-dark: #d4d4d4;
+	--dragenter-color: rgb(182, 235, 160);
 }
 
 .hidden-in-flow
@@ -53,7 +55,7 @@
 {
 	color: tomato;
 }
-.controls
+.heade__controls
 {
 	display: flex;
 	flex-wrap: wrap;
@@ -61,7 +63,7 @@
 	justify-content: space-between;
 	row-gap: 0.2rem;
 }
-.controls > *
+.heade__controls > *
 {
 	width: 47%;
 }
@@ -79,16 +81,47 @@
 	bottom: 0px;
 	left: 0px;
 	width: 100%;
+}
+.footer__controls
+{
 	display: flex;
 	flex-direction: column;
 	row-gap: 0.5rem;
+	min-width: max-content;
+
 }
-.footer hr
+.footer__controls hr
 {
 	width: 100%;
 	margin-bottom: 0.2rem;
 }
-.footer div:last-child
+.footer__dnd_placer
+{
+	display: flex;
+	justify-content: flex-start;
+	flex-wrap: nowrap;
+	align-items:center;
+}
+.footer__drag_and_drop
+{
+	width:100%;
+	align-self: stretch;
+	margin-left: 0.5rem;
+	border-radius: 1rem;
+	border-style: dashed;
+	border-width: 0.15rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+}
+.footer__drag_and_drop__dragenter
+{
+	background-color: var(--dragenter-color);
+	color: black;
+}
+
+.footer > div:last-child
 {
 	height: 0.3rem;
 }
@@ -112,6 +145,12 @@
 {
 	max-width: 500px;
 }
+
+.hidden
+{
+	display: none;
+}
+
 
 @media screen and (max-width: 900px)
 {
@@ -139,6 +178,10 @@
 		max-width: 100%;
 		align-self: center;
 	}
+	.footer__drag_and_drop
+	{
+		display: none;
+	}
 }
 
 @media (prefers-color-scheme: dark)
@@ -146,7 +189,11 @@
 	body
 	{
 		background-color: var(--main-bg-color-dark);
-		color: #d4d4d4;
+		color: var(--text-color-dark);
+	}
+	.footer__drag_and_drop
+	{
+		border-color: white;
 	}
 	.header
 	{
@@ -174,5 +221,9 @@
 	.footer
 	{
 		background-color: var(--main-bg-color-light);
+	}
+	.footer__drag_and_drop
+	{
+		border-color: black;
 	}
 }

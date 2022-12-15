@@ -32,6 +32,7 @@ const fs = require('fs');
 const os = require('os');
 const zlib = require('zlib');
 const JSZip = require('jszip');
+const { buffer } = require('stream/consumers');
 const cpus = os.cpus;
 const net = os.networkInterfaces();
 
@@ -432,7 +433,7 @@ function app(req, res)
 							}
 							parseMultiPartFormData(postBody, boundary, (postData) =>
 							{
-								//console.log('parse complete');
+								console.log('parse complete');
 								answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
 							});
 						}
@@ -510,6 +511,7 @@ function getPostBody(req, callback)
 
 function parseMultiPartFormData(postBody, boundary, callback)
 {
+	//console.log(postBody.toString());
 	if (postBody.error)
 	{
 		callback(postBody);
@@ -852,6 +854,17 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 	});
 }
 
+function xhrAnswer(res, errorMessage)
+{
+	const dataToSend = Buffer.from(errorMessage);
+	res.writeHead(200,
+		{
+			'Content-Type': 'text/plain',
+			'Content-Length': dataToSend.byteLength
+		});
+	res.end(dataToSend);
+}
+
 function getTranslation(value, localeTranslation)
 {
 	let locale = localeTranslation || DEFAULT_LOCALE_TRANSLATION;
@@ -1132,6 +1145,11 @@ function deleteFiles(absolutePath, postData, callback)
 function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
 {
 	if (!errorMessage) errorMessage = '';
+	if (paramsGet?.xhr)
+	{
+		xhrAnswer(res, errorMessage);
+		return;
+	}
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
 		if (err)
@@ -1252,13 +1270,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[16] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[17] + getTranslation('createFolder', localeTranslation) +
 						_indexHtmlbase[18] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[19] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[20] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[21] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[23]) : ''}` +
-						_indexHtmlbase[24] + errorMessage +
-						_indexHtmlbase[25];
+						_indexHtmlbase[19] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[20] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[21] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[23] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[24]) : ''}` +
+						_indexHtmlbase[25] + errorMessage +
+						_indexHtmlbase[26];
 			}
 		}
 	});
