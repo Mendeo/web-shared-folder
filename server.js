@@ -1042,7 +1042,7 @@ function zipFolder(res, urlPath, absolutePath, postData)
 				for (let file of files)
 				{
 					if (isRoot && !selectedFiles.includes(file.name)) continue;
-					if (file.isDirectory())
+					if (!file.isFile())
 					{
 						readFolderRecursive(path.join(folderPath, file.name), false);
 					}
