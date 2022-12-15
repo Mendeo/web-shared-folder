@@ -989,7 +989,7 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 				numOfFiles--;
 				if (err)
 				{
-					errorSendingFile = `${getTranslation('sendingFilesError', localeTranslation)} Error while saving file: ${err.message}`;
+					errorSendingFile = `${getTranslation('sendingFilesError', localeTranslation)} Server error while saving files.`;
 					console.log(`File ${fileData.fileName} was not saved: ${err.message}`);
 				}
 				else
