@@ -945,7 +945,7 @@ function createUserDir(postData, absolutePath, localeTranslation, callback)
 	}
 	else
 	{
-		fs.mkdir(path.join(absolutePath, postData.dir), { recursive: true }, (err) =>
+		fs.mkdir(path.join(absolutePath, decodeURIComponent(postData.dir)), { recursive: true }, (err) =>
 		{
 			if (err)
 			{
