@@ -173,7 +173,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		console.log(err?.message);
 		process.exit(1);
 	}
-	else if (!stats.isDirectory())
+	else if (stats.isFile())
 	{
 		console.log('Переданный путь не является директорией!');
 		process.exit(1);
@@ -757,7 +757,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 		{
 			error(err, res);
 		}
-		else if (stats.isDirectory())
+		else if (!stats.isFile())
 		{
 			if (_generateIndex)
 			{
@@ -1199,7 +1199,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							console.log(err?.message);
 							return;
 						}
-						const isDirectory = file.isDirectory();
+						const isDirectory = !file.isFile();
 						const linkName = isDirectory ? `[${file.name}]` : file.name;
 						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
