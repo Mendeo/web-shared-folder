@@ -1124,7 +1124,7 @@ function deleteFiles(absolutePath, postData, callback)
 				if (err)
 				{
 					console.log(err.message);
-					callback(`Can't delete ${fileName}`);
+					callback(`Server error. Can't delete ${fileName}`);
 					return;
 				}
 				else
