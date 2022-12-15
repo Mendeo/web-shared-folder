@@ -32,6 +32,7 @@ const fs = require('fs');
 const os = require('os');
 const zlib = require('zlib');
 const JSZip = require('jszip');
+const { buffer } = require('stream/consumers');
 const cpus = os.cpus;
 const net = os.networkInterfaces();
 
@@ -432,7 +433,7 @@ function app(req, res)
 							}
 							parseMultiPartFormData(postBody, boundary, (postData) =>
 							{
-								//console.log('parse complete');
+								console.log('parse complete');
 								answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
 							});
 						}
@@ -510,6 +511,7 @@ function getPostBody(req, callback)
 
 function parseMultiPartFormData(postBody, boundary, callback)
 {
+	console.log(postBody.toString());
 	if (postBody.error)
 	{
 		callback(postBody);
@@ -608,8 +610,8 @@ function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage,
 {
 
 	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
-	//if (paramsGet) console.log(paramsGet);
-	//if (postData) console.log(postData);
+	if (paramsGet) console.log(paramsGet);
+	if (postData) console.log(postData);
 }
 
 function sendCachedFile(res, file, contentType, acceptEncoding)
@@ -850,6 +852,17 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			sendFile(res, filePath, stats.size);
 		}
 	});
+}
+
+function xhrAnswer(res, errorMessage)
+{
+	const dataToSend = Buffer.from(errorMessage);
+	res.writeHead(200,
+		{
+			'Content-Type': 'text/plain',
+			'Content-Length': dataToSend.byteLength
+		});
+	res.end(dataToSend);
 }
 
 function getTranslation(value, localeTranslation)
@@ -1132,6 +1145,11 @@ function deleteFiles(absolutePath, postData, callback)
 function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
 {
 	if (!errorMessage) errorMessage = '';
+	if (paramsGet?.xhr)
+	{
+		xhrAnswer(res, errorMessage);
+		return;
+	}
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
 		if (err)
