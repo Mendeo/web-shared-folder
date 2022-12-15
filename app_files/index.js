@@ -208,22 +208,23 @@ function filesSubmit(formData)
 function dragAndDropFiles()
 {
 	const dropZoneClass = 'footer__drag_and_drop__dragenter';
-	const dragField = document.querySelector('.footer__drag_and_drop');
-	dragField.addEventListener('dragenter', (e) =>
+	const dropZone = document.querySelector('.footer__drag_and_drop');
+	dropZone.classList.remove('hidden');
+	dropZone.addEventListener('dragenter', (e) =>
 	{
 		e.preventDefault();
-		dragField.classList.add(dropZoneClass);
+		dropZone.classList.add(dropZoneClass);
 	});
-	dragField.addEventListener('dragleave', (e) =>
+	dropZone.addEventListener('dragleave', (e) =>
 	{
 		e.preventDefault();
-		dragField.classList.remove(dropZoneClass);
+		dropZone.classList.remove(dropZoneClass);
 	});
-	dragField.addEventListener('dragover', (e) => e.preventDefault());
-	dragField.addEventListener('drop', (e)=>
+	dropZone.addEventListener('dragover', (e) => e.preventDefault());
+	dropZone.addEventListener('drop', (e)=>
 	{
 		e.preventDefault();
-		dragField.classList.remove(dropZoneClass);
+		dropZone.classList.remove(dropZoneClass);
 		const formData = new FormData();
 		for (let file of e.dataTransfer.files)
 		{
