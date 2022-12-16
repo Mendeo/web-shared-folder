@@ -7,8 +7,6 @@ filesSubmit();
 dragAndDropFiles();
 backspaceToPreviousFolder();
 
-console.log(location);
-
 function setClientLanguage()
 {
 	let _lang = null;
@@ -253,7 +251,12 @@ function backspaceToPreviousFolder()
 	{
 		if (e.code === 'Backspace' && location.pathname !== '/')
 		{
-			history.back();
+			//history.back();
+			const arr = location.pathname.split('/');
+			let backPath = arr.slice(0, arr.length - 1).join('/');
+			if (backPath === '') backPath = '/';
+			console.log(backPath);
+			location.assign(backPath);
 		}
 	});
 }
