@@ -800,7 +800,14 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 							{
 								deleteFiles(filePath, postData, (errorMessage) =>
 								{
-									generateAndSendIndexHtmlAlias(errorMessage);
+									if (errorMessage)
+									{
+										generateAndSendIndexHtmlAlias(errorMessage);
+									}
+									else
+									{
+										successPostResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+									}
 								});
 							}
 							else
@@ -818,7 +825,18 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 				{
 					saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
 					{
-						generateAndSendIndexHtmlAlias(errorMessage);
+						if (paramsGet?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
+						{
+							xhrAnswer(res, errorMessage);
+						}
+						else if(errorMessage)
+						{
+							generateAndSendIndexHtmlAlias(errorMessage);
+						}
+						else
+						{
+							successPostResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+						}
 					});
 				}
 				else
@@ -854,6 +872,14 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 	});
 }
 
+function successPostResponse(res, urlPath)
+{
+	res.writeHead(302,
+		{
+			'Location': urlPath
+		});
+	res.end();
+}
 function xhrAnswer(res, errorMessage)
 {
 	const dataToSend = Buffer.from(errorMessage);
@@ -1145,11 +1171,6 @@ function deleteFiles(absolutePath, postData, callback)
 function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
 {
 	if (!errorMessage) errorMessage = '';
-	if (paramsGet?.xhr)
-	{
-		xhrAnswer(res, errorMessage);
-		return;
-	}
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
 		if (err)
