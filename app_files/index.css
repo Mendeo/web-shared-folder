@@ -95,6 +95,16 @@
 	width: 100%;
 	margin-bottom: 0.2rem;
 }
+.footer__mk_dir_form
+{
+	display: flex;
+	justify-content: flex-start;
+	column-gap: 0.2rem;
+}
+.footer__mk_dir_form input[name="dir"]
+{
+	width: 100%;
+}
 .footer__dnd_placer
 {
 	display: flex;

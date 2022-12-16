@@ -113,12 +113,12 @@ function filesSubmit(formData)
 	let uploadForm = null;
 	if (!formData)
 	{
-		uploadForm = document.getElementById('upload_files');
+		uploadForm = document.querySelector('.footer__upload_files_form');
 		if (!uploadForm) return;
 	}
 	const errorFiled = document.querySelector('.error_message');
 	const MAX_FILE_LENGTH = 2147483647;
-	const progressBar = document.querySelector('#upload_files + progress');
+	const progressBar = document.querySelector('.footer__controls > progress');
 	const xhr = new XMLHttpRequest();
 	xhr.upload.addEventListener('progress', (event) =>
 	{
@@ -160,7 +160,7 @@ function filesSubmit(formData)
 		uploadForm.addEventListener('submit', (event) =>
 		{
 			event.preventDefault();
-			const inputFiles = document.querySelector('#upload_files input[type=file]');
+			const inputFiles = document.querySelector('.footer__upload_files_form input[type="file"]');
 			if (inputFiles.files.length === 0) return;
 			const totalSize = filesSize(inputFiles.files);
 			if (totalSize <= 5242880)
