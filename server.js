@@ -32,7 +32,6 @@ const fs = require('fs');
 const os = require('os');
 const zlib = require('zlib');
 const JSZip = require('jszip');
-const { buffer } = require('stream/consumers');
 const cpus = os.cpus;
 const net = os.networkInterfaces();
 
