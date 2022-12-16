@@ -1425,7 +1425,8 @@ function sendHtmlString(res, data, cookie, acceptEncoding)
 	{
 		'Content-Length': Buffer.from(data).byteLength,
 		'Content-Type': 'text/html; charset=utf-8',
-		'Content-Security-Policy': 'default-src \'self\''
+		'Content-Security-Policy': 'default-src \'self\'',
+		'Cache-Control': 'no-cache'
 	};
 	if (cookie)
 	{
