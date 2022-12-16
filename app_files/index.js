@@ -71,6 +71,7 @@ function deleteFilesWarningDialog()
 	if (!dialog) return;
 	const selectForm = document.getElementById('select_form');
 	const deleteButton = document.querySelector('#select_form input[name="delete"');
+
 	deleteButton.addEventListener('click', (event) =>
 	{
 		event.preventDefault();
@@ -87,6 +88,8 @@ function deleteFilesWarningDialog()
 	if (dialog.showModal)
 	{
 		const doNotAsk = document.querySelector('#delete-warning-dialog input[type="checkbox"]');
+		const doNotAskLabel = document.querySelector('#delete-warning-dialog label[for="doNotAsk"]');
+
 		dialog.addEventListener('close', () =>
 		{
 			if (dialog.returnValue === 'yes')
@@ -94,6 +97,11 @@ function deleteFilesWarningDialog()
 				if (doNotAsk.checked) sessionStorage.setItem('deleteWithoutAsk', true);
 				submit();
 			}
+		});
+		doNotAskLabel.addEventListener('click', (e) =>
+		{
+			e.preventDefault();
+			doNotAsk.checked = !doNotAsk.checked;
 		});
 	}
 
