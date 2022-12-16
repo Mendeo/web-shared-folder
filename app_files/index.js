@@ -5,6 +5,9 @@ performSelectButtons();
 deleteFilesWarningDialog();
 filesSubmit();
 dragAndDropFiles();
+backspaceToPreviousFolder();
+
+console.log(location);
 
 function setClientLanguage()
 {
@@ -239,5 +242,18 @@ function dragAndDropFiles()
 			formData.append('upload_xhr', file);
 		}
 		filesSubmit(formData);
+	});
+}
+
+function backspaceToPreviousFolder()
+{
+	const selectForm = document.getElementById('select_form');
+	selectForm.focus();
+	selectForm.addEventListener('keydown', (e) =>
+	{
+		if (e.code === 'Backspace' && location.pathname !== '/')
+		{
+			history.back();
+		}
 	});
 }
