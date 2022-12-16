@@ -1531,6 +1531,7 @@ function canShowInBrowser(ext)
 
 function getContentType(ext)
 {
+	ext = ext.toLowerCase();
 	//Взял из настроек nginx
 	if (ext === '.html' || ext === '.htm' || ext === '.shtml') return 'text/html; charset=utf-8';
 	if (ext === '.css') return 'text/css; charset=utf-8';
