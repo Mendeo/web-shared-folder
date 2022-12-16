@@ -1045,12 +1045,6 @@ function zipFolder(res, urlPath, absolutePath, postData)
 	let numberOfFile = 0;
 	let numberOfRecursive = 0;
 
-	let rootDir = path.dirname(absolutePath);
-	if (urlPath === '/')
-	{
-		rootDir = ROOT_PATH;
-	}
-
 	readFolderRecursive(absolutePath, true);
 
 	function readFolderRecursive(folderPath, isRoot)
@@ -1083,7 +1077,7 @@ function zipFolder(res, urlPath, absolutePath, postData)
 							else
 							{
 								numberOfFile--;
-								const relativePath = path.join(path.relative(rootDir, folderPath), file.name);
+								const relativePath = path.join(path.relative(absolutePath, folderPath), file.name);
 								zip.file(relativePath, data);
 								if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
 							}
@@ -1093,7 +1087,7 @@ function zipFolder(res, urlPath, absolutePath, postData)
 			}
 			else
 			{
-				const relativePath = path.join(path.relative(rootDir, folderPath));
+				const relativePath = path.join(path.relative(absolutePath, folderPath));
 				zip.folder(relativePath);
 			}
 			numberOfRecursive--;
