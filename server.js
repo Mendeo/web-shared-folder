@@ -1465,7 +1465,7 @@ function sendFile(res, filePath, size)
 
 function canShowInBrowser(ext)
 {
-	switch (ext)
+	switch (ext.toLowerCase())
 	{
 	case '.html':
 	case '.htm':
