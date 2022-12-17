@@ -255,7 +255,6 @@ function backspaceToPreviousFolder()
 			const arr = location.pathname.split('/');
 			let backPath = arr.slice(0, arr.length - 1).join('/');
 			if (backPath === '') backPath = '/';
-			console.log(backPath);
 			location.assign(backPath);
 		}
 	});
