@@ -105,6 +105,7 @@ All command line options can also be set in the environment variables: SERVER_RO
 Options specified on the command line have higher precedence.
 
 In order to allow users not only download files and folders from server, but also upload it to the server, it is necessary to set the environment variable SERVER_UPLOAD_ENABLE to 1.
+In particular, in this mode, the user can upload a zip archive to the server and then unzip it by clicking on the unzip icon.
 
 You can set the page title in the SERVER_DIRECTORY_MODE_TITLE environment variable.
 
