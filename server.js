@@ -766,7 +766,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			const responseCookie = [];
 			const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
 			let localeTranslation = _locales.get(clientLang);
-			ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, stats.isFile());
+			ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, stats.isFile(), stats.size);
 		}
 		else if (stats.isFile())
 		{
@@ -790,52 +790,23 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 	});
 }
 
-function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, isFile)
+function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, isFile, fileSize)
 {
-	if (postData && !Array.isArray(postData) && typeof postData === 'object')
+	if (!isFile)
 	{
-		if (postData.error)
+		if (postData && !Array.isArray(postData) && typeof postData === 'object')
 		{
-			generateAndSendIndexHtmlAlias(postData.error);
-		}
-		else if (postData.dir)
-		{
-			if (UPLOAD_ENABLE)
+			if (postData.error)
 			{
-				createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
-				{
-					generateAndSendIndexHtmlAlias(errorMessage);
-				});
+				generateAndSendIndexHtmlAlias(postData.error);
 			}
-			else
-			{
-				generateAndSendIndexHtmlAlias();
-			}
-		}
-		else if (Object.keys(postData).length < 2)
-		{
-			generateAndSendIndexHtmlAlias('No files selected!');
-		}
-		else
-		{
-			if (postData.download)
-			{
-				zipFolder(res, urlPath, filePath, postData);
-			}
-			else if (postData.delete)
+			else if (postData.dir)
 			{
 				if (UPLOAD_ENABLE)
 				{
-					deleteFiles(filePath, postData, (errorMessage) =>
+					createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
 					{
-						if (errorMessage)
-						{
-							generateAndSendIndexHtmlAlias(errorMessage);
-						}
-						else
-						{
-							reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
-						}
+						generateAndSendIndexHtmlAlias(errorMessage);
 					});
 				}
 				else
@@ -843,31 +814,67 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 					generateAndSendIndexHtmlAlias();
 				}
 			}
+			else if (Object.keys(postData).length < 2)
+			{
+				generateAndSendIndexHtmlAlias('No files selected!');
+			}
 			else
 			{
-				generateAndSendIndexHtmlAlias();
+				if (postData.download)
+				{
+					zipFolder(res, urlPath, filePath, postData);
+				}
+				else if (postData.delete)
+				{
+					if (UPLOAD_ENABLE)
+					{
+						deleteFiles(filePath, postData, (errorMessage) =>
+						{
+							if (errorMessage)
+							{
+								generateAndSendIndexHtmlAlias(errorMessage);
+							}
+							else
+							{
+								reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+							}
+						});
+					}
+					else
+					{
+						generateAndSendIndexHtmlAlias();
+					}
+				}
+				else
+				{
+					generateAndSendIndexHtmlAlias();
+				}
 			}
 		}
-	}
-	else if (postDataHasFiles(postData))
-	{
-		saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
+		else if (postDataHasFiles(postData))
 		{
-			if (paramsGet?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
+			saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
 			{
-				xhrAnswer(res, errorMessage);
-			}
-			else if(errorMessage)
-			{
-				generateAndSendIndexHtmlAlias(errorMessage);
-			}
-			else
-			{
-				reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
-			}
-		});
+				if (paramsGet?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
+				{
+					xhrAnswer(res, errorMessage);
+				}
+				else if(errorMessage)
+				{
+					generateAndSendIndexHtmlAlias(errorMessage);
+				}
+				else
+				{
+					reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+				}
+			});
+		}
+		else
+		{
+			generateAndSendIndexHtmlAlias();
+		}
 	}
-	else if (paramsGet?.unzip && isFile)
+	else if (paramsGet?.unzip)
 	{
 		unzip(filePath, errorMessage =>
 		{
@@ -887,7 +894,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 	}
 	else
 	{
-		generateAndSendIndexHtmlAlias();
+		sendFile(res, filePath, fileSize);
 	}
 
 	function generateAndSendIndexHtmlAlias(errorMessage)
