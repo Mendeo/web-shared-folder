@@ -880,12 +880,12 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 		{
 			if (errorMessage)
 			{
-				console.log(`${filePath} unziped failed: ${errorMessage}`);
+				console.log(`${urlPath} unziped failed: ${errorMessage}`);
 				generateAndSendIndexHtmlAlias(errorMessage);
 			}
 			else
 			{
-				console.log(`${filePath} unziped successfully.`);
+				console.log(`${urlPath} unziped successfully.`);
 				let urlPathDir = urlPath.slice(0, urlPath.lastIndexOf('/'));
 				if (urlPathDir === '') urlPathDir = '/';
 				reloadResponse(res, urlPathDir);
