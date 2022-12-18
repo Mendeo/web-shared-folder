@@ -269,6 +269,7 @@ function readIconsFiles()
 		}
 	}
 	_icons_svg_map.set('/icons/eye.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'eye.svg')));
+	_icons_svg_map.set('/icons/unzip.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'unzip.svg')));
 }
 
 function readTranslationFiles()
@@ -722,6 +723,9 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			sendCachedFile(res, _icons_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
 		case '/icons/eye.svg':
+			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
+			return;
+		case '/icons/unzip.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
 		case '/_favicon.ico':
