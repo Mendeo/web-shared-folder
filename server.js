@@ -1524,7 +1524,6 @@ function unzip(pathToZip, callback)
 				{
 					const file = files[index];
 					const name = zipData.files[file].name;
-					const data = zipData.files[file]._data.compressedContent;
 					const isDir = zipData.files[file].dir;
 					const fullPath = path.join(path.dirname(pathToZip), name);
 					if (isDir)
@@ -1536,10 +1535,13 @@ function unzip(pathToZip, callback)
 					}
 					else
 					{
-						fs.writeFile(fullPath, data, err =>
+						zipData.files[file].async('uint8array').then(data =>
 						{
-							perform(err);
-						});
+							fs.writeFile(fullPath, data, err =>
+							{
+								perform(err);
+							});
+						}).catch(perform);
 					}
 
 					function perform(err)
