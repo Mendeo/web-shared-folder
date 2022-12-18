@@ -32,17 +32,24 @@
 	text-decoration: none;
 	margin-left: 0.2rem;
 }
-.open-in-browser-icon
+.flex_right_icons
 {
 	text-decoration: none;
 	display: inline-block;
 	margin-left: auto;
 	width: 20px;
 	height: 20px;
-	background-image: url("/icons/eye.svg");
 	background-size: contain;
 	background-repeat: no-repeat;
 	background-position: center;
+}
+.open-in-browser-icon
+{
+	background-image: url("/icons/eye.svg");
+}
+.unzip-icon
+{
+	background-image: url("/icons/eye.svg");
 }
 .main_container__first_column
 {

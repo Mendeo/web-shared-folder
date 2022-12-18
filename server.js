@@ -756,85 +756,80 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 		{
 			error(err, res);
 		}
-		else if (!stats.isFile())
+		else if (_generateIndex)
 		{
-			if (_generateIndex)
+			const responseCookie = [];
+			const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
+			let localeTranslation = _locales.get(clientLang);
+			ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, stats.isFile());
+		}
+		else if (stats.isFile())
+		{
+			sendFile(res, filePath, stats.size);
+		}
+		else
+		{
+			filePath = path.join(filePath, 'index.html');
+			fs.stat(filePath, (err, stats) =>
 			{
-				const responseCookie = [];
-				const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
-				let localeTranslation = _locales.get(clientLang);
-				if (postData && !Array.isArray(postData) && typeof postData === 'object')
+				if (err)
 				{
-					if (postData.error)
-					{
-						generateAndSendIndexHtmlAlias(postData.error);
-					}
-					else if (postData.dir)
-					{
-						if (UPLOAD_ENABLE)
-						{
-							createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
-							{
-								generateAndSendIndexHtmlAlias(errorMessage);
-							});
-						}
-						else
-						{
-							generateAndSendIndexHtmlAlias();
-						}
-					}
-					else if (Object.keys(postData).length < 2)
-					{
-						generateAndSendIndexHtmlAlias('No files selected!');
-					}
-					else
-					{
-						if (postData.download)
-						{
-							zipFolder(res, urlPath, filePath, postData);
-						}
-						else if (postData.delete)
-						{
-							if (UPLOAD_ENABLE)
-							{
-								deleteFiles(filePath, postData, (errorMessage) =>
-								{
-									if (errorMessage)
-									{
-										generateAndSendIndexHtmlAlias(errorMessage);
-									}
-									else
-									{
-										successPostResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
-									}
-								});
-							}
-							else
-							{
-								generateAndSendIndexHtmlAlias();
-							}
-						}
-						else
-						{
-							generateAndSendIndexHtmlAlias();
-						}
-					}
+					error(err, res);
 				}
-				else if (postDataHasFiles(postData))
+				else
 				{
-					saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
+					sendFile(res, filePath, stats.size);
+				}
+			});
+		}
+	});
+}
+
+function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, isFile)
+{
+	if (postData && !Array.isArray(postData) && typeof postData === 'object')
+	{
+		if (postData.error)
+		{
+			generateAndSendIndexHtmlAlias(postData.error);
+		}
+		else if (postData.dir)
+		{
+			if (UPLOAD_ENABLE)
+			{
+				createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
+				{
+					generateAndSendIndexHtmlAlias(errorMessage);
+				});
+			}
+			else
+			{
+				generateAndSendIndexHtmlAlias();
+			}
+		}
+		else if (Object.keys(postData).length < 2)
+		{
+			generateAndSendIndexHtmlAlias('No files selected!');
+		}
+		else
+		{
+			if (postData.download)
+			{
+				zipFolder(res, urlPath, filePath, postData);
+			}
+			else if (postData.delete)
+			{
+				if (UPLOAD_ENABLE)
+				{
+					deleteFiles(filePath, postData, (errorMessage) =>
 					{
-						if (paramsGet?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
-						{
-							xhrAnswer(res, errorMessage);
-						}
-						else if(errorMessage)
+						if (errorMessage)
 						{
 							generateAndSendIndexHtmlAlias(errorMessage);
 						}
 						else
 						{
-							successPostResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+							reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
 						}
 					});
 				}
@@ -842,36 +837,61 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 				{
 					generateAndSendIndexHtmlAlias();
 				}
-
-				function generateAndSendIndexHtmlAlias(errorMessage)
-				{
-					generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
-				}
 			}
 			else
 			{
-				filePath = path.join(filePath, 'index.html');
-				fs.stat(filePath, (err, stats) =>
-				{
-					if (err)
-					{
-						error(err, res);
-					}
-					else
-					{
-						sendFile(res, filePath, stats.size);
-					}
-				});
+				generateAndSendIndexHtmlAlias();
 			}
 		}
-		else
+	}
+	else if (postDataHasFiles(postData))
+	{
+		saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
 		{
-			sendFile(res, filePath, stats.size);
-		}
-	});
+			if (paramsGet?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
+			{
+				xhrAnswer(res, errorMessage);
+			}
+			else if(errorMessage)
+			{
+				generateAndSendIndexHtmlAlias(errorMessage);
+			}
+			else
+			{
+				reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+			}
+		});
+	}
+	else if (paramsGet?.unzip && isFile)
+	{
+		unzip(filePath, errorMessage =>
+		{
+			if (errorMessage)
+			{
+				console.log(`${filePath} unziped failed: ${errorMessage}`);
+				generateAndSendIndexHtmlAlias(errorMessage);
+			}
+			else
+			{
+				console.log(`${filePath} unziped successfully.`);
+				let urlPathDir = urlPath.slice(0, urlPath.lastIndexOf('/'));
+				if (urlPathDir === '') urlPathDir = '/';
+				reloadResponse(res, urlPathDir);
+			}
+		});
+	}
+	else
+	{
+		generateAndSendIndexHtmlAlias();
+	}
+
+	function generateAndSendIndexHtmlAlias(errorMessage)
+	{
+		generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
+	}
 }
 
-function successPostResponse(res, urlPath)
+function reloadResponse(res, urlPath)
 {
 	res.writeHead(302,
 		{
@@ -1225,8 +1245,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 `				<div class="main_container__first_column">
 					<input type="checkbox" name="${Buffer.from(file.name).toString('base64url')}">
 					<div class="${iconnClassName}"></div>
-					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${showInBrowser ? `
-					<a href="${linkHref}" class="open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
+					${ext === '.zip' ? `<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}
+					${showInBrowser ? `<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
 				</div>
 				<span>${sizeStr}</span>
 				<span>${modify}</span>
@@ -1476,6 +1497,72 @@ function sendFile(res, filePath, size)
 		console.log('Sent successfully: ' + filePath);
 	});
 
+}
+
+function unzip(pathToZip, callback)
+{
+	const zip = new JSZip();
+	fs.readFile(pathToZip, (err, data) =>
+	{
+		if (err)
+		{
+			callback(err.message);
+		}
+		else
+		{
+			zip.loadAsync(data, { createFolders: true }).then(zipData =>
+			{
+				const files = Object.keys(zipData.files);
+				if (files.length > 0) next(0);
+
+				function next(index)
+				{
+					const file = files[index];
+					const name = zipData.files[file].name;
+					const data = zipData.files[file]._data.compressedContent;
+					const isDir = zipData.files[file].dir;
+					const fullPath = path.join(path.dirname(pathToZip), name);
+					if (isDir)
+					{
+						fs.mkdir(fullPath, { recursive: true }, err =>
+						{
+							perform(err);
+						});
+					}
+					else
+					{
+						fs.writeFile(fullPath, data, err =>
+						{
+							perform(err);
+						});
+					}
+
+					function perform(err)
+					{
+						if (err)
+						{
+							console.log('Unzip error: ' + err.message);
+							callback('Server error while uziping');
+						}
+						else
+						{
+							if (index < files.length - 1)
+							{
+								next(index + 1);
+							}
+							else
+							{
+								callback();
+							}
+						}
+					}
+				}
+			}).catch(err =>
+			{
+				callback(err?.message || err);
+			});
+		}
+	});
 }
 
 function canShowInBrowser(ext)
