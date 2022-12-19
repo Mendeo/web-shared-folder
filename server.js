@@ -878,16 +878,17 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 	{
 		unzip(filePath, errorMessage =>
 		{
+			let urlPathDir = urlPath.slice(0, urlPath.lastIndexOf('/'));
+			if (urlPathDir === '') urlPathDir = '/';
 			if (errorMessage)
 			{
-				console.log(`${urlPath} unziped failed: ${errorMessage}`);
-				generateAndSendIndexHtmlAlias(errorMessage);
+				const msg = `${urlPath} unzipped failed`;
+				console.log(`${msg}: ${errorMessage}`);
+				generateAndSendIndexHtml(res, urlPathDir, path.join(ROOT_PATH, urlPathDir), acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, msg);
 			}
 			else
 			{
-				console.log(`${urlPath} unziped successfully.`);
-				let urlPathDir = urlPath.slice(0, urlPath.lastIndexOf('/'));
-				if (urlPathDir === '') urlPathDir = '/';
+				console.log(`${urlPath} unzipped successfully.`);
 				reloadResponse(res, urlPathDir);
 			}
 		});
