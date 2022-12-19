@@ -1209,6 +1209,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 			let folderName = '/';
 			const folderSizeStub = getTranslation('folderSizeStub', localeTranslation);
 			let hrefsResult = '';
+			let filesNumber = 0;
+			let foldersNumber = 0;
+			let filesSize = 0;
 			//Массив sortLinks содержит html код ссылок для сортировки.
 			const sortLinks = new Array(3);
 			if (urlPath !== '/')
@@ -1279,6 +1282,15 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
 							sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
 						}
+						if (isDirectory)
+						{
+							foldersNumber++;
+						}
+						else
+						{
+							filesNumber++;
+							filesSize += stats.size;
+						}
 					});
 				}
 			}
@@ -1307,24 +1319,25 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[6] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
 						_indexHtmlbase[8]) : ''}` +
-						_indexHtmlbase[9] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[10] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[11] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[12] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[13] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[14] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[15] + hrefsResult +
-						_indexHtmlbase[16] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[17] + getTranslation('createFolder', localeTranslation) +
-						_indexHtmlbase[18] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[19] + getTranslation('dragAndDropText', localeTranslation) +
-						_indexHtmlbase[20] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[21] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[23] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[24]) : ''}` +
-						_indexHtmlbase[25] + errorMessage +
-						_indexHtmlbase[26];
+						_indexHtmlbase[9] + `Всего ${filesNumber} файлов и ${foldersNumber} папкок. Общий размер файлов: ${getStrSize(filesSize, localeTranslation)}` +
+						_indexHtmlbase[10] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[11] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[12] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[13] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[14] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[15] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[16] + hrefsResult +
+						_indexHtmlbase[17] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[18] + getTranslation('createFolder', localeTranslation) +
+						_indexHtmlbase[19] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[20] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[21] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[23] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[24] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[25]) : ''}` +
+						_indexHtmlbase[26] + errorMessage +
+						_indexHtmlbase[27];
 			}
 		}
 	});
