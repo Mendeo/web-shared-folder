@@ -62,7 +62,7 @@
 {
 	color: tomato;
 }
-.heade__controls
+.header__controls
 {
 	display: flex;
 	flex-wrap: wrap;
@@ -70,9 +70,13 @@
 	justify-content: space-between;
 	row-gap: 0.2rem;
 }
-.heade__controls > *
+.header__controls > *
 {
 	width: 47%;
+}
+.header__stats
+{
+	margin-top: 0.4rem;
 }
 .header
 {

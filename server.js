@@ -1267,6 +1267,15 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				<span>${sizeStr}</span>
 				<span>${modify}</span>
 `, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+						if (isDirectory)
+						{
+							foldersNumber++;
+						}
+						else
+						{
+							filesNumber++;
+							filesSize += stats.size;
+						}
 						if (hrefs.length === files.length)
 						{
 							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
@@ -1281,15 +1290,6 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
 							sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
 							sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
-						}
-						if (isDirectory)
-						{
-							foldersNumber++;
-						}
-						else
-						{
-							filesNumber++;
-							filesSize += stats.size;
 						}
 					});
 				}
@@ -1319,7 +1319,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[6] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
 						_indexHtmlbase[8]) : ''}` +
-						_indexHtmlbase[9] + `Всего ${filesNumber} файлов и ${foldersNumber} папкок. Общий размер файлов: ${getStrSize(filesSize, localeTranslation)}` +
+						_indexHtmlbase[9] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
 						_indexHtmlbase[10] + getTranslation('fileName', localeTranslation) +
 						_indexHtmlbase[11] + (hasFiles ? sortLinks[0] : '') +
 						_indexHtmlbase[12] + getTranslation('fileSize', localeTranslation) +
