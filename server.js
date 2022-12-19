@@ -874,7 +874,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 			generateAndSendIndexHtmlAlias();
 		}
 	}
-	else if (paramsGet?.unzip)
+	else if (paramsGet?.unzip && UPLOAD_ENABLE)
 	{
 		unzip(filePath, errorMessage =>
 		{
@@ -1261,7 +1261,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 					<input type="checkbox" name="${Buffer.from(file.name).toString('base64url')}">
 					<div class="${iconnClassName}"></div>
 					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
-					${ext === '.zip' ? `<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}
+					${ext === '.zip' && UPLOAD_ENABLE ? `<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}
 					${showInBrowser ? `<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
 				</div>
 				<span>${sizeStr}</span>
