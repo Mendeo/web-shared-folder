@@ -857,7 +857,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 			{
 				if (paramsGet?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
 				{
-					xhrAnswer(res, errorMessage);
+					simpleAnswer(res, errorMessage);
 				}
 				else if(errorMessage)
 				{
@@ -884,7 +884,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 			{
 				const msg = `${urlPath} unzipped failed`;
 				console.log(`${msg}: ${errorMessage}`);
-				generateAndSendIndexHtml(res, urlPathDir, path.join(ROOT_PATH, urlPathDir), acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, msg);
+				simpleAnswer(res, msg);
 			}
 			else
 			{
@@ -912,7 +912,7 @@ function reloadResponse(res, urlPath)
 		});
 	res.end();
 }
-function xhrAnswer(res, errorMessage)
+function simpleAnswer(res, errorMessage)
 {
 	const dataToSend = Buffer.from(errorMessage);
 	res.writeHead(200,
