@@ -218,6 +218,7 @@ function dragAndDropFiles()
 {
 	const dropZoneClass = 'footer__drag_and_drop__dragenter';
 	const dropZone = document.querySelector('.footer__drag_and_drop');
+	if (!dropZone) return;
 	dropZone.classList.remove('hidden');
 	dropZone.addEventListener('dragenter', (e) =>
 	{
