@@ -344,7 +344,7 @@ function app(req, res)
 {
 	let now = new Date();
 	let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
-	if (now - _lastReqTime > 1000 || _lastIP !== ip) console.log(`*******${ip}, ${now.toLocaleString('ru-RU', { hour: 'numeric', minute: 'numeric', second: 'numeric' })} *******`);
+	if (now - _lastReqTime > 1000 || _lastIP !== ip) console.log(`*******${ip}, ${now.toLocaleString()} *******`);
 	_lastReqTime = now;
 	_lastIP = ip;
 	//Проводим аутентификацию
