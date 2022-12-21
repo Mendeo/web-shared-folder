@@ -1,11 +1,23 @@
 'use strict';
 
+const _checkboxes =  document.querySelectorAll('#select_form input[type="checkbox"]');
+
 setClientLanguage();
 performSelectButtons();
 deleteFilesWarningDialog();
-filesSubmit();
+upload();
 dragAndDropFiles();
 backspaceToPreviousFolder();
+preventDownloadIfNoFilesSelected();
+
+function hasSelectedChecboxes()
+{
+	for (let elem of _checkboxes)
+	{
+		if (elem.checked) return true;
+	}
+	return false;
+}
 
 function setClientLanguage()
 {
@@ -70,14 +82,13 @@ function deleteFilesWarningDialog()
 	if (sessionStorage.getItem('deleteWithoutAsk')) return;
 	const dialog = document.getElementById('delete-warning-dialog');
 	if (!dialog) return;
-	const checkboxes =  document.querySelectorAll('#select_form input[type="checkbox"]');
 	const selectForm = document.getElementById('select_form');
 	const deleteButton = document.querySelector('#select_form input[name="delete"]');
 
 	deleteButton.addEventListener('click', (event) =>
 	{
 		event.preventDefault();
-		if (!hasSelected(checkboxes)) return;
+		if (!hasSelectedChecboxes()) return;
 		if (dialog.showModal)
 		{
 			dialog.showModal();
@@ -117,18 +128,9 @@ function deleteFilesWarningDialog()
 		selectForm.append(deleteInput);
 		selectForm.submit();
 	}
-
-	function hasSelected(arr)
-	{
-		for (let elem of arr)
-		{
-			if (elem.checked) return true;
-		}
-		return false;
-	}
 }
 
-function filesSubmit(formData)
+function upload(formData)
 {
 	let uploadForm = null;
 	if (!formData)
@@ -251,7 +253,7 @@ function dragAndDropFiles()
 		{
 			formData.append('upload_xhr', file);
 		}
-		filesSubmit(formData);
+		upload(formData);
 	});
 }
 
@@ -269,5 +271,14 @@ function backspaceToPreviousFolder()
 			if (backPath === '') backPath = '/';
 			location.assign(backPath);
 		}
+	});
+}
+
+function preventDownloadIfNoFilesSelected()
+{
+	const downloadButton = document.querySelector('#select_form input[name="download"]');
+	downloadButton.addEventListener('click', (e) =>
+	{
+		if (!hasSelectedChecboxes()) e.preventDefault();
 	});
 }
