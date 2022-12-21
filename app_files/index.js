@@ -70,12 +70,14 @@ function deleteFilesWarningDialog()
 	if (sessionStorage.getItem('deleteWithoutAsk')) return;
 	const dialog = document.getElementById('delete-warning-dialog');
 	if (!dialog) return;
+	const checkboxes =  document.querySelectorAll('#select_form input[type="checkbox"]');
 	const selectForm = document.getElementById('select_form');
-	const deleteButton = document.querySelector('#select_form input[name="delete"');
+	const deleteButton = document.querySelector('#select_form input[name="delete"]');
 
 	deleteButton.addEventListener('click', (event) =>
 	{
 		event.preventDefault();
+		if (!hasSelected(checkboxes)) return;
 		if (dialog.showModal)
 		{
 			dialog.showModal();
@@ -114,6 +116,15 @@ function deleteFilesWarningDialog()
 		deleteInput.value = true;
 		selectForm.append(deleteInput);
 		selectForm.submit();
+	}
+
+	function hasSelected(arr)
+	{
+		for (let elem of arr)
+		{
+			if (elem.checked) return true;
+		}
+		return false;
 	}
 }
 
