@@ -130,7 +130,7 @@ function deleteFilesWarningDialog()
 	}
 }
 
-function upload(formData)
+function upload(formData, callback)
 {
 	let uploadForm = null;
 	if (!formData)
@@ -160,6 +160,7 @@ function upload(formData)
 		{
 			progressBar.value = 0;
 			removeProgressBar();
+			callback(xhr.response);
 			if (xhr.response)
 			{
 				errorFiled.innerHTML = xhr.response;
@@ -174,7 +175,9 @@ function upload(formData)
 	{
 		progressBar.value = 0;
 		removeProgressBar();
-		errorFiled.innerHTML = 'Error occurred!';
+		const msg = 'Error occurred!';
+		errorFiled.innerHTML = msg;
+		callback(msg);
 	});
 
 	if (!formData)
@@ -188,6 +191,7 @@ function upload(formData)
 			if (totalSize <= 5242880)
 			{
 				uploadForm.submit();
+				callback();
 				return;
 			}
 			formData = new FormData(uploadForm);
@@ -218,17 +222,18 @@ function upload(formData)
 
 	function showProgressBar()
 	{
-		progressBar.hidden = false;
+		progressBar.classList.remove('hidden-in-flow');
 	}
 
 	function removeProgressBar()
 	{
-		progressBar.hidden = true;
+		progressBar.classList.add('hidden-in-flow');
 	}
 }
 
 function dragAndDropFiles()
 {
+	let uploadingInProgress = false;
 	const dropZoneClass = 'footer__drag_and_drop__dragenter';
 	const dropZone = document.querySelector('.footer__drag_and_drop');
 	if (!dropZone) return;
@@ -236,24 +241,33 @@ function dragAndDropFiles()
 	dropZone.addEventListener('dragenter', (e) =>
 	{
 		e.preventDefault();
-		dropZone.classList.add(dropZoneClass);
+		if (!uploadingInProgress) dropZone.classList.add(dropZoneClass);
 	});
 	dropZone.addEventListener('dragleave', (e) =>
 	{
 		e.preventDefault();
-		dropZone.classList.remove(dropZoneClass);
+		if (!uploadingInProgress) dropZone.classList.remove(dropZoneClass);
 	});
 	dropZone.addEventListener('dragover', (e) => e.preventDefault());
 	dropZone.addEventListener('drop', (e)=>
 	{
 		e.preventDefault();
-		dropZone.classList.remove(dropZoneClass);
-		const formData = new FormData();
-		for (let file of e.dataTransfer.files)
+		if (!uploadingInProgress)
 		{
-			formData.append('upload_xhr', file);
+			dropZone.classList.remove(dropZoneClass);
+			const formData = new FormData();
+			for (let file of e.dataTransfer.files)
+			{
+				formData.append('upload_xhr', file);
+			}
+			dropZone.classList.add('footer__drag_and_drop__while_upload');
+			uploadingInProgress = true;
+			upload(formData, () =>
+			{
+				uploadingInProgress = false;
+				dropZone.classList.remove('footer__drag_and_drop__while_upload');
+			});
 		}
-		upload(formData);
 	});
 }
 

@@ -99,7 +99,10 @@
 	flex-direction: column;
 	row-gap: 0.5rem;
 	min-width: max-content;
-
+}
+.footer__controls > progress
+{
+	width: 100%;
 }
 .footer__controls hr
 {
@@ -140,6 +143,11 @@
 {
 	background-color: var(--dragenter-color);
 	color: black;
+}
+
+.footer__drag_and_drop__while_upload
+{
+	filter: contrast(0%);
 }
 
 .footer > div:last-child
