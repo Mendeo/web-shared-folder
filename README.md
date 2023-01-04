@@ -36,6 +36,7 @@ In https mode, it is possible to enable automatic redirection from http to https
 If the keys \<username\> and \<password\> are given, then HTTP authentication is enabled with the given login and password.
 
 **All command line options can also be set in the environment variables: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.** Options specified on the command line have higher precedence.
+The password can be set as a md5 hash in the **SERVER_PASSWORD_MD5** environment variable.
 
 In order to allow users not only download files from server, but also upload it to the server, it is necessary to set the environment variable **SERVER_UPLOAD_ENABLE** to 1. **The maximum upload size at one time is about 2 GiB.**
 In particular, in this mode, the user can upload a zip archive to the server and then unzip it by clicking on the unzip icon.
