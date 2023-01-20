@@ -1,4 +1,4 @@
-# web-shared-fodler
+# web-shared-folder
 
 Convenient http server on nodejs. Designed to share some folder on a local network or even on the Internet. It can also be used as a web server to serve static sites.
 
