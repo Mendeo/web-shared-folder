@@ -160,7 +160,7 @@ function upload(formData, callback)
 		{
 			progressBar.value = 0;
 			removeProgressBar();
-			callback(xhr.response);
+			if (typeof callback === 'function') callback(xhr.response);
 			if (xhr.response)
 			{
 				errorFiled.innerHTML = xhr.response;
@@ -171,13 +171,14 @@ function upload(formData, callback)
 			}
 		}
 	});
-	xhr.addEventListener('error', () =>
+	xhr.addEventListener('error', (err) =>
 	{
 		progressBar.value = 0;
 		removeProgressBar();
 		const msg = 'Error occurred!';
+		if (typeof callback === 'function') callback(msg);
 		errorFiled.innerHTML = msg;
-		callback(msg);
+		console.log(err);
 	});
 
 	if (!formData)

@@ -487,6 +487,7 @@ function getPostBody(req, callback)
 			if (postLength > size)
 			{
 				req.destroy();
+				console.log('The request was destroyed due to a size error.');
 				return;
 			}
 			else
