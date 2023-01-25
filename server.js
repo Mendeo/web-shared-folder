@@ -495,6 +495,12 @@ function getPostBody(req, callback)
 				postChunks.push(chunk);
 			}
 		});
+		req.on('error', (err) =>
+		{
+			console.log('An error occured while uploading!');
+			console.log(err);
+			req.destroy();
+		});
 		req.on('end', () =>
 		{
 			//console.log('all post data received');
