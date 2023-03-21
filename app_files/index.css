@@ -182,7 +182,7 @@
 {
 	outline: none;
 }
-#poweredBy
+.block_center
 {
 	display: flex;
 	justify-content: center;
