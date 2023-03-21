@@ -1339,17 +1339,18 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[14] + getTranslation('modifyDate', localeTranslation) +
 						_indexHtmlbase[15] + (hasFiles ? sortLinks[2] : '') +
 						_indexHtmlbase[16] + hrefsResult +
-						_indexHtmlbase[17] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[18] + getTranslation('createFolder', localeTranslation) +
-						_indexHtmlbase[19] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[20] + getTranslation('dragAndDropText', localeTranslation) +
-						_indexHtmlbase[21] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[23] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[24] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[25]) : ''}` +
-						_indexHtmlbase[26] + errorMessage +
-						_indexHtmlbase[27];
+						_indexHtmlbase[17] + getTranslation('poweredBy', localeTranslation) +
+						_indexHtmlbase[18] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[19] + getTranslation('createFolder', localeTranslation) +
+						_indexHtmlbase[20] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[21] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[23] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[24] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[25] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[26]) : ''}` +
+						_indexHtmlbase[27] + errorMessage +
+						_indexHtmlbase[28];
 			}
 		}
 	});

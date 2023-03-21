@@ -182,6 +182,11 @@
 {
 	outline: none;
 }
+#poweredBy
+{
+	display: flex;
+	justify-content: center;
+}
 
 
 @media screen and (max-width: 900px)

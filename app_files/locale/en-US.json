@@ -26,5 +26,6 @@
 	"dragAndDropText": "Drag files here.",
 	"linkToUnzip": "Unzip archive on server",
 	"filesStats": "Files",
-	"foldersStats": "Folders"
+	"foldersStats": "Folders",
+	"poweredBy": "Powered by"
 }

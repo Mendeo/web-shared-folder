@@ -26,5 +26,6 @@
 	"dragAndDropText": "Перетащите файлы сюда.",
 	"linkToUnzip": "Распаковать на сервере",
 	"filesStats": "Файлов",
-	"foldersStats": "Папок"
+	"foldersStats": "Папок",
+	"poweredBy": "Работает на"
 }
