@@ -1253,22 +1253,25 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 			{
 				for (let file of files)
 				{
-					fs.stat(path.join(absolutePath, file.name), (err, stats) =>
+					const filePath = path.join(absolutePath, file.name);
+					fs.stat(filePath, (err, stats) =>
 					{
 						if (err)
 						{
 							console.log(err?.message);
 							return;
 						}
-						const isDirectory = !file.isFile();
-						const linkName = isDirectory ? `[${file.name}]` : file.name;
-						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
-						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
-						const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
-						const ext = isDirectory ? 'folder' : path.extname(file.name);
-						const iconnClassName = getIconClassName(ext);
-						const showInBrowser = !isDirectory && canShowInBrowser(ext);
-						hrefs.push({ value:
+						checkIsDirectory(filePath, file, afterIsDirectory);
+						function afterIsDirectory(isDirectory)
+						{
+							const linkName = isDirectory ? `[${file.name}]` : file.name;
+							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
+							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
+							const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
+							const ext = isDirectory ? 'folder' : path.extname(file.name);
+							const iconnClassName = getIconClassName(ext);
+							const showInBrowser = !isDirectory && canShowInBrowser(ext);
+							hrefs.push({ value:
 `				<div class="main_container__first_column">
 					<input type="checkbox" name="${Buffer.from(file.name).toString('base64url')}">
 					<div class="${iconnClassName}"></div>
@@ -1279,29 +1282,30 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				<span>${sizeStr}</span>
 				<span>${modify}</span>
 `, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
-						if (isDirectory)
-						{
-							foldersNumber++;
-						}
-						else
-						{
-							filesNumber++;
-							filesSize += stats.size;
-						}
-						if (hrefs.length === files.length)
-						{
-							const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
-							const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'asc', setSortCookie, null, setSortCookie);
-							sortHrefs(sortType, sortDirection, hrefs);
-							for (let h of hrefs)
+							if (isDirectory)
 							{
-								hrefsResult += h.value;
+								foldersNumber++;
 							}
-							//Массив sortLinks содержит html код ссылок для сортировки.
-							sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
-							sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
-							sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
-							sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
+							else
+							{
+								filesNumber++;
+								filesSize += stats.size;
+							}
+							if (hrefs.length === files.length)
+							{
+								const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
+								const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'asc', setSortCookie, null, setSortCookie);
+								sortHrefs(sortType, sortDirection, hrefs);
+								for (let h of hrefs)
+								{
+									hrefsResult += h.value;
+								}
+								//Массив sortLinks содержит html код ссылок для сортировки.
+								sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
+								sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
+								sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
+								sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
+							}
 						}
 					});
 				}
@@ -1354,6 +1358,34 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 			}
 		}
 	});
+}
+
+function checkIsDirectory(path, dirent, next)
+{
+	if (dirent.isSymbolicLink())
+	{
+		fs.readlink(path, (err, linkPath) =>
+		{
+			if (err)
+			{
+				console.log(err?.message);
+				return;
+			}
+			fs.stat(linkPath, (err, stats) =>
+			{
+				if (err)
+				{
+					console.log(err?.message);
+					return;
+				}
+				next(stats.isDirectory());
+			});
+		});
+	}
+	else
+	{
+		next(dirent.isDirectory());
+	}
 }
 
 //Если key есть и в primary и в secondary, то вернёт из primary, иначе: вернёт из secondary.
