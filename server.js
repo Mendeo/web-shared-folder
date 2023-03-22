@@ -1074,6 +1074,7 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 function zipFolder(res, absolutePath, postData)
 {
 	const selectedFiles = [];
+	const rootFolderName = path.basename(absolutePath);
 	let keys = Object.keys(postData);
 	for (let key of keys)
 	{
@@ -1159,7 +1160,8 @@ function zipFolder(res, absolutePath, postData)
 		zipStream.on('error', (err) => error(err, res));
 		res.writeHead(200,
 			{
-				'Content-Type': 'application/zip'
+				'Content-Type': 'application/zip',
+				'Content-Disposition': `attachment; filename=${rootFolderName + '.zip'}`
 			});
 		res.on('close', () =>
 		{
