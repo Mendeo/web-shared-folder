@@ -1161,7 +1161,7 @@ function zipFolder(res, urlPath, absolutePath, postData)
 		res.writeHead(200,
 			{
 				'Content-Type': 'application/zip',
-				'Content-Disposition': `attachment; filename=${rootFolderName + '.zip'}`
+				'Content-Disposition': `attachment; filename=${encodeURI(rootFolderName)}.zip`
 			});
 		res.on('close', () =>
 		{
