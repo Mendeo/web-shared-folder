@@ -833,7 +833,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 			{
 				if (postData.download)
 				{
-					zipFolder(res, filePath, postData);
+					zipFolder(res, urlPath, filePath, postData);
 				}
 				else if (postData.delete)
 				{
@@ -1071,10 +1071,10 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 	}
 }
 
-function zipFolder(res, absolutePath, postData)
+function zipFolder(res, urlPath, absolutePath, postData)
 {
 	const selectedFiles = [];
-	const rootFolderName = path.basename(absolutePath);
+	const rootFolderName = urlPath === '/' ? 'archive' : path.basename(absolutePath);
 	let keys = Object.keys(postData);
 	for (let key of keys)
 	{
