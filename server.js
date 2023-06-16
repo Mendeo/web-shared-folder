@@ -1173,7 +1173,7 @@ function zipFolder(res, urlPath, absolutePath, postData)
 		});
 		res.on('finish', () =>
 		{
-			console.log('Zip archive sent successfully.');
+			console.log('Zip archive sent successfully: ' + selectedFiles.join(', '));
 		});
 	}
 }
