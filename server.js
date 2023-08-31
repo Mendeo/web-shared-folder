@@ -36,7 +36,7 @@ const JSZip = require('jszip');
 const cpus = os.cpus;
 const net = os.networkInterfaces();
 
-const VERSION = JSON.parse(fs.readFileSync('./package.json').toString()).version;
+const VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json')).toString()).version;
 { //Show version
 	const v = process.argv[2];
 	if (!process.argv[3] && (v === '-v' || v === '-V' || v == '--version'))
