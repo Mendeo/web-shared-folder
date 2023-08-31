@@ -36,6 +36,80 @@ const JSZip = require('jszip');
 const cpus = os.cpus;
 const net = os.networkInterfaces();
 
+const VERSION = JSON.parse(fs.readFileSync('./package.json').toString()).version;
+{ //Show version
+	const v = process.argv[2];
+	if (!process.argv[3] && (v === '-v' || v === '-V' || v == '--version'))
+	{
+		console.log(VERSION);
+		process.exit(0);
+	}
+}
+{//Show help
+	const h = process.argv[2];
+	if (!process.argv[3] && (h === '-h' || h === '-H' || h == '--help'))
+	{
+		const help =
+`Web server on nodejs, designed to share user directory from network.
+It can also be used as a web server to serve static sites.
+
+Usage:
+web-shared-folder <path to the directory for sharing> <port> [<key> <cert>] [<username> <password>]
+
+If there is the "index.html" file in the specified directory,
+then the server will start in the static web site mode.
+The directory contents viewing mode can be forced.
+To do this, set the environment variable SERVER_DIRECTORY_MODE=1.
+Also, this mode can be forcibly disabled by setting SERVER_DIRECTORY_MODE=0.
+
+In order to start the server to work over https, you must specify the files:
+the private key file (<key>) and the certificate file (<cert>).
+
+In https mode, it is possible to enable automatic redirection from http.
+To do this, set to the SERVER_AUTO_REDIRECT_HTTP_PORT environment variable
+the port number from which the redirection will be performed (usually 80).
+
+If the keys <username> and <password> are given,
+then HTTP authentication is enabled with the given login and password.
+
+All command line options can also be set in the environment variables:
+SERVER_ROOT, SERVER_PORT, SERVER_KEY,
+SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
+Also in the SERVER_PASSWORD_MD5 environment variable
+the server password can be set as a md5 hash.
+Options specified on the command line have higher precedence.
+
+In order to allow users to upload files to the server,
+it is necessary to set the environment variable SERVER_UPLOAD_ENABLE to 1.
+
+In particular, in this mode, the user can upload a zip archive to the server
+and then unzip it by clicking on the unzip icon.
+
+User can set the page title in the
+SERVER_DIRECTORY_MODE_TITLE environment variable.
+
+It is possible to run server in cluster mode.
+To do this, set the SERVER_USE_CLUSTER_MODE environment variable to 1.
+In cluster mode, nodejs child processes will be created according to
+the number of processor cores. This mode allows you to use all 
+processor resources, but at the same time it increases the consumption of RAM.
+If SERVER_SHOULD_RESTART_WORKER=1 is given, the child process will be
+automatically restarted if it terminates unexpectedly.
+
+By default, the server returns the contents in a compressed form.
+If you want to disable this behavior, you can set SERVER_DISABLE_COMPRESSION=1
+
+The server uses the "file-icon-vectors" npm package to display file icons.
+(https://www.npmjs.com/package/file-icon-vectors)
+Three types of icons are available: "classic", "square-o", "vivid"
+(see the package page for more details).
+You can set the SERVER_ICONS_TYPE environment variable to one of these values.
+The default is "square-o".`;
+		console.log(help);
+		process.exit(0);
+	}
+}
+
 const USE_CLUSTER_MODE = Number(process.env.SERVER_USE_CLUSTER_MODE);
 const SHOULD_RESTART_WORKER = Number(process.env.SERVER_SHOULD_RESTART_WORKER);
 const DIRECTORY_MODE = Number(process.env.SERVER_DIRECTORY_MODE);
@@ -87,48 +161,15 @@ const password = process.argv[7] || (_isMd5Password ? process.env.SERVER_PASSWOR
 
 if (!ROOT_PATH || !PORT)
 {
-	console.log(`Convenient http server on nodejs. Designed to share some folder on a local network or even on the Internet.
-It can also be used as a web server to serve static sites.
-
-Usage:
-web-shared-folder <path to the folder for sharing> <port> [<key> <cert>] [<username> <password>]
-
-If there is the "index.html" file in the specified folder, then the server will start in the static web site mode, not in the folder viewing mode.
-The folder contents viewing mode can be forced by setting the environment variable SERVER_DIRECTORY_MODE=1.
-Also, this mode can be forcibly disabled by setting SERVER_DIRECTORY_MODE=0.
-
-In order to start the server to work over https, you must specify the path to the private key file (<key>) and the path to the certificate file (<cert>).
-In https mode, it is possible to enable automatic redirection from http to https.
-To do this, in the SERVER_AUTO_REDIRECT_HTTP_PORT environment variable, specify the port number from which the redirection will be performed (usually 80).
-
-If the keys <username> and <password> are given, then HTTP authentication is enabled with the given login and password.
-
-All command line options can also be set in the environment variables: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
-Options specified on the command line have higher precedence.
-The password can be set as a md5 hash in the SERVER_PASSWORD_MD5 environment variable.
-
-In order to allow users not only download files and folders from server, but also upload it to the server, it is necessary to set the environment variable SERVER_UPLOAD_ENABLE to 1.
-In particular, in this mode, the user can upload a zip archive to the server and then unzip it by clicking on the unzip icon.
-
-You can set the page title in the SERVER_DIRECTORY_MODE_TITLE environment variable.
-
-It is possible to run server in cluster mode. To do this, set the SERVER_USE_CLUSTER_MODE environment variable to 1.
-In cluster mode, nodejs child processes will be created according to the number of processor cores.
-This mode allows you to use all the processor resources, but at the same time it increases the consumption of RAM.
-If SERVER_SHOULD_RESTART_WORKER=1 is given, the child process will be automatically restarted if it terminates unexpectedly.
-
-By default, the server returns the contents of the web page in a compressed form.
-If you want to disable this behavior, you can set SERVER_DISABLE_COMPRESSION=1
-
-The server uses the "file-icon-vectors" npm package (https://www.npmjs.com/package/file-icon-vectors) to display file icons.
-Three types of icons are available: "classic", "square-o", "vivid" (see the package page for more details).
-You can set the SERVER_ICONS_TYPE environment variable to one of these values. The default is "square-o".`);
+	console.log(`web-shared-folder, version ${VERSION}
+To show help use "--help" key`);
 	process.exit(0);
 }
 
 const numCPUs = cpus().length;
 if (cluster.isPrimary)
 {
+	console.log('web-shared-folder, version ' + VERSION);
 	console.log('Port = ' + PORT);
 	console.log('Root = ' + ROOT_PATH);
 	if (USE_CLUSTER_MODE) console.log('CPUs number = ' + numCPUs);
@@ -178,7 +219,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 	}
 	else if (stats.isFile())
 	{
-		console.log('Переданный путь не является директорией!');
+		console.log('Path is not directory');
 		process.exit(1);
 	}
 	else
