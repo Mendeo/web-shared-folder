@@ -1135,18 +1135,14 @@ function zipFolder(res, urlPath, absolutePath, postData)
 						{
 							readFolderRecursive(fullPath, false);
 						}
-						else
+						else if (isDirectory !== null)
 						{
 							numberOfFile++;
 							fs.readFile(fullPath, (err, data) =>
 							{
-								if (err)
+								numberOfFile--;
+								if (!err)
 								{
-									zipError(err, res);
-								}
-								else
-								{
-									numberOfFile--;
 									const relativePath = path.join(path.relative(absolutePath, folderPath), file.name);
 									zip.file(relativePath, data);
 									if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
