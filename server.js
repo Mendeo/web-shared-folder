@@ -179,26 +179,6 @@ if (cluster.isPrimary)
 	console.log();
 }
 
-function getIpV4()
-{
-	const ips = [];
-	for (let iface in net)
-	{
-		const ifaceData = net[iface];
-		if (Array.isArray(ifaceData) && ifaceData.length > 0)
-		{
-			for (let ip of ifaceData)
-			{
-				if (ip.family === 'IPv4' || Number(ip.family) === 4)
-				{
-					ips.push(ip.address);
-				}
-			}
-		}
-	}
-	return ips;
-}
-
 let _generateIndex = false;
 let _indexHtmlbase = null;
 let _favicon = null;
@@ -230,7 +210,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		}
 		else
 		{
-			let indexFile = path.join(ROOT_PATH, 'index.html');
+			const indexFile = path.join(ROOT_PATH, 'index.html');
 			_generateIndex = !fs.existsSync(indexFile);
 		}
 		if (_generateIndex)
@@ -249,7 +229,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			readIconsFiles();
 			readTranslationFiles();
 		}
-		let isHttps = key && cert;
+		const isHttps = key && cert;
 		if (cluster.isPrimary)
 		{
 			if (isHttps)
@@ -1299,6 +1279,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 			}
 			if (files.length > 0)
 			{
+				let countFiles = files.length;
 				for (let file of files)
 				{
 					const filePath = path.join(absolutePath, file.name);
@@ -1307,11 +1288,19 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						if (err)
 						{
 							console.log(err?.message);
+							countFiles--;
+							if (countFiles === 0) prepareToSendFiles();
 							return;
 						}
 						checkIsDirectory(filePath, file, afterIsDirectory);
 						function afterIsDirectory(isDirectory)
 						{
+							countFiles--;
+							if (isDirectory === null)
+							{
+								if (countFiles === 0) prepareToSendFiles();
+								return;
+							}
 							const linkName = isDirectory ? `[${file.name}]` : file.name;
 							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
@@ -1339,23 +1328,24 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 								filesNumber++;
 								filesSize += stats.size;
 							}
-							if (hrefs.length === files.length)
-							{
-								const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
-								const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'asc', setSortCookie, null, setSortCookie);
-								sortHrefs(sortType, sortDirection, hrefs);
-								for (let h of hrefs)
-								{
-									hrefsResult += h.value;
-								}
-								//Массив sortLinks содержит html код ссылок для сортировки.
-								sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
-								sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
-								sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
-								sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
-							}
+							if (countFiles === 0) prepareToSendFiles();
 						}
 					});
+				}
+				function prepareToSendFiles()
+				{
+					const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
+					const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'asc', setSortCookie, null, setSortCookie);
+					sortHrefs(sortType, sortDirection, hrefs);
+					for (let h of hrefs)
+					{
+						hrefsResult += h.value;
+					}
+					//Массив sortLinks содержит html код ссылок для сортировки.
+					sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
+					sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
+					sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
+					sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
 				}
 			}
 			else
@@ -1417,14 +1407,14 @@ function checkIsDirectory(path, dirent, next)
 			if (err)
 			{
 				console.log(err?.message);
-				return;
+				next(null);
 			}
 			fs.stat(linkPath, (err, stats) =>
 			{
 				if (err)
 				{
 					console.log(err?.message);
-					return;
+					next(null);
 				}
 				next(stats.isDirectory());
 			});
@@ -1921,4 +1911,24 @@ function md5(buffer)
 	{
 		return (data << n) | (data >>> 32 - n);
 	}
+}
+
+function getIpV4()
+{
+	const ips = [];
+	for (let iface in net)
+	{
+		const ifaceData = net[iface];
+		if (Array.isArray(ifaceData) && ifaceData.length > 0)
+		{
+			for (let ip of ifaceData)
+			{
+				if (ip.family === 'IPv4' || Number(ip.family) === 4)
+				{
+					ips.push(ip.address);
+				}
+			}
+		}
+	}
+	return ips;
 }
