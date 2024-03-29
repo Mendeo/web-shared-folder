@@ -81,6 +81,7 @@ function deleteFilesWarningDialog()
 {
 	if (sessionStorage.getItem('deleteWithoutAsk')) return;
 	const dialog = document.getElementById('delete-warning-dialog');
+	const dialogMessage = document.getElementById('dialog_message');
 	if (!dialog) return;
 	const selectForm = document.getElementById('select_form');
 	const deleteButton = document.querySelector('#select_form input[name="delete"]');
@@ -95,7 +96,7 @@ function deleteFilesWarningDialog()
 		}
 		else
 		{
-			const message = document.getElementById('diaolog_message').innerText;
+			const message = dialogMessage.innerText;
 			if (confirm(message)) submit();
 		}
 	});
