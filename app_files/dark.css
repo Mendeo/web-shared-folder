@@ -1,0 +1,32 @@
+/*Блок, отвечающий за переключение темы (светлая, авто, тёмная)*/
+.theme_selector > input:focus-visible ~ div
+{
+	box-shadow: 0 0 0 0.125rem white;
+}
+/*Конец блока, отвечающего за переключение темы*/
+
+body
+{
+	background-color: var(--main-bg-color-dark);
+	color: var(--text-color-dark);
+}
+.footer__drag_and_drop
+{
+	border-color: white;
+}
+.header
+{
+	background-color: var(--main-bg-color-dark);
+}
+.footer
+{
+	background-color: var(--main-bg-color-dark);
+}
+a
+{
+	filter: invert(100%) brightness(80%) contrast(80%);
+}
+h2
+{
+	color: #c8c8c8;
+}

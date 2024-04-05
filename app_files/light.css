@@ -1,0 +1,19 @@
+/*Блок, отвечающий за переключение темы (светлая, авто, тёмная)*/
+.theme_selector > input:focus-visible ~ div
+{
+	box-shadow: 0 0 0 0.125rem black;
+}
+/*Конец блока, отвечающего за переключение темы*/
+
+.header
+{
+	background-color: var(--main-bg-color-light);
+}
+.footer
+{
+	background-color: var(--main-bg-color-light);
+}
+.footer__drag_and_drop
+{
+	border-color: black;
+}

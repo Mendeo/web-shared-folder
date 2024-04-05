@@ -8,6 +8,8 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="stylesheet" href="/icons.css">
 		<link rel="stylesheet" href="/index.css">
+		<link rel="stylesheet" href="/dark.css" id="dark-theme-css" media="(prefers-color-scheme: dark)">
+		<link rel="stylesheet" href="/light.css" id="light-theme-css" media="(prefers-color-scheme: light)">
 	</head>
 	<body>
 		<form id="select_form" method="post" enctype="application/x-www-form-urlencoded" name="select_form" tabindex="-1">
@@ -97,6 +99,15 @@
 		<div class="block_center">
 			<p>~%~ <a href="https://www.npmjs.com/package/web-shared-folder">web-shared-folder</a></p>
 		</div>
+		<fieldset class="theme_selector">
+			<label for="radio-light-theme" aria-label="Light theme"></label>
+			<input type="radio" id="radio-light-theme" name="theme">
+			<label for="radio-auto-theme" aria-label="Auto theme"></label>
+			<input type="radio" id="radio-auto-theme" name="theme">
+			<label for="radio-dark-theme" aria-label="Dark theme"></label>
+			<input type="radio" id="radio-dark-theme" name="theme">
+			<div></div>
+		</fieldset>
 		<script type="text/javascript" src="/index.js"></script>
 	</body>
 </html>

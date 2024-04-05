@@ -184,6 +184,8 @@ let _indexHtmlbase = null;
 let _favicon = null;
 let _index_js = null;
 let _index_css = null;
+let _light_css = null;
+let _dark_css = null;
 let _robots_txt = null;
 let _locales = null;
 let _icons_css = null;
@@ -225,6 +227,8 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_favicon = fs.readFileSync(path.join(__dirname, 'app_files', 'favicon.ico'));
 			_index_js = fs.readFileSync(path.join(__dirname, 'app_files', 'index.js'));
 			_index_css = fs.readFileSync(path.join(__dirname, 'app_files', 'index.css'));
+			_light_css = fs.readFileSync(path.join(__dirname, 'app_files', 'light.css'));
+			_dark_css = fs.readFileSync(path.join(__dirname, 'app_files', 'dark.css'));
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
 			readIconsFiles();
 			readTranslationFiles();
@@ -295,6 +299,10 @@ function readIconsFiles()
 	}
 	_icons_svg_map.set('/icons/eye.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'eye.svg')));
 	_icons_svg_map.set('/icons/unzip.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'unzip.svg')));
+	_icons_svg_map.set('/icons/sun.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'sun.svg')));
+	_icons_svg_map.set('/icons/auto.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'auto.svg')));
+	_icons_svg_map.set('/icons/moon.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'moon.svg')));
+	_icons_svg_map.set('/icons/circle.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'circle.svg')));
 }
 
 function readTranslationFiles()
@@ -749,6 +757,12 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 		case '/index.css':
 			sendCachedFile(res, _index_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
+		case '/light.css':
+			sendCachedFile(res, _light_css, 'text/css; charset=utf-8', acceptEncoding);
+			return;
+		case '/dark.css':
+			sendCachedFile(res, _dark_css, 'text/css; charset=utf-8', acceptEncoding);
+			return;
 		case '/robots.txt':
 			sendCachedFile(res, _robots_txt, 'text/plain; charset=utf-8', acceptEncoding);
 			return;
@@ -759,6 +773,18 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
 		case '/icons/unzip.svg':
+			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
+			return;
+		case '/icons/sun.svg':
+			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
+			return;
+		case '/icons/auto.svg':
+			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
+			return;
+		case '/icons/moon.svg':
+			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
+			return;
+		case '/icons/circle.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
 		case '/_favicon.ico':
