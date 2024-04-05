@@ -2,6 +2,7 @@
 
 const _checkboxes =  document.querySelectorAll('#select_form input[type="checkbox"]');
 
+themeChanger();
 setClientLanguage();
 performSelectButtons();
 deleteFilesWarningDialog();
@@ -9,7 +10,6 @@ upload();
 dragAndDropFiles();
 backspaceToPreviousFolder();
 preventDownloadIfNoFilesSelected();
-themeChanger();
 
 function hasSelectedChecboxes()
 {
