@@ -294,15 +294,15 @@ function readIconsFiles()
 		}
 		else
 		{
-			_icons_svg_map.set(`/icons/${ICONS_TYPE}/${fileName}`, fs.readFileSync(path.join(pathCombined, fileName)));
+			_icons_svg_map.set(`/wsf_app_files/icons/${ICONS_TYPE}/${fileName}`, fs.readFileSync(path.join(pathCombined, fileName)));
 		}
 	}
-	_icons_svg_map.set('/icons/eye.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'eye.svg')));
-	_icons_svg_map.set('/icons/unzip.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'unzip.svg')));
-	_icons_svg_map.set('/icons/sun.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'sun.svg')));
-	_icons_svg_map.set('/icons/auto.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'auto.svg')));
-	_icons_svg_map.set('/icons/moon.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'moon.svg')));
-	_icons_svg_map.set('/icons/circle.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'circle.svg')));
+	_icons_svg_map.set('/wsf_app_files/eye.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'eye.svg')));
+	_icons_svg_map.set('/wsf_app_files/unzip.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'unzip.svg')));
+	_icons_svg_map.set('/wsf_app_files/sun.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'sun.svg')));
+	_icons_svg_map.set('/wsf_app_files/auto.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'auto.svg')));
+	_icons_svg_map.set('/wsf_app_files/moon.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'moon.svg')));
+	_icons_svg_map.set('/wsf_app_files/circle.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'circle.svg')));
 }
 
 function readTranslationFiles()
@@ -724,23 +724,6 @@ function compressPrepare(acceptEncoding)
 	return null;
 }
 
-function isAppFile(name)
-{
-	switch (name)
-	{
-	case 'favicon.ico':
-		return true;
-	case 'index.js':
-		return true;
-	case 'index.css':
-		return true;
-	case 'robots.txt':
-		return true;
-	case 'icons.css':
-		return true;
-	}
-	return false;
-}
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData)
 {
@@ -748,62 +731,53 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 	{
 		switch (urlPath)
 		{
-		case '/favicon.ico':
+		case '/wsf_app_files/favicon.ico':
 			sendCachedFile(res, _favicon, 'image/x-icon');
 			return;
-		case '/index.js':
+		case '/wsf_app_files/index.js':
 			sendCachedFile(res, _index_js, 'text/javascript; charset=utf-8', acceptEncoding);
 			return;
-		case '/index.css':
+		case '/wsf_app_files/index.css':
 			sendCachedFile(res, _index_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
-		case '/light.css':
+		case '/wsf_app_files/light.css':
 			sendCachedFile(res, _light_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
-		case '/dark.css':
+		case '/wsf_app_files/dark.css':
 			sendCachedFile(res, _dark_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
 		case '/robots.txt':
 			sendCachedFile(res, _robots_txt, 'text/plain; charset=utf-8', acceptEncoding);
 			return;
-		case '/icons.css':
+		case '/wsf_app_files/icons.css':
 			sendCachedFile(res, _icons_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
-		case '/icons/eye.svg':
+		case '/wsf_app_files/eye.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
-		case '/icons/unzip.svg':
+		case '/wsf_app_files/unzip.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
-		case '/icons/sun.svg':
+		case '/wsf_app_files/sun.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
-		case '/icons/auto.svg':
+		case '/wsf_app_files/auto.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
-		case '/icons/moon.svg':
+		case '/wsf_app_files/moon.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
-		case '/icons/circle.svg':
+		case '/wsf_app_files/circle.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
-		case '/_favicon.ico':
-			urlPath = '/favicon.ico';
-			break;
-		case '/_index.js':
-			urlPath = '/index.js';
-			break;
-		case '/_index.css':
-			urlPath = '/index.css';
+		case '/_index.html':
+			urlPath = '/index.html';
 			break;
 		case '/_robots.txt':
 			urlPath = '/robots.txt';
 			break;
-		case '/_icons.css':
-			urlPath = '/icons.css';
-			break;
 		}
-		if (urlPath.startsWith(`/icons/${ICONS_TYPE}`))
+		if (urlPath.startsWith(`/wsf_app_files/icons/${ICONS_TYPE}`))
 		{
 			if (_icons_svg_map.has(urlPath))
 			{
@@ -1326,7 +1300,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							const linkName = isDirectory ? `[${file.name}]` : file.name;
 							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
-							const linkHref = encodeURI(`${urlHeader}/${isAppFile(file.name) ? '_' : ''}${file.name}`);
+							let fileName = file.name;
+							if (urlHeader === '' && (fileName === 'index.html' || fileName === 'robots.txt')) fileName = '_' + fileName;
+							const linkHref = encodeURI(`${urlHeader}/${fileName}`);
 							const ext = isDirectory ? 'folder' : path.extname(file.name);
 							const iconnClassName = getIconClassName(ext);
 							const showInBrowser = !isDirectory && canShowInBrowser(ext);

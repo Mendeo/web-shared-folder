@@ -42,7 +42,7 @@
 .theme_selector > div
 {
 	background-color: #d4d4d4;
-	background-image: url("/icons/circle.svg");
+	background-image: url("/wsf_app_files/circle.svg");
 	background-size: 1rem;
 	background-repeat: no-repeat;
 	background-position: center;
@@ -72,21 +72,21 @@
 
 #radio-light-theme
 {
-	background-image: url("/icons/sun.svg");
+	background-image: url("/wsf_app_files/sun.svg");
 	background-repeat: no-repeat;
 	background-position: 11%;
 	background-size: 0.85rem;
 }
 #radio-dark-theme
 {
-	background-image: url("/icons/moon.svg");
+	background-image: url("/wsf_app_files/moon.svg");
 	background-repeat: no-repeat;
 	background-position: 75%;
 	background-size: 0.4rem;
 } 
 #radio-auto-theme
 {
-	background-image: url("/icons/auto.svg");
+	background-image: url("/wsf_app_files/auto.svg");
 	background-repeat: no-repeat;
 	background-position: center;
 	background-size: 0.5rem;
@@ -132,11 +132,11 @@
 }
 .open-in-browser-icon
 {
-	background-image: url("/icons/eye.svg");
+	background-image: url("/wsf_app_files/eye.svg");
 }
 .unzip-icon
 {
-	background-image: url("/icons/unzip.svg");
+	background-image: url("/wsf_app_files/unzip.svg");
 }
 .main_container__first_column
 {
