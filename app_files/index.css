@@ -17,6 +17,7 @@
 	border: none;
 	display: flex;
 	width: 5rem;
+	z-index: 1;
 }
 .theme_selector > label
 {
@@ -60,7 +61,6 @@
 	filter: invert(100%);
 	transition: filter 0.1s linear;
 }
-
 #radio-light-theme:checked ~ div
 {
 	background-position: 0.125rem;
@@ -69,7 +69,6 @@
 {
 	background-position: calc(100% - 0.125rem);
 }
-
 #radio-light-theme
 {
 	background-image: url("/wsf_app_files/sun.svg");
@@ -97,7 +96,6 @@
 {
 	visibility: hidden;
 }
-
 .main_container
 {
 	display: inline-grid;
