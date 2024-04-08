@@ -27,5 +27,8 @@
 	"linkToUnzip": "Распаковать на сервере",
 	"filesStats": "Файлов",
 	"foldersStats": "Папок",
-	"poweredBy": "Работает на"
+	"poweredBy": "Работает на",
+	"lightTheme": "Светлая тема",
+	"autoTheme": "Системная тема",
+	"darkTheme": "Тёмная тема"
 }

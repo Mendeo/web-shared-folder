@@ -1390,7 +1390,10 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[25]) : ''}` +
 						_indexHtmlbase[26] + errorMessage +
 						_indexHtmlbase[27] + getTranslation('poweredBy', localeTranslation) +
-						_indexHtmlbase[28];
+						_indexHtmlbase[28] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[29] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[30] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[31];
 			}
 		}
 	});
