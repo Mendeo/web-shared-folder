@@ -8,7 +8,7 @@
   },
   "name": "web-shared-folder",
   "description": "Web server for sharing folder on local network or Internet",
-  "version": "2.7.1",
+  "version": "2.7.2",
   "main": "server.js",
   "repository": {
     "type": "git",
