@@ -1433,33 +1433,33 @@ function getFromObjectsWithEqualKeys(primary, secondary, key, defaultValue, ifPr
 	{
 		if (primary[key])
 		{
-			if (ifPrimary) ifPrimary(key, primary[key]);
+			if (typeof ifPrimary === 'function') ifPrimary(key, primary[key]);
 			return primary[key];
 		}
 		if (secondary)
 		{
 			if (secondary[key])
 			{
-				if (ifSecondary) ifSecondary(key, secondary[key]);
+				if (typeof ifSecondary === 'function') ifSecondary(key, secondary[key]);
 				return secondary[key];
 			}
-			if (ifDefault) ifDefault(key, defaultValue);
+			if (typeof ifDefault  === 'function') ifDefault(key, defaultValue);
 			return defaultValue;
 		}
-		if (ifDefault) ifDefault(key, defaultValue);
+		if (typeof ifDefault === 'function') ifDefault(key, defaultValue);
 		return defaultValue;
 	}
 	if (secondary)
 	{
 		if (secondary[key])
 		{
-			if (ifSecondary) ifSecondary(key, secondary[key]);
+			if (typeof ifSecondary === 'function') ifSecondary(key, secondary[key]);
 			return secondary[key];
 		}
-		if (ifDefault) ifDefault(key, defaultValue);
+		if (typeof ifDefault === 'function') ifDefault(key, defaultValue);
 		return defaultValue;
 	}
-	if (ifDefault) ifDefault(key, defaultValue);
+	if (typeof ifDefault === 'function') ifDefault(key, defaultValue);
 	return defaultValue;
 }
 
