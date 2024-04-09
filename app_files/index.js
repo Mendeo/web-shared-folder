@@ -316,6 +316,7 @@ function themeChanger()
 
 	const selectedTheme = localStorage.getItem(THEME_STORAGE_NAME);
 	setTheme(selectedTheme);
+
 	radioLight.addEventListener('change', onThemeChange);
 	radioDark.addEventListener('change', onThemeChange);
 	radioAuto.addEventListener('change', onThemeChange);

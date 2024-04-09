@@ -29,6 +29,7 @@
 .theme_selector > input
 {
 	appearance: none;
+	-webkit-appearance:none;
 	width: 100%;
 	height: 1rem;
 	padding: 0px;
