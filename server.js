@@ -1373,9 +1373,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[2] + folderName +
 						_indexHtmlbase[3] + getTranslation('selectAll', localeTranslation) +
-						_indexHtmlbase[4] + getTranslation('deselectAll', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('downloadZip', localeTranslation) +
-						_indexHtmlbase[6] +
+						_indexHtmlbase[4] + getTranslation('downloadZip', localeTranslation) +
+						_indexHtmlbase[5] +
+						_indexHtmlbase[6] + getTranslation('deselectAll', localeTranslation) +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
 						_indexHtmlbase[8]) : ''}` +
 						_indexHtmlbase[9] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
