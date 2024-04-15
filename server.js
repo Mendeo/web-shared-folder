@@ -1052,7 +1052,9 @@ function createUserDir(postData, absolutePath, localeTranslation, callback)
 	}
 	else
 	{
-		fs.mkdir(path.join(absolutePath, decodeURIComponent(postData.dir)), { recursive: true }, (err) =>
+		let dpath = postData.dir.replace(/\+/g, ' ');
+		dpath = decodeURIComponent(dpath).replace(/[<>":?*|\\/]/g, '');
+		fs.mkdir(path.join(absolutePath, dpath), { recursive: true }, (err) =>
 		{
 			if (err)
 			{
