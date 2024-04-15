@@ -2,8 +2,6 @@
 
 Convenient http server on nodejs. Designed to share some folder on a local network or even on the Internet. It can also be used as a web server to serve static sites.
 
-**A full security audit has not been conducted, so using this server directly to access from the Internet may not be secure. In this case, it is recommended to run this server in a container. See below for an example of running from docker.**
-
 Capabilities
 * Pages are automatically displayed in the user language (only two languages are available at the moment).
 * User can download the selected files and folders at once as a zip archive.
@@ -26,20 +24,20 @@ npm i -g web-shared-folder
 
 ## Usage
 ```bash
-web-shared-folder <path to the folder for sharing> <port> [<key> <cert>] [<username> <password>]
+web-shared-folder [--upload or -u] <path to the folder for sharing> <port> [<key> <cert>] [<username> <password>]
 ```
 **If there is the "index.html" file in the specified folder, then the server will start in the static web site mode, not in the folder viewing mode.** The folder contents viewing mode can be forced by setting the environment variable **SERVER_DIRECTORY_MODE=1**. Also, this mode can be forcibly disabled by setting **SERVER_DIRECTORY_MODE=0**.
 
 In order to start the server to work over https, you must specify the path to the private key file (\<key\>) and the path to the certificate file (\<cert\>).
 In https mode, it is possible to enable automatic redirection from http to https. To do this, in the **SERVER_AUTO_REDIRECT_HTTP_PORT** environment variable, specify the port number from which the redirection will be performed (usually 80).
 
+In order to allow users not only download files from server, but also upload it to the server, it is necessary to add command key **--upload** or **-u** or set the environment variable **SERVER_UPLOAD_ENABLE** to 1. **The maximum upload size at one time is about 2 GiB.**
+In particular, in this mode, the user can upload a zip archive to the server and then unzip it by clicking on the unzip icon.
+
 If the keys \<username\> and \<password\> are given, then HTTP authentication is enabled with the given login and password.
 
 **All command line options can also be set in the environment variables: SERVER_ROOT, SERVER_PORT, SERVER_KEY, SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.** Options specified on the command line have higher precedence.
 The password can be set as a md5 hash in the **SERVER_PASSWORD_MD5** environment variable.
-
-In order to allow users not only download files from server, but also upload it to the server, it is necessary to set the environment variable **SERVER_UPLOAD_ENABLE** to 1. **The maximum upload size at one time is about 2 GiB.**
-In particular, in this mode, the user can upload a zip archive to the server and then unzip it by clicking on the unzip icon.
 
 You can set the page title in the **SERVER_DIRECTORY_MODE_TITLE** environment variable.
 

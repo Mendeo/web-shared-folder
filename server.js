@@ -38,29 +38,32 @@ const net = os.networkInterfaces();
 
 const VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json')).toString()).version;
 { //Show version
-	const v = process.argv[2];
-	if (!process.argv[3] && (v === '-v' || v === '-V' || v == '--version'))
+	const v = process.argv.includes('-v') || process.argv.includes('-V') || process.argv.includes('--version');
+	if (v)
 	{
 		console.log(VERSION);
 		process.exit(0);
 	}
 }
 {//Show help
-	const h = process.argv[2];
-	if (!process.argv[3] && (h === '-h' || h === '-H' || h == '--help'))
+	const h = process.argv.includes('-h') || process.argv.includes('-H') || process.argv.includes('--help');
+	if (h)
 	{
 		const help =
 `Web server on nodejs, designed to share user directory from network.
 It can also be used as a web server to serve static sites.
 
 Usage:
-web-shared-folder <path to the directory for sharing> <port> [<key> <cert>] [<username> <password>]
+web-shared-folder [--upload or -u] <path to the directory for sharing> <port> [<key> <cert>] [<username> <password>]
 
 If there is the "index.html" file in the specified directory,
 then the server will start in the static web site mode.
 The directory contents viewing mode can be forced.
 To do this, set the environment variable SERVER_DIRECTORY_MODE=1.
 Also, this mode can be forcibly disabled by setting SERVER_DIRECTORY_MODE=0.
+
+In order to allow users to upload files to the server,
+it is necessary to add command key **--upload** or **-u** or set the environment variable SERVER_UPLOAD_ENABLE to 1.
 
 In order to start the server to work over https, you must specify the files:
 the private key file (<key>) and the certificate file (<cert>).
@@ -78,9 +81,6 @@ SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
 Also in the SERVER_PASSWORD_MD5 environment variable
 the server password can be set as a md5 hash.
 Options specified on the command line have higher precedence.
-
-In order to allow users to upload files to the server,
-it is necessary to set the environment variable SERVER_UPLOAD_ENABLE to 1.
 
 In particular, in this mode, the user can upload a zip archive to the server
 and then unzip it by clicking on the unzip icon.
@@ -109,14 +109,18 @@ The default is "square-o".`;
 		process.exit(0);
 	}
 }
-
+const ARGS = [];
+for (let arg of process.argv)
+{
+	ARGS.push(arg);
+}
+const UPLOAD_ENABLE = checkUpload(ARGS);
 const USE_CLUSTER_MODE = Number(process.env.SERVER_USE_CLUSTER_MODE);
 const SHOULD_RESTART_WORKER = Number(process.env.SERVER_SHOULD_RESTART_WORKER);
 const DIRECTORY_MODE = Number(process.env.SERVER_DIRECTORY_MODE);
 const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE;
 const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_PORT);
 const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
-const UPLOAD_ENABLE = Number(process.env.SERVER_UPLOAD_ENABLE);
 
 let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
 
@@ -150,14 +154,14 @@ else
 	cluster = { isPrimary: true };
 }
 
-const ROOT_PATH_RAW = (process.argv[2] || process.env.SERVER_ROOT);
+const ROOT_PATH_RAW = (ARGS[2] || process.env.SERVER_ROOT);
 const ROOT_PATH = ROOT_PATH_RAW ? ROOT_PATH_RAW.replace(/"/g, '') : null; //Папка относительно которой будут задаваться все папки, которые идут с адресом
-const PORT = Number(process.argv[3] || process.env.SERVER_PORT);
-const key = process.argv[4] || process.env.SERVER_KEY;
-const cert = process.argv[5] || process.env.SERVER_CERT;
-const username = process.argv[6] || process.env.SERVER_USERNAME;
+const PORT = Number(ARGS[3] || process.env.SERVER_PORT);
+const key = ARGS[4] || process.env.SERVER_KEY;
+const cert = ARGS[5] || process.env.SERVER_CERT;
+const username = ARGS[6] || process.env.SERVER_USERNAME;
 const _isMd5Password = process.env.SERVER_PASSWORD_MD5 ? true : false;
-const password = process.argv[7] || (_isMd5Password ? process.env.SERVER_PASSWORD_MD5.toLowerCase() : process.env.SERVER_PASSWORD);
+const password = ARGS[7] || (_isMd5Password ? process.env.SERVER_PASSWORD_MD5.toLowerCase() : process.env.SERVER_PASSWORD);
 
 if (!ROOT_PATH || !PORT)
 {
@@ -1935,4 +1939,29 @@ function getIpV4()
 		}
 	}
 	return ips;
+}
+function checkUpload(args)
+{
+	let flag = false;
+	let index = args.indexOf('--upload');
+	if (index !== -1)
+	{
+		args.splice(index, 1);
+		flag = true;
+	}
+	index = args.indexOf('-u');
+	if (index !== -1)
+	{
+		args.splice(index, 1);
+		flag = true;
+	}
+	index = args.indexOf('-U');
+	if (index !== -1)
+	{
+		args.splice(index, 1);
+		flag = true;
+	}
+	let env = Number(process.env.SERVER_UPLOAD_ENABLE);
+	if (!Number.isNaN(env) && env > 0) flag = true;
+	return flag;
 }
