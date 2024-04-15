@@ -1303,7 +1303,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 								if (countFiles === 0) prepareToSendFiles();
 								return;
 							}
-							const linkName = isDirectory ? `[${file.name}]` : file.name;
+							let linkName = isDirectory ? `[${file.name}]` : file.name;
+							linkName = linkName.replace(/ /g, '&nbsp;');
 							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
 							let fileName = file.name;
