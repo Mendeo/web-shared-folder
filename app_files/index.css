@@ -230,17 +230,14 @@
 	background-color: var(--dragenter-color);
 	color: black;
 }
-
 .footer__drag_and_drop__while_upload
 {
 	filter: contrast(0%);
 }
-
 .footer > div:last-child
 {
 	height: 0.3rem;
 }
-
 .dialog p
 {
 	text-align: center;
@@ -273,7 +270,10 @@
 	display: flex;
 	justify-content: center;
 }
-
+input[type="text"]:invalid
+{
+	color: red;
+}
 
 @media screen and (max-width: 900px)
 {

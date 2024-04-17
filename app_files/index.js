@@ -10,6 +10,7 @@ upload();
 dragAndDropFiles();
 backspaceToPreviousFolder();
 preventDownloadIfNoFilesSelected();
+renameFiles();
 
 function hasSelectedChecboxes()
 {
@@ -379,4 +380,34 @@ function themeChanger()
 	{
 		localStorage.setItem(THEME_STORAGE_NAME, value);
 	}
+}
+
+function renameFiles()
+{
+	const dialog = document.getElementById('rename-dialog');
+	if (!dialog.showModal) return;
+	const renameButton = document.getElementById('rename-button');
+	const fileName = document.querySelector('#rename-dialog input[type="text"]');
+
+	renameButton.addEventListener('click', () =>
+	{
+		dialog.showModal();
+	});
+	fileName.addEventListener('input', () =>
+	{
+		if (fileName.validity.patternMismatch)
+		{
+			fileName.setCustomValidity('Ты охуел?');
+		}
+		else
+		{
+			fileName.setCustomValidity('');
+		}
+		fileName.reportValidity();
+	});
+	dialog.addEventListener('close', () =>
+	{
+		console.log(fileName.value);
+		console.log(dialog.returnValue);
+	});
 }

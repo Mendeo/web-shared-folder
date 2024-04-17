@@ -109,6 +109,19 @@
 			<input type="radio" id="radio-dark-theme" title="~%~" name="theme">
 			<div></div>
 		</fieldset>
+		<button id="rename-button">Переименовать!</button>
+		<dialog id="rename-dialog" class="dialog">
+			<p><b>Новое имя файла</b></p>
+			<p>
+				<input type="text" pattern="^[^&lt;&gt;&quot;:?*\|\\\/]+$">
+			</p>
+			<form method="dialog">
+				<div class="dialog__buttons">
+					<button value="ok" name="delete" type="submit">Ok</button>
+					<button value="cancel">Cancel</button>
+				</div>
+			</form>
+		</dialog>
 		<script type="text/javascript" src="/wsf_app_files/index.js"></script>
 	</body>
 </html>
