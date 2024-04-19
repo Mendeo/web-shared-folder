@@ -1216,8 +1216,21 @@ function zipFolder(res, urlPath, absolutePath, postData)
 
 function renameFile(absolutePath, postData, callback)
 {
-	if (!UPLOAD_ENABLE) return;
-	if (!postData.rename_from || !postData.rename_to) return;
+	if (!UPLOAD_ENABLE)
+	{
+		callback('Writing is not allowed!');
+		return;
+	}
+	if (!postData.rename_from || !postData.rename_to)
+	{
+		callback('No "rename_from" or "postData.rename_to"');
+		return;
+	}
+	if ((newName.match(FILES_REG_EXP) !== null) || oldName.match(FILES_REG_EXP) !== null)
+	{
+		callback('Name error!');
+		return;
+	}
 	const oldName = Buffer.from(postData.rename_from, 'base64url').toString();
 	const newName = Buffer.from(postData.rename_to, 'base64url').toString();
 	fs.rename(path.join(absolutePath, oldName), path.join(absolutePath, newName), (err) =>
@@ -1237,7 +1250,11 @@ function renameFile(absolutePath, postData, callback)
 
 function deleteFiles(absolutePath, postData, callback)
 {
-	if (!UPLOAD_ENABLE) return;
+	if (!UPLOAD_ENABLE)
+	{
+		callback('Writing is not allowed!');
+		return;
+	}
 	let keys = Object.keys(postData);
 	let numOfFiles = keys.length - 1;
 	for (let key of keys)
@@ -1245,7 +1262,12 @@ function deleteFiles(absolutePath, postData, callback)
 		if (key === 'delete') continue;
 		if (postData[key] === 'on')
 		{
-			const fileName = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key));
+			const fileName = Buffer.from(key, 'base64url').toString();
+			if (fileName.match(FILES_REG_EXP) !== null)
+			{
+				callback('Name error!');
+				return;
+			}
 			const filePath = path.join(absolutePath, fileName);
 			fs.rm(filePath, { force: true, recursive: true }, (err) =>
 			{
