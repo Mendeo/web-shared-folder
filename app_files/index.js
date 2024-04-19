@@ -434,7 +434,7 @@ function renameFiles()
 	{
 		if (dialog.returnValue === 'ok')
 		{
-			const newName = btoa(fileName.value);
+			const newName = btoa(fileName.value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 			submit(oldName, newName);
 		}
 	});
@@ -444,12 +444,12 @@ function renameFiles()
 		const selectForm = document.getElementById('select_form');
 		const from = document.createElement('input');
 		from.type = 'hidden';
-		from.name = 'rename-from';
+		from.name = 'rename_from';
 		from.value = oldName;
 		selectForm.append(from);
 		const to = document.createElement('input');
 		to.type = 'hidden';
-		to.name = 'rename-to';
+		to.name = 'rename_to';
 		to.value = newName;
 		selectForm.append(to);
 		selectForm.submit();

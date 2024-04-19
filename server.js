@@ -861,26 +861,33 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 				{
 					zipFolder(res, urlPath, filePath, postData);
 				}
-				else if (postData.delete)
+				else if (UPLOAD_ENABLE && postData.delete)
 				{
-					if (UPLOAD_ENABLE)
+					deleteFiles(filePath, postData, (errorMessage) =>
 					{
-						deleteFiles(filePath, postData, (errorMessage) =>
+						if (errorMessage)
 						{
-							if (errorMessage)
-							{
-								generateAndSendIndexHtmlAlias(errorMessage);
-							}
-							else
-							{
-								reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
-							}
-						});
-					}
-					else
+							generateAndSendIndexHtmlAlias(errorMessage);
+						}
+						else
+						{
+							reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+						}
+					});
+				}
+				else if (UPLOAD_ENABLE && postData.rename_from && postData.rename_to)
+				{
+					renameFile(filePath, postData, (errorMessage) =>
 					{
-						generateAndSendIndexHtmlAlias();
-					}
+						if (errorMessage)
+						{
+							generateAndSendIndexHtmlAlias(errorMessage);
+						}
+						else
+						{
+							reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+						}
+					});
 				}
 				else
 				{
@@ -1207,8 +1214,30 @@ function zipFolder(res, urlPath, absolutePath, postData)
 	}
 }
 
+function renameFile(absolutePath, postData, callback)
+{
+	if (!UPLOAD_ENABLE) return;
+	if (!postData.rename_from || !postData.rename_to) return;
+	const oldName = Buffer.from(postData.rename_from, 'base64url').toString();
+	const newName = Buffer.from(postData.rename_to, 'base64url').toString();
+	fs.rename(path.join(absolutePath, oldName), path.join(absolutePath, newName), (err) =>
+	{
+		if (err)
+		{
+			console.log(err.message);
+			callback(`Server error. Can't rename ${oldName}`);
+			return;
+		}
+		else
+		{
+			callback(null);
+		}
+	});
+}
+
 function deleteFiles(absolutePath, postData, callback)
 {
+	if (!UPLOAD_ENABLE) return;
 	let keys = Object.keys(postData);
 	let numOfFiles = keys.length - 1;
 	for (let key of keys)
