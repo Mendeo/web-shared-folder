@@ -51,8 +51,7 @@ function performSelectButtons()
 {
 	const selectAllButton = document.getElementById('selectAll');
 	const deselectAllButton = document.getElementById('deselectAll');
-	const checkboxes = document.querySelectorAll('.main_container__first_column > input[type="checkbox"]');
-
+	const checkboxes = document.querySelectorAll('input[id^="item-checkbox-"]');
 	selectAllButton.addEventListener('click', (event) =>
 	{
 		event.preventDefault();
@@ -403,16 +402,19 @@ function renameFiles()
 {
 	const dialog = document.getElementById('rename-dialog');
 	if (!dialog.showModal) return;
-	const renameButtons = document.querySelectorAll('button[data-rename-button]');
+	const renameButtons = document.querySelectorAll('button[id^="rename-button-"]');
 	const fileName = document.querySelector('#rename-dialog input[type="text"]');
 
 	let oldName = '';
 	for (let rb of renameButtons)
 	{
+		rb.hidden = false;
 		rb.addEventListener('click', (e) =>
 		{
 			e.preventDefault();
-			oldName = rb.getAttribute('data-rename-button');
+			const id = rb.id.split('-')[2];
+			const checkboxBeforeButton = document.getElementById(`item-checkbox-${id}`);
+			oldName = checkboxBeforeButton.getAttribute('name');
 			dialog.showModal();
 		});
 	}

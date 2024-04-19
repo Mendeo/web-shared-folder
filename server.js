@@ -1288,6 +1288,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 			if (files.length > 0)
 			{
 				let countFiles = files.length;
+				let fileIndex = -1;
 				for (let file of files)
 				{
 					const filePath = path.join(absolutePath, file.name);
@@ -1300,7 +1301,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							if (countFiles === 0) prepareToSendFiles();
 							return;
 						}
+						fileIndex++;
 						checkIsDirectory(filePath, file, afterIsDirectory);
+
 						function afterIsDirectory(isDirectory)
 						{
 							countFiles--;
@@ -1321,8 +1324,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
 							hrefs.push({ value:
 `				<div class="main_container__first_column">
-					<input type="checkbox" name="${fileNameInBase64}">
-					${UPLOAD_ENABLE ? `<button data-rename-button="${fileNameInBase64}">|</button>` : ''}
+					<input id="item-checkbox-${fileIndex}" type="checkbox" name="${fileNameInBase64}">
+					${UPLOAD_ENABLE ? `<button hidden id="rename-button-${fileIndex}">|</button>` : ''}
 					<div class="${iconnClassName}"></div>
 					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
 					${ext === '.zip' && UPLOAD_ENABLE ? `<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}
