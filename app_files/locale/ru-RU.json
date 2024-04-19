@@ -30,5 +30,6 @@
 	"poweredBy": "Работает на",
 	"lightTheme": "Светлая тема",
 	"autoTheme": "Системная тема",
-	"darkTheme": "Тёмная тема"
+	"darkTheme": "Тёмная тема",
+	"invalidFolderName": "Некорректное имя папки"
 }

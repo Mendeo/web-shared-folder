@@ -10,6 +10,7 @@ upload();
 dragAndDropFiles();
 backspaceToPreviousFolder();
 preventDownloadIfNoFilesSelected();
+createFolderValidity();
 renameFiles();
 
 function hasSelectedChecboxes()
@@ -381,18 +382,38 @@ function themeChanger()
 		localStorage.setItem(THEME_STORAGE_NAME, value);
 	}
 }
-
+function createFolderValidity()
+{
+	const input = document.querySelector('form[name="mk_dir"] > input[name="dir"]');
+	if (!input) return;
+	input.addEventListener('input', () =>
+	{
+		if (input.validity.patternMismatch)
+		{
+			input.setCustomValidity(input.getAttribute('data-invalid-message'));
+		}
+		else
+		{
+			input.setCustomValidity('');
+		}
+		input.reportValidity();
+	});
+}
 function renameFiles()
 {
 	const dialog = document.getElementById('rename-dialog');
 	if (!dialog.showModal) return;
-	const renameButton = document.getElementById('rename-button');
+	const renameButtons = document.querySelectorAll('button[data-rename-button]');
 	const fileName = document.querySelector('#rename-dialog input[type="text"]');
 
-	renameButton.addEventListener('click', () =>
+	for (let rb of renameButtons)
 	{
-		dialog.showModal();
-	});
+		rb.addEventListener('click', (e) =>
+		{
+			e.preventDefault();
+			dialog.showModal();
+		});
+	}
 	fileName.addEventListener('input', () =>
 	{
 		if (fileName.validity.patternMismatch)

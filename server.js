@@ -141,6 +141,7 @@ else
 	}
 }
 
+const FILES_REG_EXP = new RegExp(/[<>":?*|\\/]/g);
 const DEFAULT_LANG = 'en-US';
 let DEFAULT_LOCALE_TRANSLATION = null;
 
@@ -1053,7 +1054,12 @@ function createUserDir(postData, absolutePath, localeTranslation, callback)
 	else
 	{
 		let dpath = postData.dir.replace(/\+/g, ' ');
-		dpath = decodeURIComponent(dpath).replace(/[<>":?*|\\/]/g, '');
+		dpath = decodeURIComponent(dpath);
+		if (dpath.match(FILES_REG_EXP) !== null)
+		{
+			callback(`${getTranslation('createFolderError', localeTranslation)}`);
+			return;
+		}
 		fs.mkdir(path.join(absolutePath, dpath), { recursive: true }, (err) =>
 		{
 			if (err)
@@ -1307,15 +1313,16 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							linkName = linkName.replace(/ /g, '&nbsp;');
 							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
-							let fileName = file.name;
-							if (urlHeader === '' && (fileName === 'index.html' || fileName === 'robots.txt')) fileName = '_' + fileName;
-							const linkHref = encodeURI(`${urlHeader}/${fileName}`);
+							if (urlHeader === '' && (file.name === 'index.html' || file.name === 'robots.txt')) file.name = '_' + file.name;
+							const linkHref = encodeURI(`${urlHeader}/${file.name}`);
 							const ext = isDirectory ? 'folder' : path.extname(file.name);
 							const iconnClassName = getIconClassName(ext);
 							const showInBrowser = !isDirectory && canShowInBrowser(ext);
+							const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
 							hrefs.push({ value:
 `				<div class="main_container__first_column">
-					<input type="checkbox" name="${Buffer.from(file.name).toString('base64url')}">
+					<input type="checkbox" name="${fileNameInBase64}">
+					${UPLOAD_ENABLE ? `<button data-rename-button="${fileNameInBase64}">|</button>` : ''}
 					<div class="${iconnClassName}"></div>
 					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
 					${ext === '.zip' && UPLOAD_ENABLE ? `<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}
@@ -1374,8 +1381,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[2] + folderName +
 						_indexHtmlbase[3] + getTranslation('selectAll', localeTranslation) +
 						_indexHtmlbase[4] + getTranslation('downloadZip', localeTranslation) +
-						_indexHtmlbase[5] +
-						_indexHtmlbase[6] + getTranslation('deselectAll', localeTranslation) +
+						_indexHtmlbase[5] + getTranslation('deselectAll', localeTranslation) +
+						_indexHtmlbase[6] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
 						_indexHtmlbase[8]) : ''}` +
 						_indexHtmlbase[9] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
@@ -1388,22 +1395,23 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[16] + hrefsResult +
 						_indexHtmlbase[17] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[18] + getTranslation('createFolder', localeTranslation) +
-						_indexHtmlbase[19] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[20] + getTranslation('dragAndDropText', localeTranslation) +
-						_indexHtmlbase[21] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[23] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[24] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[25]) : ''}` +
-						_indexHtmlbase[26] + errorMessage +
-						_indexHtmlbase[27] + getTranslation('poweredBy', localeTranslation) +
-						_indexHtmlbase[28] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[19] + getTranslation('invalidFolderName', localeTranslation) +
+						_indexHtmlbase[20] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[21] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[23] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[24] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[25] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[26]) : ''}` +
+						_indexHtmlbase[27] + errorMessage +
+						_indexHtmlbase[28] + getTranslation('poweredBy', localeTranslation) +
 						_indexHtmlbase[29] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[30] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[30] + getTranslation('lightTheme', localeTranslation) +
 						_indexHtmlbase[31] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[32] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[32] + getTranslation('autoTheme', localeTranslation) +
 						_indexHtmlbase[33] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[34];
+						_indexHtmlbase[34] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[35];
 			}
 		}
 	});

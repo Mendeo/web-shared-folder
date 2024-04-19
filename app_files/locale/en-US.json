@@ -30,5 +30,6 @@
 	"poweredBy": "Powered by",
 	"lightTheme": "Light theme",
 	"autoTheme": "Auto theme",
-	"darkTheme": "Dark theme"
+	"darkTheme": "Dark theme",
+	"invalidFolderName": "Invalid folder name"
 }
