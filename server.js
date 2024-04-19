@@ -1395,7 +1395,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[16] + hrefsResult +
 						_indexHtmlbase[17] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[18] + getTranslation('createFolder', localeTranslation) +
-						_indexHtmlbase[19] + getTranslation('invalidFolderName', localeTranslation) +
+						_indexHtmlbase[19] + getTranslation('invalidName', localeTranslation) +
 						_indexHtmlbase[20] + getTranslation('uploadFiles', localeTranslation) +
 						_indexHtmlbase[21] + getTranslation('dragAndDropText', localeTranslation) +
 						_indexHtmlbase[22] + getTranslation('deleteFilesWarning', localeTranslation) +
@@ -1411,7 +1411,11 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[32] + getTranslation('autoTheme', localeTranslation) +
 						_indexHtmlbase[33] + getTranslation('darkTheme', localeTranslation) +
 						_indexHtmlbase[34] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[35];
+						_indexHtmlbase[35] + getTranslation('newName', localeTranslation) +
+						_indexHtmlbase[36] + getTranslation('invalidName', localeTranslation) +
+						_indexHtmlbase[37] + getTranslation('ok', localeTranslation) +
+						_indexHtmlbase[38] + getTranslation('cancel', localeTranslation) +
+						_indexHtmlbase[39];
 			}
 		}
 	});

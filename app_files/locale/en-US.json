@@ -31,5 +31,8 @@
 	"lightTheme": "Light theme",
 	"autoTheme": "Auto theme",
 	"darkTheme": "Dark theme",
-	"invalidFolderName": "Invalid folder name"
+	"invalidName": "Invalid name",
+	"newName": "Input new name:",
+	"ok": "Ok",
+	"cancel": "Cancel"
 }

@@ -86,7 +86,6 @@ function deleteFilesWarningDialog()
 	const dialog = document.getElementById('delete-warning-dialog');
 	const dialogMessage = document.getElementById('dialog_message');
 	if (!dialog) return;
-	const selectForm = document.getElementById('select_form');
 	const deleteButton = document.querySelector('#select_form input[name="delete"]');
 
 	deleteButton.addEventListener('click', (event) =>
@@ -125,6 +124,7 @@ function deleteFilesWarningDialog()
 
 	function submit()
 	{
+		const selectForm = document.getElementById('select_form');
 		const deleteInput = document.createElement('input');
 		deleteInput.type = 'hidden';
 		deleteInput.name = 'delete';
@@ -406,11 +406,13 @@ function renameFiles()
 	const renameButtons = document.querySelectorAll('button[data-rename-button]');
 	const fileName = document.querySelector('#rename-dialog input[type="text"]');
 
+	let oldName = '';
 	for (let rb of renameButtons)
 	{
 		rb.addEventListener('click', (e) =>
 		{
 			e.preventDefault();
+			oldName = rb.getAttribute('data-rename-button');
 			dialog.showModal();
 		});
 	}
@@ -418,7 +420,7 @@ function renameFiles()
 	{
 		if (fileName.validity.patternMismatch)
 		{
-			fileName.setCustomValidity('Ты охуел?');
+			fileName.setCustomValidity(fileName.getAttribute('data-invalid-message'));
 		}
 		else
 		{
@@ -428,7 +430,26 @@ function renameFiles()
 	});
 	dialog.addEventListener('close', () =>
 	{
-		console.log(fileName.value);
-		console.log(dialog.returnValue);
+		if (dialog.returnValue === 'ok')
+		{
+			const newName = btoa(fileName.value);
+			submit(oldName, newName);
+		}
 	});
+
+	function submit(oldName, newName)
+	{
+		const selectForm = document.getElementById('select_form');
+		const from = document.createElement('input');
+		from.type = 'hidden';
+		from.name = 'rename-from';
+		from.value = oldName;
+		selectForm.append(from);
+		const to = document.createElement('input');
+		to.type = 'hidden';
+		to.name = 'rename-to';
+		to.value = newName;
+		selectForm.append(to);
+		selectForm.submit();
+	}
 }

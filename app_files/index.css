@@ -248,6 +248,7 @@
 	flex-wrap: nowrap;
 	justify-content: space-around;
 	margin-bottom: 0.5rem;
+	min-width: 12rem;
 }
 .dialog__buttons button
 {
