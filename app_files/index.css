@@ -275,6 +275,15 @@ input[type="text"]:invalid
 {
 	color: red;
 }
+.rename_button
+{
+	background-image: url("/wsf_app_files/rename.svg");
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: 0.9rem;
+	width: 1.5rem;
+	cursor: pointer;
+}
 
 @media screen and (max-width: 900px)
 {

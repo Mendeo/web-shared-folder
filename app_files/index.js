@@ -434,10 +434,16 @@ function renameFiles()
 	{
 		if (dialog.returnValue === 'ok')
 		{
-			const newName = btoa(fileName.value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+			const newName = toBase64url(fileName.value);
 			submit(oldName, newName);
 		}
 	});
+
+	function toBase64url(text)
+	{
+		const b64 = btoa(unescape(encodeURIComponent(text)));
+		return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+	}
 
 	function submit(oldName, newName)
 	{

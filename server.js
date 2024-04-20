@@ -312,6 +312,7 @@ function readIconsFiles()
 	_icons_svg_map.set('/wsf_app_files/auto.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'auto.svg')));
 	_icons_svg_map.set('/wsf_app_files/moon.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'moon.svg')));
 	_icons_svg_map.set('/wsf_app_files/circle.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'circle.svg')));
+	_icons_svg_map.set('/wsf_app_files/rename.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'rename.svg')));
 }
 
 function readTranslationFiles()
@@ -788,6 +789,9 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
 		case '/wsf_app_files/circle.svg':
+			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
+			return;
+		case '/wsf_app_files/rename.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
 		case '/_index.html':
@@ -1388,7 +1392,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							hrefs.push({ value:
 `				<div class="main_container__first_column">
 					<input id="item-checkbox-${fileIndex}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
-					<button hidden id="rename-button-${fileIndex}">|</button>` : ''}
+					<button hidden class="rename_button" id="rename-button-${fileIndex}"></button>` : ''}
 					<div class="${iconnClassName}"></div>
 					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
 					<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
