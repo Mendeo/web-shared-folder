@@ -152,7 +152,7 @@
 {
 	display: flex;
 	flex-wrap: wrap;
-	max-width: 300px;
+	max-width: 22rem;
 	justify-content: space-between;
 	row-gap: 0.2rem;
 }
