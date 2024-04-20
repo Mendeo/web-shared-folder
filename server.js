@@ -952,7 +952,7 @@ function reloadResponse(res, urlPath)
 {
 	res.writeHead(302,
 		{
-			'Location': urlPath
+			'Location': encodeURI(urlPath)
 		});
 	res.end();
 }
