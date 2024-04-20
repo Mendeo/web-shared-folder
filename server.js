@@ -1226,13 +1226,13 @@ function renameFile(absolutePath, postData, callback)
 		callback('No "rename_from" or "postData.rename_to"');
 		return;
 	}
+	const oldName = Buffer.from(postData.rename_from, 'base64url').toString();
+	const newName = Buffer.from(postData.rename_to, 'base64url').toString();
 	if ((newName.match(FILES_REG_EXP) !== null) || oldName.match(FILES_REG_EXP) !== null)
 	{
 		callback('Name error!');
 		return;
 	}
-	const oldName = Buffer.from(postData.rename_from, 'base64url').toString();
-	const newName = Buffer.from(postData.rename_to, 'base64url').toString();
 	fs.rename(path.join(absolutePath, oldName), path.join(absolutePath, newName), (err) =>
 	{
 		if (err)
