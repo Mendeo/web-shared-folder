@@ -1375,12 +1375,12 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
 							hrefs.push({ value:
 `				<div class="main_container__first_column">
-					<input id="item-checkbox-${fileIndex}" type="checkbox" name="${fileNameInBase64}">
-					${UPLOAD_ENABLE ? `<button hidden id="rename-button-${fileIndex}">|</button>` : ''}
+					<input id="item-checkbox-${fileIndex}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
+					<button hidden id="rename-button-${fileIndex}">|</button>` : ''}
 					<div class="${iconnClassName}"></div>
-					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
-					${ext === '.zip' && UPLOAD_ENABLE ? `<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}
-					${showInBrowser ? `<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
+					<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
+					<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
 				</div>
 				<span>${sizeStr}</span>
 				<span>${modify}</span>
