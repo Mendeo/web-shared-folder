@@ -1,0 +1,25 @@
+body
+{
+	font-family: Arial, Helvetica, sans-serif;
+}
+.center
+{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 95vh;
+}
+.center p
+{
+	text-align: center;
+	padding-bottom: 20rem;
+}
+.center__code
+{
+	font-size: 10rem;
+	color:red;
+}
+.center__msg
+{
+	font-size: xx-large;
+}

@@ -194,6 +194,8 @@ let _dark_css = null;
 let _robots_txt = null;
 let _locales = null;
 let _icons_css = null;
+let _404_css = null;
+let _404_html = null;
 let _icons_svg_map = new Map();
 let _icons_catalog = new Set();
 
@@ -235,6 +237,8 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_light_css = fs.readFileSync(path.join(__dirname, 'app_files', 'light.css'));
 			_dark_css = fs.readFileSync(path.join(__dirname, 'app_files', 'dark.css'));
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
+			_404_css = fs.readFileSync(path.join(__dirname, 'app_files', '404.css'));
+			_404_html = fs.readFileSync(path.join(__dirname, 'app_files', '404.html')).toString().split('~%~');
 			readIconsFiles();
 			readTranslationFiles();
 		}
@@ -435,15 +439,17 @@ function app(req, res)
 		const url = req.url.split('?');
 		const urlPath = decodeURI(url[0]);
 		console.log('url: ' + urlPath);
-		if (urlPath.match(/[/\\]\.+\.[/\\]/))
-		{
-			error(`You can watch only ${ROOT_PATH} directory`, res);
-			return;
-		}
 		const cookie = parseCookie(req.headers?.cookie);
 		const paramsGet = parseRequest(url[1]);
 		const acceptEncoding = req.headers['accept-encoding'];
 		const acceptLanguage = req.headers['accept-language'];
+		if (urlPath.match(/[/\\]\.+\.[/\\]/))
+		{
+			const clientLang = getClientLanguage(acceptLanguage, cookie);
+			const localeTranslation = _locales.get(clientLang);
+			error404(`You can watch only ${ROOT_PATH} directory`, res, acceptEncoding, localeTranslation);
+			return;
+		}
 		/*Post данные*/
 		const contentType = req.headers['content-type']?.split(';').map((value) => value.trim());
 		if (contentType)
@@ -660,7 +666,7 @@ function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage,
 	//if (postData) console.log(postData);
 }
 
-function sendCachedFile(res, file, contentType, acceptEncoding)
+function sendCachedFile(res, file, contentType, acceptEncoding, code)
 {
 	const headers =
 	{
@@ -668,10 +674,10 @@ function sendCachedFile(res, file, contentType, acceptEncoding)
 		'Cache-Control': 'max-age=86400',
 		'Content-Security-Policy': 'default-src \'self\''
 	};
-	sendCompressed(res, headers, file, acceptEncoding);
+	sendCompressed(res, headers, file, acceptEncoding, code);
 }
 
-function sendCompressed(res, headers, data, acceptEncoding)
+function sendCompressed(res, headers, data, acceptEncoding, code)
 {
 	const compress = compressPrepare(acceptEncoding);
 	if (compress)
@@ -681,20 +687,21 @@ function sendCompressed(res, headers, data, acceptEncoding)
 		{
 			if (err) error500(err, res);
 			headers['Content-Length'] = cData.byteLength;
-			send200(res, headers, cData);
+			send(res, headers, cData, code);
 		});
 	}
 	else
 	{
 		if (!data.byteLength) data = Buffer.from(data);
 		headers['Content-Length'] = data.byteLength;
-		send200(res, headers, data);
+		send(res, headers, data, code);
 	}
 }
 
-function send200(res, headers, data)
+function send(res, headers, data, code)
 {
-	res.writeHead(200, headers);
+	if (!code) code = 200;
+	res.writeHead(code, headers);
 	res.end(data);
 }
 
@@ -732,8 +739,13 @@ function compressPrepare(acceptEncoding)
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData)
 {
+	let localeTranslation = '';
+	const responseCookie = [];
+	let clientLang = '';
 	if (_generateIndex)
 	{
+		clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
+		localeTranslation = _locales.get(clientLang);
 		switch (urlPath)
 		{
 		case '/wsf_app_files/favicon.ico':
@@ -756,6 +768,9 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			return;
 		case '/wsf_app_files/icons.css':
 			sendCachedFile(res, _icons_css, 'text/css; charset=utf-8', acceptEncoding);
+			return;
+		case '/wsf_app_files/404.css':
+			sendCachedFile(res, _404_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
 		case '/wsf_app_files/eye.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
@@ -796,18 +811,15 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 	{
 		if (err)
 		{
-			error(err, res);
+			error404(err, res, acceptEncoding, localeTranslation);
 		}
 		else if (_generateIndex)
 		{
-			const responseCookie = [];
-			const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
-			let localeTranslation = _locales.get(clientLang);
 			ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, stats.isFile(), stats.size);
 		}
 		else if (stats.isFile())
 		{
-			sendFile(res, filePath, stats.size);
+			sendFile(res, filePath, stats.size, acceptEncoding, localeTranslation);
 		}
 		else
 		{
@@ -816,11 +828,11 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			{
 				if (err)
 				{
-					error(err, res);
+					error404(err, res, acceptEncoding, localeTranslation);
 				}
 				else
 				{
-					sendFile(res, filePath, stats.size);
+					sendFile(res, filePath, stats.size, acceptEncoding, localeTranslation);
 				}
 			});
 		}
@@ -859,7 +871,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 			{
 				if (postData.download)
 				{
-					zipFolder(res, urlPath, filePath, postData);
+					zipFolder(res, urlPath, filePath, postData, acceptEncoding, localeTranslation);
 				}
 				else if (UPLOAD_ENABLE && postData.delete)
 				{
@@ -939,7 +951,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 	}
 	else
 	{
-		sendFile(res, filePath, fileSize);
+		sendFile(res, filePath, fileSize, acceptEncoding, localeTranslation);
 	}
 
 	function generateAndSendIndexHtmlAlias(errorMessage)
@@ -1012,7 +1024,7 @@ function getClientLanguage(acceptLanguage, cookie, responseCookie)
 		if (!cookie?.lang)
 		{
 			//Сохраним в куках найденную локаль, чтобы каждый раз не искать.
-			responseCookie.push(`lang=${clientLang}; path=/; max-age=86400; samesite=strict`);
+			if (responseCookie) responseCookie.push(`lang=${clientLang}; path=/; max-age=86400; samesite=strict`);
 			return clientLang;
 		}
 	}
@@ -1111,7 +1123,7 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 	}
 }
 
-function zipFolder(res, urlPath, absolutePath, postData)
+function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeTranslation)
 {
 	const selectedFiles = [];
 	const rootFolderName = urlPath === '/' ? 'archive' : path.basename(absolutePath);
@@ -1193,7 +1205,7 @@ function zipFolder(res, urlPath, absolutePath, postData)
 	{
 		const zipStream = zip.generateNodeStream();
 		zipStream.pipe(res);
-		zipStream.on('error', (err) => error(err, res));
+		zipStream.on('error', (err) => error404(err, res, acceptEncoding, localeTranslation));
 		res.writeHead(200,
 			{
 				'Content-Type': 'application/zip',
@@ -1299,7 +1311,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 	{
 		if (err)
 		{
-			error(err, res);
+			error404(err, res, acceptEncoding, localeTranslation);
 		}
 		else
 		{
@@ -1616,16 +1628,10 @@ function getStrSize(size, localeTranslation)
 	return (size / Math.pow(2, sizeOfSize * 10)).toFixed(1) + ' ' + suffix;
 }
 
-function error(err, res)
+function error404(err, res, acceptEncoding, localeTranslation)
 {
+	sendCachedFile(res, _404_html[0] + getTranslation('pageNotPhound', localeTranslation) + _404_html[1], 'text/html; charset=utf-8', acceptEncoding, 404);
 	console.log('Not found: ' + err);
-	const msg = '404 Not Found';
-	res.writeHead(404,
-		{
-			'Content-Length': msg.length,
-			'Content-Type': 'text/plain'
-		});
-	res.end(msg);
 }
 function error500(err, res)
 {
@@ -1659,11 +1665,11 @@ function sendHtmlString(res, data, cookie, acceptEncoding)
 }
 
 //Отправка файлов с использованием файловых потоков.
-function sendFile(res, filePath, size)
+function sendFile(res, filePath, size, acceptEncoding, localeTranslation)
 {
 	let file = fs.createReadStream(filePath);
 	file.pipe(res);
-	file.on('error', (err) => error(err, res));
+	file.on('error', (err) => error404(err, res, acceptEncoding, localeTranslation));
 	res.writeHead(200,
 		{
 			'Content-Length': size,

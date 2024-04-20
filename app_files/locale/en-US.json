@@ -34,5 +34,6 @@
 	"invalidName": "Invalid name",
 	"newName": "Input new name:",
 	"ok": "Ok",
-	"cancel": "Cancel"
+	"cancel": "Cancel",
+	"pageNotPhound": "The requested page does not exist!"
 }
