@@ -447,7 +447,7 @@ function app(req, res)
 		{
 			const clientLang = getClientLanguage(acceptLanguage, cookie);
 			const localeTranslation = _locales.get(clientLang);
-			error404(`You can watch only ${ROOT_PATH} directory`, res, acceptEncoding, localeTranslation);
+			error404(`You can watch only ${ROOT_PATH} directory`, res, acceptEncoding, localeTranslation, clientLang);
 			return;
 		}
 		/*Post данные*/
@@ -811,7 +811,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 	{
 		if (err)
 		{
-			error404(err, res, acceptEncoding, localeTranslation);
+			error404(err, res, acceptEncoding, localeTranslation, clientLang);
 		}
 		else if (_generateIndex)
 		{
@@ -819,7 +819,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 		}
 		else if (stats.isFile())
 		{
-			sendFile(res, filePath, stats.size, acceptEncoding, localeTranslation);
+			sendFile(res, filePath, stats.size, acceptEncoding, localeTranslation, clientLang);
 		}
 		else
 		{
@@ -828,11 +828,11 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			{
 				if (err)
 				{
-					error404(err, res, acceptEncoding, localeTranslation);
+					error404(err, res, acceptEncoding, localeTranslation, clientLang);
 				}
 				else
 				{
-					sendFile(res, filePath, stats.size, acceptEncoding, localeTranslation);
+					sendFile(res, filePath, stats.size, acceptEncoding, localeTranslation, clientLang);
 				}
 			});
 		}
@@ -871,7 +871,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 			{
 				if (postData.download)
 				{
-					zipFolder(res, urlPath, filePath, postData, acceptEncoding, localeTranslation);
+					zipFolder(res, urlPath, filePath, postData, acceptEncoding, localeTranslation, clientLang);
 				}
 				else if (UPLOAD_ENABLE && postData.delete)
 				{
@@ -951,7 +951,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 	}
 	else
 	{
-		sendFile(res, filePath, fileSize, acceptEncoding, localeTranslation);
+		sendFile(res, filePath, fileSize, acceptEncoding, localeTranslation, clientLang);
 	}
 
 	function generateAndSendIndexHtmlAlias(errorMessage)
@@ -1123,7 +1123,7 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 	}
 }
 
-function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeTranslation)
+function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeTranslation, clientLang)
 {
 	const selectedFiles = [];
 	const rootFolderName = urlPath === '/' ? 'archive' : path.basename(absolutePath);
@@ -1205,7 +1205,7 @@ function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeT
 	{
 		const zipStream = zip.generateNodeStream();
 		zipStream.pipe(res);
-		zipStream.on('error', (err) => error404(err, res, acceptEncoding, localeTranslation));
+		zipStream.on('error', (err) => error404(err, res, acceptEncoding, localeTranslation, clientLang));
 		res.writeHead(200,
 			{
 				'Content-Type': 'application/zip',
@@ -1311,7 +1311,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 	{
 		if (err)
 		{
-			error404(err, res, acceptEncoding, localeTranslation);
+			error404(err, res, acceptEncoding, localeTranslation, clientLang);
 		}
 		else
 		{
@@ -1628,9 +1628,14 @@ function getStrSize(size, localeTranslation)
 	return (size / Math.pow(2, sizeOfSize * 10)).toFixed(1) + ' ' + suffix;
 }
 
-function error404(err, res, acceptEncoding, localeTranslation)
+function error404(err, res, acceptEncoding, localeTranslation, clientLang)
 {
-	sendCachedFile(res, _404_html[0] + getTranslation('pageNotPhound', localeTranslation) + _404_html[1], 'text/html; charset=utf-8', acceptEncoding, 404);
+	sendCachedFile(res,
+		_404_html[0] + clientLang +
+		_404_html[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
+		_404_html[2] + getTranslation('pageNotPhound', localeTranslation) +
+		_404_html[3],
+		'text/html; charset=utf-8', acceptEncoding, 404);
 	console.log('Not found: ' + err);
 }
 function error500(err, res)
@@ -1665,11 +1670,11 @@ function sendHtmlString(res, data, cookie, acceptEncoding)
 }
 
 //Отправка файлов с использованием файловых потоков.
-function sendFile(res, filePath, size, acceptEncoding, localeTranslation)
+function sendFile(res, filePath, size, acceptEncoding, localeTranslation, clientLang)
 {
 	let file = fs.createReadStream(filePath);
 	file.pipe(res);
-	file.on('error', (err) => error404(err, res, acceptEncoding, localeTranslation));
+	file.on('error', (err) => error404(err, res, acceptEncoding, localeTranslation, clientLang));
 	res.writeHead(200,
 		{
 			'Content-Length': size,
