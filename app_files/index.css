@@ -277,12 +277,30 @@ input[type="text"]:invalid
 }
 .rename_button
 {
+	width: 1.3rem;
+	position: relative;
+}
+.rename_button > button
+{
+	cursor: pointer;
+	border: none;
+	background: none;
+	padding: 0px;
+	width: 100%;
+	height: 100%;
+}
+.rename_button > div
+{
+	position: absolute;
+	top: 0px;
+	bottom: 0px;
+	left: 0px;
+	right: 0px;
 	background-image: url("/wsf_app_files/rename.svg");
 	background-position: center;
 	background-repeat: no-repeat;
 	background-size: 0.9rem;
-	width: 1.5rem;
-	cursor: pointer;
+	z-index: -1;
 }
 
 @media screen and (max-width: 900px)
