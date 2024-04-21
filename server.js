@@ -438,7 +438,7 @@ function app(req, res)
 	function normalWork()
 	{
 		const url = req.url.split('?');
-		const urlPath = decodeURI(url[0]);
+		const urlPath = decodeURIComponent(url[0]);
 		console.log('url: ' + urlPath);
 		const cookie = parseCookie(req.headers?.cookie);
 		const paramsGet = parseRequest(url[1]);
@@ -1384,7 +1384,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
 							if (urlHeader === '' && (file.name === 'index.html' || file.name === 'robots.txt')) file.name = '_' + file.name;
-							const linkHref = encodeURI(`${urlHeader}/${file.name}`);
+							const linkHref = encodeURI(urlHeader) + '/' + encodeURIComponent(file.name);
 							const ext = isDirectory ? 'folder' : path.extname(file.name);
 							const iconnClassName = getIconClassName(ext);
 							const showInBrowser = !isDirectory && canShowInBrowser(ext);
