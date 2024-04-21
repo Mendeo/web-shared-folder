@@ -1807,6 +1807,8 @@ function canShowInBrowser(ext)
 	case '.mng':
 	case '.asx':
 	case '.md':
+	case '.mjs':
+	case '.csv':
 		return true;
 	}
 	return false;
@@ -1822,6 +1824,7 @@ function getContentType(ext)
 	if (ext === '.gif') return 'image/gif';
 	if (ext === '.jpeg' || ext === '.jpg') return 'image/jpeg';
 	if (ext === '.js') return 'text/javascript; charset=utf-8';
+	if (ext === '.mjs') return 'text/javascript; charset=utf-8';
 	if (ext === '.atom') return 'application/atom+xml';
 	if (ext === '.rss') return 'application/rss+xml';
 	if (ext === '.mml') return 'text/mathml';
