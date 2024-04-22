@@ -439,35 +439,6 @@ function renameFiles()
 		}
 	});
 
-	function toBase64url(text)
-	{
-		if (!isWellFormed(text)) return '';
-		const bytes = new TextEncoder().encode(text);
-		const bytesString = String.fromCodePoint(...bytes);
-		const b64 = btoa(bytesString);
-		return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-
-		function isWellFormed(str)
-		{
-			if (typeof str.isWellFormed !== 'undefined')
-			{
-				return str.isWellFormed();
-			}
-			else
-			{
-				try
-				{
-					encodeURIComponent(str);
-					return true;
-				}
-				catch (error)
-				{
-					return false;
-				}
-			}
-		}
-	}
-
 	function submit(oldName, newName)
 	{
 		const selectForm = document.getElementById('select_form');
@@ -482,5 +453,34 @@ function renameFiles()
 		to.value = newName;
 		selectForm.append(to);
 		selectForm.submit();
+	}
+}
+
+function toBase64url(text)
+{
+	if (!isWellFormed(text)) return '';
+	const bytes = new TextEncoder().encode(text);
+	const bytesString = String.fromCodePoint(...bytes);
+	const b64 = btoa(bytesString);
+	return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+	function isWellFormed(str)
+	{
+		if (typeof str.isWellFormed !== 'undefined')
+		{
+			return str.isWellFormed();
+		}
+		else
+		{
+			try
+			{
+				encodeURIComponent(str);
+				return true;
+			}
+			catch (error)
+			{
+				return false;
+			}
+		}
 	}
 }
