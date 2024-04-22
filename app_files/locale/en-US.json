@@ -35,5 +35,6 @@
 	"newName": "Input new name:",
 	"ok": "Ok",
 	"cancel": "Cancel",
-	"pageNotPhound": "The requested page does not exist!"
+	"pageNotPhound": "The requested page does not exist!",
+	"rename": "Rename"
 }

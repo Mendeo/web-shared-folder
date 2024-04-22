@@ -1392,7 +1392,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							hrefs.push({ value:
 `				<div class="main_container__first_column">
 					<input id="item-checkbox-${fileIndex}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
-					<div class="rename_button"><button hidden id="rename-button-${fileIndex}"></button><div></div></div>` : ''}
+					<div class="rename_button"><button hidden title="${getTranslation('rename', localeTranslation)}" aria-label="${getTranslation('rename', localeTranslation)}" id="rename-button-${fileIndex}"></button><div></div></div>` : ''}
 					<div class="${iconnClassName}"></div>
 					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
 					<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
