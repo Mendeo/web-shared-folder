@@ -405,7 +405,7 @@ function renameFiles()
 	const renameButtons = document.querySelectorAll('button[id^="rename-button-"]');
 	const fileName = document.querySelector('#rename-dialog input[type="text"]');
 
-	let oldName = '';
+	let oldNameBase64 = '';
 	for (let rb of renameButtons)
 	{
 		rb.hidden = false;
@@ -414,7 +414,7 @@ function renameFiles()
 			e.preventDefault();
 			const id = rb.id.split('-')[2];
 			const checkboxBeforeButton = document.getElementById(`item-checkbox-${id}`);
-			oldName = checkboxBeforeButton.getAttribute('name');
+			oldNameBase64 = checkboxBeforeButton.getAttribute('name');
 			dialog.showModal();
 		});
 	}
@@ -434,8 +434,7 @@ function renameFiles()
 	{
 		if (dialog.returnValue === 'ok')
 		{
-			const newName = toBase64url(fileName.value);
-			submit(oldName, newName);
+			submit(oldNameBase64, fileName.value);
 		}
 	});
 
@@ -453,34 +452,5 @@ function renameFiles()
 		to.value = newName;
 		selectForm.append(to);
 		selectForm.submit();
-	}
-}
-
-function toBase64url(text)
-{
-	if (!isWellFormed(text)) return '';
-	const bytes = new TextEncoder().encode(text);
-	const bytesString = String.fromCodePoint(...bytes);
-	const b64 = btoa(bytesString);
-	return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-
-	function isWellFormed(str)
-	{
-		if (typeof str.isWellFormed !== 'undefined')
-		{
-			return str.isWellFormed();
-		}
-		else
-		{
-			try
-			{
-				encodeURIComponent(str);
-				return true;
-			}
-			catch (error)
-			{
-				return false;
-			}
-		}
 	}
 }
