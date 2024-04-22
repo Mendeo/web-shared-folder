@@ -1391,8 +1391,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
 							hrefs.push({ value:
 `				<div class="main_container__first_column">
-					<input id="item-checkbox-${fileIndex}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
-					<div class="rename_button"><button hidden title="${getTranslation('rename', localeTranslation)}" aria-label="${getTranslation('rename', localeTranslation)}" id="rename-button-${fileIndex}"></button><div></div></div>` : ''}
+					<input id="item-checkbox-${fileIndex}" aria-label="${getTranslation('select', localeTranslation)}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
+					<div class="rename_button"><button hidden title="${getTranslation('rename', localeTranslation)}" id="rename-button-${fileIndex}"></button><div></div></div>` : ''}
 					<div class="${iconnClassName}"></div>
 					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
 					<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `

@@ -36,5 +36,6 @@
 	"ok": "Ok",
 	"cancel": "Cancel",
 	"pageNotPhound": "The requested page does not exist!",
-	"rename": "Rename"
+	"rename": "Rename",
+	"select": "Select"
 }
