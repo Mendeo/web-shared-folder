@@ -1070,6 +1070,11 @@ function postDataHasFiles(postData)
 
 function createUserDir(postData, absolutePath, localeTranslation, callback)
 {
+	if (!UPLOAD_ENABLE)
+	{
+		callback('Writing is not allowed!');
+		return;
+	}
 	if (!postData.dir || postData.dir.length === 0 || postData.dir.length > 255)
 	{
 		callback(`${getTranslation('createFolderError', localeTranslation)}`);
@@ -1242,8 +1247,13 @@ function renameFile(absolutePath, postData, callback)
 		callback('No "rename_from" or "postData.rename_to"');
 		return;
 	}
-	const oldName = Buffer.from(postData.rename_from, 'base64url').toString();
 	const newName = Buffer.from(postData.rename_to, 'base64url').toString();
+	if (newName.length > 255)
+	{
+		callback('Name error!');
+		return;
+	}
+	const oldName = Buffer.from(postData.rename_from, 'base64url').toString();
 	if ((newName.match(FILES_REG_EXP) !== null) || oldName.match(FILES_REG_EXP) !== null)
 	{
 		callback('Name error!');
