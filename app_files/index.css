@@ -93,10 +93,6 @@
 }
 /*Конец блока, отвечающего за переключение темы*/
 
-.hidden-in-flow
-{
-	visibility: hidden;
-}
 .main_container
 {
 	display: inline-grid;
@@ -193,6 +189,10 @@
 	}
 }
 /*---UPLOAD_SPLITTER---*/
+.hidden_in_flow
+{
+	visibility: hidden;
+}
 .unzip-icon
 {
 	background-image: url("/wsf_app_files/unzip.svg");
