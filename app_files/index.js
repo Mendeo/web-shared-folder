@@ -5,21 +5,94 @@ const _checkboxes =  document.querySelectorAll('#select_form input[type="checkbo
 themeChanger();
 setClientLanguage();
 performSelectButtons();
+preventDownloadIfNoFilesSelected();
+backspaceToPreviousFolder();
+/*---UPLOAD_SPLITTER---*/
 deleteFilesWarningDialog();
 upload();
 dragAndDropFiles();
-backspaceToPreviousFolder();
-preventDownloadIfNoFilesSelected();
 createFolderValidity();
 renameFiles();
-
-function hasSelectedChecboxes()
+/*---UPLOAD_SPLITTER---*/
+function themeChanger()
 {
-	for (let elem of _checkboxes)
+	const THEME_STORAGE_NAME = 'selected-theme';
+	const STORAGE_LIGHT_THEME = 'light';
+	const STORAGE_DARK_THEME = 'dark';
+	const STORAGE_AUTO_THEME = 'auto';
+
+	const radioLight = document.getElementById('radio-light-theme');
+	const radioDark = document.getElementById('radio-dark-theme');
+	const radioAuto = document.getElementById('radio-auto-theme');
+
+	const styleLight = document.getElementById('light-theme-css');
+	const styleDark = document.getElementById('dark-theme-css');
+
+	const selectedTheme = localStorage.getItem(THEME_STORAGE_NAME);
+	setTheme(selectedTheme);
+
+	radioLight.addEventListener('change', onThemeChange);
+	radioDark.addEventListener('change', onThemeChange);
+	radioAuto.addEventListener('change', onThemeChange);
+
+	function setTheme(selectedTheme)
 	{
-		if (elem.checked) return true;
+		if (selectedTheme !== STORAGE_LIGHT_THEME && selectedTheme !== STORAGE_DARK_THEME && selectedTheme !== STORAGE_AUTO_THEME)
+		{
+			selectedTheme = STORAGE_AUTO_THEME;
+			setThemeToLocalStorage(STORAGE_AUTO_THEME);
+		}
+
+		if (selectedTheme === STORAGE_LIGHT_THEME)
+		{
+			styleLight.media = 'all';
+			styleDark.media = 'not all';
+			radioLight.checked = true;
+		}
+		else if (selectedTheme === STORAGE_DARK_THEME)
+		{
+			styleLight.media = 'not all';
+			styleDark.media = 'all';
+			radioDark.checked = true;
+		}
+		else
+		{
+			styleLight.media = '(prefers-color-scheme: light)';
+			styleDark.media = '(prefers-color-scheme: dark)';
+			radioAuto.checked = true;
+		}
 	}
-	return false;
+
+	function onThemeChange()
+	{
+		let selectedTheme = '';
+		let ifSet = false;
+		if (radioLight.checked)
+		{
+			selectedTheme = STORAGE_LIGHT_THEME;
+			ifSet = true;
+		}
+		else if (radioDark.checked)
+		{
+			selectedTheme = STORAGE_DARK_THEME;
+			ifSet = true;
+		}
+		else if (radioAuto.checked)
+		{
+			selectedTheme = STORAGE_AUTO_THEME;
+			ifSet = true;
+		}
+		if (ifSet)
+		{
+			setThemeToLocalStorage(selectedTheme);
+			setTheme(selectedTheme);
+		}
+	}
+
+	function setThemeToLocalStorage(value)
+	{
+		localStorage.setItem(THEME_STORAGE_NAME, value);
+	}
 }
 
 function setClientLanguage()
@@ -79,6 +152,41 @@ function performSelectButtons()
 	}
 }
 
+function preventDownloadIfNoFilesSelected()
+{
+	const downloadButton = document.querySelector('#select_form input[name="download"]');
+	downloadButton.addEventListener('click', (e) =>
+	{
+		if (!hasSelectedChecboxes()) e.preventDefault();
+	});
+}
+
+function hasSelectedChecboxes()
+{
+	for (let elem of _checkboxes)
+	{
+		if (elem.checked) return true;
+	}
+	return false;
+}
+
+function backspaceToPreviousFolder()
+{
+	const selectForm = document.getElementById('select_form');
+	selectForm.focus();
+	selectForm.addEventListener('keydown', (e) =>
+	{
+		if (e.code === 'Backspace' && location.pathname !== '/')
+		{
+			//history.back();
+			const arr = location.pathname.split('/');
+			let backPath = arr.slice(0, arr.length - 1).join('/');
+			if (backPath === '') backPath = '/';
+			location.assign(backPath);
+		}
+	});
+}
+/*---UPLOAD_SPLITTER---*/
 function deleteFilesWarningDialog()
 {
 	if (sessionStorage.getItem('deleteWithoutAsk')) return;
@@ -275,112 +383,6 @@ function dragAndDropFiles()
 	});
 }
 
-function backspaceToPreviousFolder()
-{
-	const selectForm = document.getElementById('select_form');
-	selectForm.focus();
-	selectForm.addEventListener('keydown', (e) =>
-	{
-		if (e.code === 'Backspace' && location.pathname !== '/')
-		{
-			//history.back();
-			const arr = location.pathname.split('/');
-			let backPath = arr.slice(0, arr.length - 1).join('/');
-			if (backPath === '') backPath = '/';
-			location.assign(backPath);
-		}
-	});
-}
-
-function preventDownloadIfNoFilesSelected()
-{
-	const downloadButton = document.querySelector('#select_form input[name="download"]');
-	downloadButton.addEventListener('click', (e) =>
-	{
-		if (!hasSelectedChecboxes()) e.preventDefault();
-	});
-}
-
-function themeChanger()
-{
-	const THEME_STORAGE_NAME = 'selected-theme';
-	const STORAGE_LIGHT_THEME = 'light';
-	const STORAGE_DARK_THEME = 'dark';
-	const STORAGE_AUTO_THEME = 'auto';
-
-	const radioLight = document.getElementById('radio-light-theme');
-	const radioDark = document.getElementById('radio-dark-theme');
-	const radioAuto = document.getElementById('radio-auto-theme');
-
-	const styleLight = document.getElementById('light-theme-css');
-	const styleDark = document.getElementById('dark-theme-css');
-
-	const selectedTheme = localStorage.getItem(THEME_STORAGE_NAME);
-	setTheme(selectedTheme);
-
-	radioLight.addEventListener('change', onThemeChange);
-	radioDark.addEventListener('change', onThemeChange);
-	radioAuto.addEventListener('change', onThemeChange);
-
-	function setTheme(selectedTheme)
-	{
-		if (selectedTheme !== STORAGE_LIGHT_THEME && selectedTheme !== STORAGE_DARK_THEME && selectedTheme !== STORAGE_AUTO_THEME)
-		{
-			selectedTheme = STORAGE_AUTO_THEME;
-			setThemeToLocalStorage(STORAGE_AUTO_THEME);
-		}
-
-		if (selectedTheme === STORAGE_LIGHT_THEME)
-		{
-			styleLight.media = 'all';
-			styleDark.media = 'not all';
-			radioLight.checked = true;
-		}
-		else if (selectedTheme === STORAGE_DARK_THEME)
-		{
-			styleLight.media = 'not all';
-			styleDark.media = 'all';
-			radioDark.checked = true;
-		}
-		else
-		{
-			styleLight.media = '(prefers-color-scheme: light)';
-			styleDark.media = '(prefers-color-scheme: dark)';
-			radioAuto.checked = true;
-		}
-	}
-
-	function onThemeChange()
-	{
-		let selectedTheme = '';
-		let ifSet = false;
-		if (radioLight.checked)
-		{
-			selectedTheme = STORAGE_LIGHT_THEME;
-			ifSet = true;
-		}
-		else if (radioDark.checked)
-		{
-			selectedTheme = STORAGE_DARK_THEME;
-			ifSet = true;
-		}
-		else if (radioAuto.checked)
-		{
-			selectedTheme = STORAGE_AUTO_THEME;
-			ifSet = true;
-		}
-		if (ifSet)
-		{
-			setThemeToLocalStorage(selectedTheme);
-			setTheme(selectedTheme);
-		}
-	}
-
-	function setThemeToLocalStorage(value)
-	{
-		localStorage.setItem(THEME_STORAGE_NAME, value);
-	}
-}
 function createFolderValidity()
 {
 	const input = document.querySelector('form[name="mk_dir"] > input[name="dir"]');
@@ -398,10 +400,11 @@ function createFolderValidity()
 		input.reportValidity();
 	});
 }
+
 function renameFiles()
 {
 	const dialog = document.getElementById('rename-dialog');
-	if (!dialog.showModal) return;
+	if (!dialog || !dialog.showModal) return;
 	const renameButtons = document.querySelectorAll('button[id^="rename-button-"]');
 	const fileName = document.querySelector('#rename-dialog input[type="text"]');
 

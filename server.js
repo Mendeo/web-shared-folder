@@ -232,7 +232,8 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			}
 			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'app_files', 'index.html')).toString().split('~%~');
 			_favicon = fs.readFileSync(path.join(__dirname, 'app_files', 'favicon.ico'));
-			_index_js = fs.readFileSync(path.join(__dirname, 'app_files', 'index.js'));
+			const index_js_splitted = fs.readFileSync(path.join(__dirname, 'app_files', 'index.js')).toString().split('/*---UPLOAD_SPLITTER---*/');
+			_index_js = UPLOAD_ENABLE ? index_js_splitted.join('') : index_js_splitted[0] + index_js_splitted[2];
 			_index_css = fs.readFileSync(path.join(__dirname, 'app_files', 'index.css'));
 			_light_css = fs.readFileSync(path.join(__dirname, 'app_files', 'light.css'));
 			_dark_css = fs.readFileSync(path.join(__dirname, 'app_files', 'dark.css'));
@@ -1481,26 +1482,30 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[17] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[18] + getTranslation('createFolder', localeTranslation) +
 						_indexHtmlbase[19] + getTranslation('invalidName', localeTranslation) +
-						_indexHtmlbase[20] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[21] + getTranslation('dragAndDropText', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[23] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[24] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[25] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[26]) : ''}` +
-						_indexHtmlbase[27] + errorMessage +
-						_indexHtmlbase[28] + getTranslation('poweredBy', localeTranslation) +
-						_indexHtmlbase[29] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[20] + getTranslation('folderName', localeTranslation) +
+						_indexHtmlbase[21] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[23] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[24] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[25] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[26] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[27]) : ''}` +
+						_indexHtmlbase[28] + errorMessage +
+						_indexHtmlbase[29] + getTranslation('poweredBy', localeTranslation) +
 						_indexHtmlbase[30] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[31] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[31] + getTranslation('lightTheme', localeTranslation) +
 						_indexHtmlbase[32] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[33] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[33] + getTranslation('autoTheme', localeTranslation) +
 						_indexHtmlbase[34] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[35] + getTranslation('newName', localeTranslation) +
-						_indexHtmlbase[36] + getTranslation('invalidName', localeTranslation) +
-						_indexHtmlbase[37] + getTranslation('ok', localeTranslation) +
-						_indexHtmlbase[38] + getTranslation('cancel', localeTranslation) +
-						_indexHtmlbase[39];
+						_indexHtmlbase[35] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[36] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[37] + getTranslation('inputNewName', localeTranslation) +
+						_indexHtmlbase[38] + getTranslation('invalidName', localeTranslation) +
+						_indexHtmlbase[39] + getTranslation('newName', localeTranslation) +
+						_indexHtmlbase[40] + getTranslation('ok', localeTranslation) +
+						_indexHtmlbase[41] + getTranslation('cancel', localeTranslation) +
+						_indexHtmlbase[42]) : ''}` +
+						_indexHtmlbase[43];
 			}
 		}
 	});

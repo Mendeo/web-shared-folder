@@ -67,7 +67,7 @@
 					<form class="footer__mk_dir_form" method="post" enctype="application/x-www-form-urlencoded" name="mk_dir">
 						<!--Create folder files-->
 						<input type="submit" value="~%~">
-						<input type="text" name="dir" data-invalid-message="~%~" required pattern="^[^&lt;&gt;&quot;:?*\|\\\/]+$">
+						<input type="text" name="dir" data-invalid-message="~%~" aria-label="~%~" required pattern="^[^&lt;&gt;&quot;:?*\|\\\/]+$">
 					</form>
 					<!--Upload files form-->
 					<form class="footer__upload_files_form" method="post" enctype="multipart/form-data" name="upload_files">
@@ -107,11 +107,11 @@
 			<label for="radio-dark-theme" aria-label="~%~"></label>
 			<input type="radio" id="radio-dark-theme" title="~%~" name="theme">
 			<div></div>
-		</fieldset>
+		</fieldset>~%~
 		<dialog id="rename-dialog" class="dialog">
-			<p><b>~%~</b></p>
+			<p><b>~%~:</b></p>
 			<p>
-				<input type="text" data-invalid-message="~%~" pattern="^[^&lt;&gt;&quot;:?*\|\\\/]+$">
+				<input type="text" data-invalid-message="~%~" aria-label="~%~" pattern="^[^&lt;&gt;&quot;:?*\|\\\/]+$">
 			</p>
 			<form method="dialog">
 				<div class="dialog__buttons">
@@ -119,7 +119,7 @@
 					<button value="cancel">~%~</button>
 				</div>
 			</form>
-		</dialog>
+		</dialog>~%~
 		<script type="text/javascript" src="/wsf_app_files/index.js"></script>
 	</body>
 </html>
