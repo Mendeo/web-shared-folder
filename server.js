@@ -1070,7 +1070,7 @@ function postDataHasFiles(postData)
 
 function createUserDir(postData, absolutePath, localeTranslation, callback)
 {
-	if (!postData.dir || postData.dir.length === 0)
+	if (!postData.dir || postData.dir.length === 0 || postData.dir.length > 255)
 	{
 		callback(`${getTranslation('createFolderError', localeTranslation)}`);
 	}
