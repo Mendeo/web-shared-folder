@@ -193,7 +193,7 @@ function deleteFilesWarningDialog()
 	const dialog = document.getElementById('delete-warning-dialog');
 	const dialogMessage = document.getElementById('dialog_message');
 	if (!dialog) return;
-	const deleteButton = document.querySelector('#select_form input[name="delete"]');
+	const deleteButton = document.querySelector('#select_form button[name="delete"]');
 
 	deleteButton.addEventListener('click', (event) =>
 	{
@@ -229,14 +229,14 @@ function deleteFilesWarningDialog()
 		});
 	}
 
+	const selectForm = document.getElementById('select_form');
 	function submit()
 	{
-		const selectForm = document.getElementById('select_form');
-		const deleteInput = document.createElement('input');
-		deleteInput.type = 'hidden';
-		deleteInput.name = 'delete';
-		deleteInput.value = true;
-		selectForm.append(deleteInput);
+		const tmpElement = document.createElement('input');
+		tmpElement.type = 'hidden';
+		tmpElement.name = 'delete';
+		tmpElement.value = true;
+		selectForm.append(tmpElement);
 		selectForm.submit();
 	}
 }
