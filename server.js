@@ -1214,7 +1214,7 @@ function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeT
 
 	function sendZip()
 	{
-		const zipStream = zip.generateNodeStream();
+		const zipStream = zip.generateNodeStream({ compression: 'STORE' });
 		zipStream.pipe(res);
 		zipStream.on('error', (err) => error404(err, res, acceptEncoding, localeTranslation, clientLang));
 		res.writeHead(200,
