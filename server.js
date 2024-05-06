@@ -443,7 +443,7 @@ function app(req, res)
 		const urlPath = decodeURIComponent(url[0]);
 		console.log('url: ' + urlPath);
 		const cookie = parseCookie(req.headers?.cookie);
-		const paramsGet = parseRequest(url[1]);
+		const reqGetData = parseRequest(url[1]);
 		const acceptEncoding = req.headers['accept-encoding'];
 		const acceptLanguage = req.headers['accept-language'];
 		if (urlPath.match(/[/\\]\.+\.[/\\]/))
@@ -463,7 +463,7 @@ function app(req, res)
 				{
 					if (err)
 					{
-						answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, { error: err.message });
+						answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, { error: err.message });
 					}
 					else
 					{
@@ -479,32 +479,32 @@ function app(req, res)
 									break;
 								}
 							}
-							parseMultiPartFormData(postBody, boundary, (postData) =>
+							parseMultiPartFormData(postBody, boundary, (reqPostData) =>
 							{
 								//console.log('parse complete');
-								answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+								answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData);
 							});
 						}
 						else if (contentType[0] === 'application/x-www-form-urlencoded')
 						{
-							const postData = parseXwwwFormUrlEncoded(postBody);
-							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+							const reqPostData = parseXwwwFormUrlEncoded(postBody);
+							answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData);
 						}
 						else
 						{
-							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+							answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage);
 						}
 					}
 				});
 			}
 			else
 			{
-				answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+				answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage);
 			}
 		}
 		else
 		{
-			answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+			answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage);
 		}
 	}
 }
@@ -740,7 +740,7 @@ function compressPrepare(acceptEncoding)
 }
 
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData)
+function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData)
 {
 	let localeTranslation = '';
 	const responseCookie = [];
@@ -821,7 +821,7 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 		}
 		else if (_generateIndex)
 		{
-			ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, stats.isFile(), stats.size);
+			ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, stats.isFile(), stats.size);
 		}
 		else if (stats.isFile())
 		{
@@ -845,21 +845,21 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 	});
 }
 
-function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, isFile, fileSize)
+function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, isFile, fileSize)
 {
 	if (!isFile)
 	{
-		if (postData && !Array.isArray(postData) && typeof postData === 'object')
+		if (reqPostData && !Array.isArray(reqPostData) && typeof reqPostData === 'object')
 		{
-			if (postData.error)
+			if (reqPostData.error)
 			{
-				generateAndSendIndexHtmlAlias(postData.error);
+				generateAndSendIndexHtmlAlias(reqPostData.error);
 			}
-			else if (postData.dir)
+			else if (reqPostData.dir)
 			{
 				if (UPLOAD_ENABLE)
 				{
-					createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
+					createUserDir(reqPostData, filePath, localeTranslation, (errorMessage) =>
 					{
 						generateAndSendIndexHtmlAlias(errorMessage);
 					});
@@ -869,19 +869,15 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 					generateAndSendIndexHtmlAlias();
 				}
 			}
-			else if (Object.keys(postData).length < 2)
+			else if (Object.keys(reqPostData).length < 2)
 			{
 				generateAndSendIndexHtmlAlias('No files selected!');
 			}
 			else
 			{
-				if (postData.download)
+				if (UPLOAD_ENABLE && reqPostData.delete)
 				{
-					zipFolder(res, urlPath, filePath, postData, acceptEncoding, localeTranslation, clientLang);
-				}
-				else if (UPLOAD_ENABLE && postData.delete)
-				{
-					deleteFiles(filePath, postData, (errorMessage) =>
+					deleteFiles(filePath, reqPostData, (errorMessage) =>
 					{
 						if (errorMessage)
 						{
@@ -893,9 +889,9 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 						}
 					});
 				}
-				else if (UPLOAD_ENABLE && postData.rename_from && postData.rename_to)
+				else if (UPLOAD_ENABLE && reqPostData.rename_from && reqPostData.rename_to)
 				{
-					renameFile(filePath, postData, (errorMessage) =>
+					renameFile(filePath, reqPostData, (errorMessage) =>
 					{
 						if (errorMessage)
 						{
@@ -913,11 +909,11 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 				}
 			}
 		}
-		else if (postDataHasFiles(postData))
+		else if (UPLOAD_ENABLE && postDataHasFiles(reqPostData))
 		{
-			saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
+			saveUserFiles(reqPostData, filePath, localeTranslation, (errorMessage) =>
 			{
-				if (paramsGet?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
+				if (reqGetData?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
 				{
 					simpleAnswer(res, errorMessage);
 				}
@@ -931,12 +927,16 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 				}
 			});
 		}
+		else if (reqGetData?.download)
+		{
+			zipFolder(res, urlPath, filePath, reqGetData, acceptEncoding, localeTranslation, clientLang);
+		}
 		else
 		{
 			generateAndSendIndexHtmlAlias();
 		}
 	}
-	else if (paramsGet?.unzip && UPLOAD_ENABLE)
+	else if (reqGetData?.unzip && UPLOAD_ENABLE)
 	{
 		unzip(filePath, errorMessage =>
 		{
@@ -962,7 +962,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 
 	function generateAndSendIndexHtmlAlias(errorMessage)
 	{
-		generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
+		generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
 	}
 }
 
@@ -1104,17 +1104,17 @@ function createUserDir(postData, absolutePath, localeTranslation, callback)
 	}
 }
 
-function saveUserFiles(postData, absolutePath, localeTranslation, callback)
+function saveUserFiles(reqPostData, absolutePath, localeTranslation, callback)
 {
-	if (!postData?.length || postData.length === 0)
+	if (!reqPostData?.length || reqPostData.length === 0)
 	{
 		callback(`${getTranslation('sendingFilesError', localeTranslation)} No data received.`);
 	}
 	else
 	{
 		let errorSendingFile = '';
-		let numOfFiles = postData.length;
-		for (let fileData of postData)
+		let numOfFiles = reqPostData.length;
+		for (let fileData of reqPostData)
 		{
 			fs.writeFile(path.join(absolutePath, fileData.fileName), fileData.data, (err) =>
 			{
