@@ -154,7 +154,7 @@ function performSelectButtons()
 
 function preventDownloadIfNoFilesSelected()
 {
-	const downloadButton = document.querySelector('#select_form input[name="download"]');
+	const downloadButton = document.querySelector('#select_form button[name="download"]');
 	downloadButton.addEventListener('click', (e) =>
 	{
 		if (!hasSelectedChecboxes()) e.preventDefault();
