@@ -1755,9 +1755,20 @@ function unzip(pathToZip, callback)
 					{
 						zipData.files[file].async('uint8array').then(data =>
 						{
-							fs.writeFile(fullPath, data, err =>
+							const fileDir = path.dirname(fullPath);
+							fs.mkdir(fileDir, { recursive: true }, err =>
 							{
-								perform(err);
+								if (err)
+								{
+									perform(err);
+								}
+								else
+								{
+									fs.writeFile(fullPath, data, err =>
+									{
+										perform(err);
+									});
+								}
 							});
 						}).catch(perform);
 					}
