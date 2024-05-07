@@ -1414,7 +1414,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 					<div class="rename_button"><button hidden title="${getTranslation('rename', localeTranslation)}" id="rename-button-${fileIndex}"></button><div></div></div>` : ''}
 					<div class="${iconnClassName}"></div>
 					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
-					<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
+					<a href="${linkHref}?unzip=true" class="flex_right_icons unzip_icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
 					<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
 				</div>
 				<span>${sizeStr}</span>
