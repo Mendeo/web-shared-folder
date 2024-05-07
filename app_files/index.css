@@ -193,7 +193,7 @@
 {
 	visibility: hidden;
 }
-.unzip-icon
+.unzip_icon
 {
 	background-image: url("/wsf_app_files/unzip.svg");
 }
@@ -213,6 +213,7 @@
 }
 .footer__controls > progress
 {
+	max-width: 100vh;
 	width: 100%;
 }
 .footer__controls hr
