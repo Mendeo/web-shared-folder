@@ -334,12 +334,12 @@ function upload(formData, callback)
 
 	function showProgressBar()
 	{
-		progressBar.classList.remove('hidden-in-flow');
+		progressBar.classList.remove('hidden_in_flow');
 	}
 
 	function removeProgressBar()
 	{
-		progressBar.classList.add('hidden-in-flow');
+		progressBar.classList.add('hidden_in_flow');
 	}
 }
 
