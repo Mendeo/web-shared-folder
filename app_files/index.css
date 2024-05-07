@@ -213,7 +213,7 @@
 }
 .footer__controls > progress
 {
-	max-width: 100vh;
+	max-width: 100vw;
 	width: 100%;
 }
 .footer__controls hr
