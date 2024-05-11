@@ -9,7 +9,7 @@
 /*Блок, отвечающий за переключение темы (светлая, авто, тёмная)*/
 .theme_selector
 {
-	position: absolute;
+	position: fixed;
 	bottom: 1rem;
 	right: 1rem;
 	padding: 0.125rem;
