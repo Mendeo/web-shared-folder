@@ -239,11 +239,12 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_light_css = fs.readFileSync(path.join(__dirname, 'app_files', 'light.css'));
 			_dark_css = fs.readFileSync(path.join(__dirname, 'app_files', 'dark.css'));
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
-			_404_css = fs.readFileSync(path.join(__dirname, 'app_files', '404.css'));
-			_404_html = fs.readFileSync(path.join(__dirname, 'app_files', '404.html')).toString().split('~%~');
 			readIconsFiles();
-			readTranslationFiles();
 		}
+		readTranslationFiles();
+		_404_css = fs.readFileSync(path.join(__dirname, 'app_files', '404.css'));
+		_404_html = fs.readFileSync(path.join(__dirname, 'app_files', '404.html')).toString().split('~%~');
+
 		const isHttps = key && cert;
 		if (cluster.isPrimary)
 		{
@@ -742,13 +743,11 @@ function compressPrepare(acceptEncoding)
 //Поиск и сопоставление нужных путей
 function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData)
 {
-	let localeTranslation = '';
 	const responseCookie = [];
-	let clientLang = '';
+	let clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
+	let localeTranslation = _locales.get(clientLang);
 	if (_generateIndex)
 	{
-		clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
-		localeTranslation = _locales.get(clientLang);
 		switch (urlPath)
 		{
 		case '/wsf_app_files/favicon.ico':
@@ -771,9 +770,6 @@ function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, acceptL
 			return;
 		case '/wsf_app_files/icons.css':
 			sendCachedFile(res, _icons_css, 'text/css; charset=utf-8', acceptEncoding);
-			return;
-		case '/wsf_app_files/404.css':
-			sendCachedFile(res, _404_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
 		case '/wsf_app_files/eye.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
@@ -811,6 +807,11 @@ function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, acceptL
 				return;
 			}
 		}
+	}
+	if (urlPath === '/wsf_app_files/404.css')
+	{
+		sendCachedFile(res, _404_css, 'text/css; charset=utf-8', acceptEncoding);
+		return;
 	}
 	let filePath = path.join(ROOT_PATH, urlPath);
 	fs.stat(filePath, (err, stats) =>
@@ -1027,7 +1028,7 @@ function getClientLanguage(acceptLanguage, cookie, responseCookie)
 	}
 	if (success)
 	{
-		if (!cookie?.lang)
+		if (!cookie?.lang && _generateIndex)
 		{
 			//Сохраним в куках найденную локаль, чтобы каждый раз не искать.
 			if (responseCookie) responseCookie.push(`lang=${clientLang}; path=/; max-age=86400; samesite=strict`);
@@ -1659,9 +1660,10 @@ function error404(err, res, acceptEncoding, localeTranslation, clientLang)
 {
 	sendCachedFile(res,
 		_404_html[0] + clientLang +
-		_404_html[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
-		_404_html[2] + getTranslation('pageNotPhound', localeTranslation) +
-		_404_html[3],
+		_404_html[1] + (_generateIndex ? (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) : '404') +
+		_404_html[2] + (_generateIndex ? 'wsf_app_files/' : '') +
+		_404_html[3] + getTranslation('pageNotFound', localeTranslation) +
+		_404_html[4],
 		'text/html; charset=utf-8', acceptEncoding, 404);
 	console.log('Not found: ' + err);
 }

@@ -37,7 +37,7 @@
 	"newName": "New file or folder name",
 	"ok": "Ok",
 	"cancel": "Cancel",
-	"pageNotPhound": "The requested page does not exist!",
+	"pageNotFound": "The requested page does not exist!",
 	"rename": "Rename",
 	"select": "Select"
 }
