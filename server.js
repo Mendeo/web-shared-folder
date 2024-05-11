@@ -1400,12 +1400,18 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 								return;
 							}
 							let linkName = isDirectory ? `[${file.name}]` : file.name;
+							const ext = isDirectory ? 'folder' : path.extname(file.name);
+							const maxNameLength = 70;
+							const isNameTruncated = linkName.length > maxNameLength;
+							if (isNameTruncated)
+							{
+								linkName = linkName.slice(0, maxNameLength - ext.length - 5) + '&nbsp;...&nbsp;' + ext;
+							}
 							linkName = linkName.replace(/ /g, '&nbsp;');
 							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
 							if (urlHeader === '' && (file.name === 'index.html' || file.name === 'robots.txt')) file.name = '_' + file.name;
 							const linkHref = encodeURI(urlHeader) + '/' + encodeURIComponent(file.name);
-							const ext = isDirectory ? 'folder' : path.extname(file.name);
 							const iconnClassName = getIconClassName(ext);
 							const showInBrowser = !isDirectory && canShowInBrowser(ext);
 							const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
@@ -1414,7 +1420,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 					<input id="item-checkbox-${fileIndex}" aria-label="${getTranslation('select', localeTranslation)}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
 					<div class="rename_button"><button hidden title="${getTranslation('rename', localeTranslation)}" id="rename-button-${fileIndex}"></button><div></div></div>` : ''}
 					<div class="${iconnClassName}"></div>
-					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
+					<a href="${linkHref}"${isDirectory ? '' : ' download'} ${isNameTruncated ? `title="${file.name}"` : ''}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
 					<a href="${linkHref}?unzip=true" class="flex_right_icons unzip_icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
 					<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
 				</div>
