@@ -1118,6 +1118,66 @@ function saveUserFiles(reqPostData, absolutePath, localeTranslation, callback)
 	}
 }
 
+function readFolderRecursive(folderPath, onFolder, onFile, onError, onEnd)
+{
+	let numberOfFile = 0;
+	let numberOfFolder = 0;
+	const rootPath = folderPath;
+	read(folderPath);
+
+	function read(folderPath)
+	{
+		numberOfFolder++;
+		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
+		{
+			if (err)
+			{
+				onError(err);
+			}
+			else if (files.length > 0)
+			{
+				for (let file of files)
+				{
+					const fullPath = path.join(folderPath, file.name);
+					checkIsDirectory(fullPath, file, afterIsDirectory);
+					function afterIsDirectory(isDirectory)
+					{
+						if (isDirectory)
+						{
+							const relativePath = path.join(path.relative(rootPath, fullPath)).replace(/\\/g, '/');
+							onFolder(fullPath, relativePath, () =>
+							{
+								read(fullPath);
+								numberOfFolder--;
+							});
+						}
+						else if (isDirectory !== null)
+						{
+							numberOfFile++;
+							const relativePath = path.join(path.relative(rootPath, folderPath), file.name).replace(/\\/g, '/');
+							onFile(fullPath, relativePath, () =>
+							{
+								numberOfFile--;
+								if (numberOfFolder === 0 && numberOfFile === 0) onEnd();
+								return;
+							});
+						}
+					}
+				}
+			}
+			else
+			{
+				const relativePath = path.join(path.relative(rootPath, folderPath));
+				onFolder(folderPath, relativePath, () =>
+				{
+					numberOfFolder--;
+					if (numberOfFolder === 0 && numberOfFile === 0) onEnd();
+				});
+			}
+		});
+	}
+}
+
 function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeTranslation, clientLang)
 {
 	const selectedFiles = [];
@@ -1133,62 +1193,35 @@ function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeT
 		}
 	}
 	const zip = new JSZip();
-
-	let numberOfFile = 0;
-	let numberOfRecursive = 0;
-
-	readFolderRecursive(absolutePath, true);
-
-	function readFolderRecursive(folderPath, isRoot)
+	const onFolder = function(fullPath, relativePath, next)
 	{
-		numberOfRecursive++;
-		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
+		zip.folder(relativePath);
+		next();
+	};
+	const onFile = function(fullPath, relativePath, next)
+	{
+		fs.readFile(fullPath, (err, data) =>
 		{
-			if (err)
+			if (!err)
 			{
-				zipError(err, res);
-			}
-			else if (files.length > 0)
-			{
-				for (let file of files)
-				{
-					if (isRoot && !selectedFiles.includes(file.name)) continue;
-					const fullPath = path.join(folderPath, file.name);
-					checkIsDirectory(fullPath, file, afterIsDirectory);
-					function afterIsDirectory(isDirectory)
-					{
-						if (isDirectory)
-						{
-							const relativePath = path.join(path.relative(absolutePath, fullPath)).replace(/\\/g, '/');
-							zip.folder(relativePath);
-							readFolderRecursive(fullPath, false);
-						}
-						else if (isDirectory !== null)
-						{
-							numberOfFile++;
-							fs.readFile(fullPath, (err, data) =>
-							{
-								numberOfFile--;
-								if (!err)
-								{
-									const relativePath = path.join(path.relative(absolutePath, folderPath), file.name).replace(/\\/g, '/');
-									zip.file(relativePath, data);
-									if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
-								}
-							});
-						}
-					}
-				}
+				zip.file(relativePath, data);
 			}
 			else
 			{
-				const relativePath = path.join(path.relative(absolutePath, folderPath));
-				zip.folder(relativePath);
+				zipError(err, res);
 			}
-			numberOfRecursive--;
-			if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
+			next();
 		});
-	}
+	};
+	const onError = function(err)
+	{
+		zipError(err, res);
+	};
+	const onEnd = function()
+	{
+		sendZip();
+	};
+	readFolderRecursive(absolutePath, onFolder, onFile, onError, onEnd);
 
 	function zipError(err, res)
 	{
