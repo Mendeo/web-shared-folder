@@ -24,6 +24,7 @@
 	"no": "No",
 	"deleteFilesWarning": "Are you sure you want to delete the selected files? <br>This operation cannot be undone.",
 	"deleteWithoutAsk": "Delete without confirmation",
+	"deleteError": "An error occurred during deletion",
 	"dragAndDropText": "Drag files here.",
 	"linkToUnzip": "Unzip archive on server",
 	"filesStats": "Files",
@@ -33,6 +34,7 @@
 	"autoTheme": "Auto theme",
 	"darkTheme": "Dark theme",
 	"invalidName": "Invalid name",
+	"renameError": "An error occurred while renaming",
 	"inputNewName": "Input the new name",
 	"newName": "New file or folder name",
 	"ok": "Ok",
@@ -41,5 +43,6 @@
 	"rename": "Rename",
 	"select": "Select",
 	"copy": "Copy",
-	"paste": "Paste"
+	"paste": "Paste",
+	"pasteError": "Failed to paste"
 }

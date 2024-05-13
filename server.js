@@ -862,7 +862,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, coo
 				{
 					if (reqPostData.delete)
 					{
-						deleteFiles(filePath, reqPostData, (errorMessage) =>
+						deleteFiles(filePath, reqPostData, localeTranslation, (errorMessage) =>
 						{
 							if (errorMessage)
 							{
@@ -876,7 +876,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, coo
 					}
 					else if (reqPostData.rename_from && reqPostData.rename_to)
 					{
-						renameFile(filePath, reqPostData.rename_from, reqPostData.rename_to, (errorMessage) =>
+						renameItem(filePath, reqPostData.rename_from, reqPostData.rename_to, localeTranslation, (errorMessage) =>
 						{
 							if (errorMessage)
 							{
@@ -890,14 +890,14 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, coo
 					}
 					else if (reqPostData.dir)
 					{
-						createUserDir(reqPostData, filePath, localeTranslation, (errorMessage) =>
+						createUserDir(filePath, reqPostData, localeTranslation, (errorMessage) =>
 						{
 							generateAndSendIndexHtmlAlias(errorMessage);
 						});
 					}
 					else if (reqPostData.paste_items && reqPostData.paste_from)
 					{
-						renameFile(filePath, reqPostData, (errorMessage) =>
+						pasteItems(filePath, reqPostData.paste_from, reqPostData.paste_items, (errorMessage) =>
 						{
 							if (errorMessage)
 							{
@@ -1088,40 +1088,6 @@ function postDataHasFiles(postData)
 	return Array.isArray(postData) && postData.length > 0 && postData.reduce((hasFileName, item) => hasFileName & (item.fileName && item.fileName !== '' && item.data !== undefined), true);
 }
 
-function createUserDir(postData, absolutePath, localeTranslation, callback)
-{
-	if (!UPLOAD_ENABLE)
-	{
-		callback('Writing is not allowed!');
-		return;
-	}
-	if (!postData.dir || postData.dir.length === 0 || postData.dir.length > 255)
-	{
-		callback(`${getTranslation('createFolderError', localeTranslation)}`);
-	}
-	else
-	{
-		let dpath = postData.dir.replace(/\+/g, ' ');
-		dpath = decodeURIComponent(dpath);
-		if (dpath.match(FILES_REG_EXP) !== null)
-		{
-			callback(`${getTranslation('createFolderError', localeTranslation)}`);
-			return;
-		}
-		fs.mkdir(path.join(absolutePath, dpath), { recursive: true }, (err) =>
-		{
-			if (err)
-			{
-				callback(`${getTranslation('createFolderError', localeTranslation)}`);
-			}
-			else
-			{
-				callback(null);
-			}
-		});
-	}
-}
-
 function saveUserFiles(reqPostData, absolutePath, localeTranslation, callback)
 {
 	if (!reqPostData?.length || reqPostData.length === 0)
@@ -1257,7 +1223,69 @@ function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeT
 	}
 }
 
-function renameFile(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, callback)
+function createUserDir(absolutePath, postData, localeTranslation, callback)
+{
+	if (!UPLOAD_ENABLE)
+	{
+		callback('Writing is not allowed!');
+		return;
+	}
+	if (!postData.dir || postData.dir.length === 0 || postData.dir.length > 255)
+	{
+		callback(getTranslation('createFolderError', localeTranslation));
+	}
+	else
+	{
+		let dpath = postData.dir.replace(/\+/g, ' ');
+		dpath = decodeURIComponent(dpath);
+		if (dpath.match(FILES_REG_EXP) !== null)
+		{
+			callback(getTranslation('createFolderError', localeTranslation));
+			return;
+		}
+		fs.mkdir(path.join(absolutePath, dpath), { recursive: true }, (err) =>
+		{
+			if (err)
+			{
+				callback(getTranslation('createFolderError', localeTranslation));
+			}
+			else
+			{
+				callback(null);
+			}
+		});
+	}
+}
+
+function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callback)
+{
+	if (!UPLOAD_ENABLE)
+	{
+		callback('Writing is not allowed!');
+		return;
+	}
+	let fromPath = decodeURIComponent(itemsPath.replace(/\+/g, ' '));
+	if (fromPath.match(FILES_REG_EXP) !== null)
+	{
+		callback(getTranslation('pasteError', localeTranslation));
+		return;
+	}
+	fromPath = path.join(absolutePath, fromPath);
+	const items = itemsList.splite(',');
+	for (let item of items)
+	{
+		let itemPath = Buffer.from(item, 'base64url').toString();
+		if (itemPath.match(FILES_REG_EXP) !== null)
+		{
+			callback(`${getTranslation('pasteError', localeTranslation)}: ${itemPath}`);
+			return;
+		}
+		itemPath = path.join(fromPath, itemPath);
+		
+	}
+}
+
+function renameItem(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, localeTranslation, callback)
 {
 	if (!UPLOAD_ENABLE)
 	{
@@ -1265,20 +1293,15 @@ function renameFile(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, cal
 		return;
 	}
 	const newName = decodeURIComponent(renameTo_uriEncoded.replace(/\+/g, ' '));
-	if (newName.length > 255)
-	{
-		callback('Name error!');
-		return;
-	}
 	const oldName = Buffer.from(renameFrom_base64Url, 'base64url').toString();
 	if (newName === oldName)
 	{
 		callback(null);
 		return;
 	}
-	if ((newName.match(FILES_REG_EXP) !== null) || oldName.match(FILES_REG_EXP) !== null)
+	if ((newName.length > 255) || (newName.match(FILES_REG_EXP) !== null) || (oldName.match(FILES_REG_EXP) !== null))
 	{
-		callback('Name error!');
+		callback(getTranslation('invalidName', localeTranslation));
 		return;
 	}
 	fs.rename(path.join(absolutePath, oldName), path.join(absolutePath, newName), (err) =>
@@ -1286,7 +1309,7 @@ function renameFile(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, cal
 		if (err)
 		{
 			console.log(err.message);
-			callback(`Server error. Can't rename ${oldName}`);
+			callback(`${getTranslation('renameError', localeTranslation)}: ${oldName}`);
 			return;
 		}
 		else
@@ -1296,7 +1319,7 @@ function renameFile(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, cal
 	});
 }
 
-function deleteFiles(absolutePath, postData, callback)
+function deleteFiles(absolutePath, postData, localeTranslation, callback)
 {
 	if (!UPLOAD_ENABLE)
 	{
@@ -1313,7 +1336,7 @@ function deleteFiles(absolutePath, postData, callback)
 			const fileName = Buffer.from(key, 'base64url').toString();
 			if (fileName.match(FILES_REG_EXP) !== null)
 			{
-				callback('Name error!');
+				callback(getTranslation('deleteError', localeTranslation));
 				return;
 			}
 			const filePath = path.join(absolutePath, fileName);
@@ -1322,7 +1345,7 @@ function deleteFiles(absolutePath, postData, callback)
 				if (err)
 				{
 					console.log(err.message);
-					callback(`Server error. Can't delete ${fileName}`);
+					callback(getTranslation('deleteError', localeTranslation));
 					return;
 				}
 				else
