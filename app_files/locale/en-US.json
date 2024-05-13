@@ -39,5 +39,7 @@
 	"cancel": "Cancel",
 	"pageNotFound": "The requested page does not exist!",
 	"rename": "Rename",
-	"select": "Select"
+	"select": "Select",
+	"copy": "Copy",
+	"paste": "Paste"
 }

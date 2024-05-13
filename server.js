@@ -1480,42 +1480,44 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[5] + getTranslation('deselectAll', localeTranslation) +
 						_indexHtmlbase[6] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
-						_indexHtmlbase[8]) : ''}` +
-						_indexHtmlbase[9] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
-						_indexHtmlbase[10] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[11] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[12] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[13] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[14] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[15] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[16] + hrefsResult +
-						_indexHtmlbase[17] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[18] + getTranslation('createFolder', localeTranslation) +
-						_indexHtmlbase[19] + getTranslation('invalidName', localeTranslation) +
-						_indexHtmlbase[20] + getTranslation('folderName', localeTranslation) +
-						_indexHtmlbase[21] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('dragAndDropText', localeTranslation) +
-						_indexHtmlbase[23] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[24] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[25] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[26] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[27]) : ''}` +
-						_indexHtmlbase[28] + errorMessage +
-						_indexHtmlbase[29] + getTranslation('poweredBy', localeTranslation) +
-						_indexHtmlbase[30] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[31] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[32] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[33] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[34] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[35] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[36] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[37] + getTranslation('inputNewName', localeTranslation) +
-						_indexHtmlbase[38] + getTranslation('invalidName', localeTranslation) +
-						_indexHtmlbase[39] + getTranslation('newName', localeTranslation) +
-						_indexHtmlbase[40] + getTranslation('ok', localeTranslation) +
-						_indexHtmlbase[41] + getTranslation('cancel', localeTranslation) +
-						_indexHtmlbase[42]) : ''}` +
-						_indexHtmlbase[43];
+						_indexHtmlbase[8] + getTranslation('copy', localeTranslation) +
+						_indexHtmlbase[9] + getTranslation('paste', localeTranslation) +
+						_indexHtmlbase[10]) : ''}` +
+						_indexHtmlbase[11] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
+						_indexHtmlbase[12] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[13] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[14] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[15] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[16] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[17] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[18] + hrefsResult +
+						_indexHtmlbase[19] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[20] + getTranslation('createFolder', localeTranslation) +
+						_indexHtmlbase[21] + getTranslation('invalidName', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('folderName', localeTranslation) +
+						_indexHtmlbase[23] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[24] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[25] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[26] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[27] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[28] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[29]) : ''}` +
+						_indexHtmlbase[30] + errorMessage +
+						_indexHtmlbase[31] + getTranslation('poweredBy', localeTranslation) +
+						_indexHtmlbase[32] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[33] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[34] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[35] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[36] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[37] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[38] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[39] + getTranslation('inputNewName', localeTranslation) +
+						_indexHtmlbase[40] + getTranslation('invalidName', localeTranslation) +
+						_indexHtmlbase[41] + getTranslation('newName', localeTranslation) +
+						_indexHtmlbase[42] + getTranslation('ok', localeTranslation) +
+						_indexHtmlbase[43] + getTranslation('cancel', localeTranslation) +
+						_indexHtmlbase[44]) : ''}` +
+						_indexHtmlbase[45];
 			}
 		}
 	});

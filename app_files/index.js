@@ -13,6 +13,7 @@ upload();
 dragAndDropFiles();
 createFolderValidity();
 renameFiles();
+performCopyPaste();
 /*---UPLOAD_SPLITTER---*/
 function themeChanger()
 {
@@ -187,6 +188,28 @@ function backspaceToPreviousFolder()
 	});
 }
 /*---UPLOAD_SPLITTER---*/
+function performCopyPaste()
+{
+	const copyItems = new Set();
+	performCopyButton();
+
+	function performCopyButton()
+	{
+		const copyButton = document.getElementById('copy_button');
+		const copyButtonName = copyButton.innerText;
+		copyButton.hidden = false;
+		copyButton.addEventListener('click', (e) =>
+		{
+			e.preventDefault();
+			for (let item of _checkboxes)
+			{
+				if (item.checked) copyItems.add(item.name);
+			}
+			copyButton.innerText = `${copyButtonName} (${copyItems.size})`;
+		});
+	}
+}
+
 function deleteFilesWarningDialog()
 {
 	if (sessionStorage.getItem('deleteWithoutAsk')) return;
