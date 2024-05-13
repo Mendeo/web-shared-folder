@@ -1356,14 +1356,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				const iconnClassName = getIconClassName('folder');
 				hrefsResult =
 `			<div class="main_container__first_column">
-				<input type="checkbox" class="hidden-in-flow">
+				<input type="checkbox" class="hidden_in_flow">
 				<div class="${iconnClassName}"></div>
 				<a href="/">[/]</a>
 			</div>
 			<span>${folderSizeStub}</span>
 			<span>-</span>
 			<div class="main_container__first_column">
-			<input type="checkbox" class="hidden-in-flow">
+			<input type="checkbox" class="hidden_in_flow">
 				<div class = "${iconnClassName}"></div>
 				<a href="${backUrl}">[..]</a>
 			</div>
