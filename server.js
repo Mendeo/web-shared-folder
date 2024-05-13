@@ -1314,7 +1314,49 @@ function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callb
 			return;
 		}
 		itemPath = path.join(fromPath, itemPath);
-		
+		paste(itemPath);
+	}
+
+	// function paste(itemPath)
+	// {
+	// 	const onFolder = function(fullPath, relativePath, next)
+	// 	{
+	// 		fs.mkdir(fullPath, (err) =>
+	// 		{
+	// 			if (err)
+	// 			{
+	// 				callback(`${getTranslation('pasteError', localeTranslation)}: ${itemPath}`);
+	// 			}
+	// 			else
+	// 			{
+	// 				next();
+	// 			}
+	// 		});
+	// 	};
+	// 	const onFile = function(fullPath, relativePath, next)
+	// 	{
+	// 		fs.copyFile(fullPath, (err, data) =>
+	// 		{
+	// 			if (err)
+	// 			{
+	// 				callback(`${getTranslation('pasteError', localeTranslation)}: ${itemPath}`);
+	// 			}
+	// 			else
+	// 			{
+	// 				zipError(err, res);
+	// 			}
+	// 			next();
+	// 		});
+	// 	};
+	// 	const onError = function(err)
+	// 	{
+	// 		zipError(err, res);
+	// 	};
+	// 	const onEnd = function()
+	// 	{
+	// 		sendZip();
+	// 	};
+	// 	readFolderRecursive(absolutePath, onFolder, onFile, onError, onEnd);
 	}
 }
 
