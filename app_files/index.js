@@ -190,12 +190,18 @@ function backspaceToPreviousFolder()
 /*---UPLOAD_SPLITTER---*/
 function performCopyPaste()
 {
-	const copyItems = new Set();
+	const items = [];
+	const copyButton = document.getElementById('copy_button');
+	const pasteButton = document.getElementById('paste_button');
+	const selectForm = document.getElementById('select_form');
+
+	const ITEMS_KEY = 'paste_items';
+	const PATH_KEY = 'paste_from';
 	performCopyButton();
+	performPasteButton();
 
 	function performCopyButton()
 	{
-		const copyButton = document.getElementById('copy_button');
 		const copyButtonName = copyButton.innerText;
 		copyButton.hidden = false;
 		copyButton.addEventListener('click', (e) =>
@@ -203,10 +209,57 @@ function performCopyPaste()
 			e.preventDefault();
 			for (let item of _checkboxes)
 			{
-				if (item.checked) copyItems.add(item.name);
+				if (item.checked) items.push(item.name);
 			}
-			copyButton.innerText = `${copyButtonName} (${copyItems.size})`;
+			if (items.length === 0)
+			{
+				copyButton.innerText = copyButtonName;
+				sessionStorage.removeItem(ITEMS_KEY);
+				sessionStorage.removeItem(PATH_KEY);
+			}
+			else
+			{
+				sessionStorage.setItem(ITEMS_KEY, items.join(','));
+				sessionStorage.setItem(PATH_KEY, location.pathname);
+				copyButton.innerText = `${copyButtonName} (${items.length})`;
+			}
+			items.length = 0;
+			pasteButton.hidden = true;
 		});
+	}
+
+	function performPasteButton()
+	{
+		const pasteButtonName = pasteButton.innerText;
+		const items = sessionStorage.getItem(ITEMS_KEY);
+		const itemsPath = sessionStorage.getItem(PATH_KEY);
+		if (items && itemsPath && itemsPath !== location.pathname)
+		{
+			pasteButton.innerText = `${pasteButtonName} (${items.split(',').length})`;
+			pasteButton.hidden = false;
+			pasteButton.addEventListener('click', (e) =>
+			{
+				e.preventDefault();
+				sessionStorage.removeItem(ITEMS_KEY);
+				sessionStorage.removeItem(PATH_KEY);
+				submit();
+			});
+		}
+
+		function submit()
+		{
+			const itemsPathInput = document.createElement('input');
+			itemsPathInput.type = 'hidden';
+			itemsPathInput.name = PATH_KEY;
+			itemsPathInput.value = itemsPath;
+			const itemsInput = document.createElement('input');
+			itemsInput.type = 'hidden';
+			itemsInput.name = ITEMS_KEY;
+			itemsInput.value = items;
+			selectForm.append(itemsPathInput);
+			selectForm.append(itemsInput);
+			selectForm.submit();
+		}
 	}
 }
 
