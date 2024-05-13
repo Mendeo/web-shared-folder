@@ -856,57 +856,57 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, coo
 			{
 				generateAndSendIndexHtmlAlias(reqPostData.error);
 			}
-			else if (reqPostData.dir)
+			else
 			{
 				if (UPLOAD_ENABLE)
 				{
-					createUserDir(reqPostData, filePath, localeTranslation, (errorMessage) =>
+					if (reqPostData.delete)
 					{
-						generateAndSendIndexHtmlAlias(errorMessage);
-					});
+						deleteFiles(filePath, reqPostData, (errorMessage) =>
+						{
+							if (errorMessage)
+							{
+								generateAndSendIndexHtmlAlias(errorMessage);
+							}
+							else
+							{
+								reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+							}
+						});
+					}
+					else if (reqPostData.rename_from && reqPostData.rename_to)
+					{
+						renameFile(filePath, reqPostData, (errorMessage) =>
+						{
+							if (errorMessage)
+							{
+								generateAndSendIndexHtmlAlias(errorMessage);
+							}
+							else
+							{
+								reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+							}
+						});
+					}
+					else if (reqPostData.dir)
+					{
+						createUserDir(reqPostData, filePath, localeTranslation, (errorMessage) =>
+						{
+							generateAndSendIndexHtmlAlias(errorMessage);
+						});
+					}
+					else if (reqPostData.paste_items && reqPostData.paste_from)
+					{
+						
+					}
+					else
+					{
+						generateAndSendIndexHtmlAlias('Invalid request parameters!');
+					}
 				}
 				else
 				{
-					generateAndSendIndexHtmlAlias();
-				}
-			}
-			else if (Object.keys(reqPostData).length < 2)
-			{
-				generateAndSendIndexHtmlAlias('No files selected!');
-			}
-			else
-			{
-				if (UPLOAD_ENABLE && reqPostData.delete)
-				{
-					deleteFiles(filePath, reqPostData, (errorMessage) =>
-					{
-						if (errorMessage)
-						{
-							generateAndSendIndexHtmlAlias(errorMessage);
-						}
-						else
-						{
-							reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
-						}
-					});
-				}
-				else if (UPLOAD_ENABLE && reqPostData.rename_from && reqPostData.rename_to)
-				{
-					renameFile(filePath, reqPostData, (errorMessage) =>
-					{
-						if (errorMessage)
-						{
-							generateAndSendIndexHtmlAlias(errorMessage);
-						}
-						else
-						{
-							reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
-						}
-					});
-				}
-				else
-				{
-					generateAndSendIndexHtmlAlias();
+					generateAndSendIndexHtmlAlias('Uploading is not allowed!');
 				}
 			}
 		}
@@ -930,7 +930,14 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, coo
 		}
 		else if (reqGetData?.download)
 		{
-			zipFolder(res, urlPath, filePath, reqGetData, acceptEncoding, localeTranslation, clientLang);
+			if (Object.keys(reqGetData).length < 2)
+			{
+				generateAndSendIndexHtmlAlias('No files selected!');
+			}
+			else
+			{
+				zipFolder(res, urlPath, filePath, reqGetData, acceptEncoding, localeTranslation, clientLang);
+			}
 		}
 		else
 		{
