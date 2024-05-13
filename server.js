@@ -876,7 +876,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, coo
 					}
 					else if (reqPostData.rename_from && reqPostData.rename_to)
 					{
-						renameFile(filePath, reqPostData, (errorMessage) =>
+						renameFile(filePath, reqPostData.rename_from, reqPostData.rename_to, (errorMessage) =>
 						{
 							if (errorMessage)
 							{
@@ -897,7 +897,17 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, coo
 					}
 					else if (reqPostData.paste_items && reqPostData.paste_from)
 					{
-						
+						renameFile(filePath, reqPostData, (errorMessage) =>
+						{
+							if (errorMessage)
+							{
+								generateAndSendIndexHtmlAlias(errorMessage);
+							}
+							else
+							{
+								reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+							}
+						});
 					}
 					else
 					{
@@ -1247,25 +1257,20 @@ function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeT
 	}
 }
 
-function renameFile(absolutePath, postData, callback)
+function renameFile(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, callback)
 {
 	if (!UPLOAD_ENABLE)
 	{
 		callback('Writing is not allowed!');
 		return;
 	}
-	if (!postData.rename_from || !postData.rename_to)
-	{
-		callback('No "rename_from" or "postData.rename_to"');
-		return;
-	}
-	const newName = decodeURIComponent(postData.rename_to.replace(/\+/g, ' '));
+	const newName = decodeURIComponent(renameTo_uriEncoded.replace(/\+/g, ' '));
 	if (newName.length > 255)
 	{
 		callback('Name error!');
 		return;
 	}
-	const oldName = Buffer.from(postData.rename_from, 'base64url').toString();
+	const oldName = Buffer.from(renameFrom_base64Url, 'base64url').toString();
 	if (newName === oldName)
 	{
 		callback(null);
