@@ -1447,7 +1447,22 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 						}
 						else
 						{
-							copyDirectory(dirPath, itemPath, onEnd); //Копирует содержимое папки.
+							//Копирует содержимое папки.
+							copyDirectory(dirPath, itemPath, (err) =>
+							{
+								if (err)
+								{
+									onEnd(err);
+								}
+								else if (pasteType === 'move')
+								{
+									fs.rmdir(itemPath, onEnd);
+								}
+								else
+								{
+									onEnd(null);
+								}
+							});
 						}
 					});
 				}
