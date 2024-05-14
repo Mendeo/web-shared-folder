@@ -1119,27 +1119,26 @@ function saveUserFiles(reqPostData, absolutePath, localeTranslation, callback)
 	}
 }
 
-function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onError, onEnd)
+function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 {
-	let numberOfFile = 0;
-	let numberOfFolder = 0;
 	const rootPath = folderPath;
-	read(folderPath);
+	read(folderPath, onEnd);
 
-	function read(folderPath)
+	function read(folderPath, callback)
 	{
-		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
+		fs.readdir(folderPath, { withFileTypes: true }, (err, items) =>
 		{
 			if (err)
 			{
-				onError(err);
+				callback(err);
 			}
-			else if (files.length > 0)
+			else if (items.length > 0)
 			{
-				for (let file of files)
+				for (let itemIndex = 0; itemIndex < items.length; itemIndex++)
 				{
-					const fullPath = path.join(folderPath, file.name);
-					checkIsDirectory(fullPath, file, afterIsDirectory);
+					const item = items[itemIndex];
+					const fullPath = path.join(folderPath, item.name);
+					checkIsDirectory(fullPath, item, afterIsDirectory);
 					function afterIsDirectory(isDirectory)
 					{
 						if (isDirectory)
@@ -1147,23 +1146,34 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onErro
 							const relativePath = path.join(path.relative(rootPath, fullPath)).replace(/\\/g, '/');
 							onFolderIn(fullPath, relativePath, () =>
 							{
-								numberOfFolder++;
-								read(fullPath);
-								onFolderOut(fullPath, relativePath, () =>
+								read(fullPath, (err) =>
 								{
-									numberOfFolder--;
+									if (err)
+									{
+										callback(err);
+									}
+									else
+									{
+										onFolderOut(fullPath, relativePath, () =>
+										{
+											if (itemIndex === items.length - 1)
+											{
+												callback(null);
+											}
+										});
+									}
 								});
 							});
 						}
 						else if (isDirectory !== null)
 						{
-							numberOfFile++;
-							const relativePath = path.join(path.relative(rootPath, folderPath), file.name).replace(/\\/g, '/');
+							const relativePath = path.join(path.relative(rootPath, folderPath), item.name).replace(/\\/g, '/');
 							onFile(fullPath, relativePath, () =>
 							{
-								numberOfFile--;
-								if (numberOfFolder === 0 && numberOfFile === 0) onEnd();
-								return;
+								if (itemIndex === items.length - 1)
+								{
+									callback(null);
+								}
 							});
 						}
 					}
@@ -1176,8 +1186,7 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onErro
 				{
 					onFolderOut(folderPath, relativePath, () =>
 					{
-						numberOfFolder--;
-						if (numberOfFolder === 0 && numberOfFile === 0) onEnd();
+						callback(null);
 					});
 				});
 			}
@@ -1225,10 +1234,14 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 					zip.folder(item);
 					zipDirectory(item, itemPath, (err) =>
 					{
-						zipError('Zip error: ' + err, res);
-					}, () =>
-					{
-						next();
+						if (err)
+						{
+							zipError('Zip error: ' + err, res);
+						}
+						else
+						{
+							next();
+						}
 					});
 				}
 				else
@@ -1263,7 +1276,7 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 		}
 	}
 
-	function zipDirectory(toPathRelative, fromPath, onError, onEnd)
+	function zipDirectory(toPathRelative, fromPath, onEnd)
 	{
 		const onFolderIn = function(fullPath, relativePath, next)
 		{
@@ -1280,7 +1293,7 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 			{
 				if (err)
 				{
-					onError(err);
+					onEnd(err);
 				}
 				else
 				{
@@ -1289,7 +1302,7 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 				}
 			});
 		};
-		readFolderRecursive(fromPath, onFolderIn, onFolderOut, onFile, onError, onEnd);
+		readFolderRecursive(fromPath, onFolderIn, onFolderOut, onFile, onEnd);
 	}
 
 	function zipError(err, res)
@@ -1392,29 +1405,33 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 		const itemPath = path.join(fromPath, item);
 		paste(itemPath, (err) =>
 		{
-			callback(getTranslation('pasteError', localeTranslation));
-			console.log('Paste error:' + err);
-		}, () =>
-		{
-			index++;
-			if (index < items.length)
+			if (err)
 			{
-				pasteItemsByIndex(index);
+				callback(getTranslation('pasteError', localeTranslation));
+				console.log('Paste error:' + err);
 			}
 			else
 			{
-				callback(null);
+				index++;
+				if (index < items.length)
+				{
+					pasteItemsByIndex(index);
+				}
+				else
+				{
+					callback(null);
+				}
 			}
 		});
 	}
 
-	function paste(itemPath, onError, onEnd)
+	function paste(itemPath, onEnd)
 	{
 		fs.stat(itemPath, (err, stats) =>
 		{
 			if (err)
 			{
-				onError(err);
+				onEnd(err);
 			}
 			else
 			{
@@ -1426,11 +1443,11 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 					{
 						if (err)
 						{
-							onError(err);
+							onEnd(err);
 						}
 						else
 						{
-							copyDirectory(dirPath, itemPath, onError, onEnd); //Копирует содержимое папки.
+							copyDirectory(dirPath, itemPath, onEnd); //Копирует содержимое папки.
 						}
 					});
 				}
@@ -1438,22 +1455,12 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 				{
 					const fileName = path.basename(itemPath);
 					const pathTo = path.join(absolutePath, fileName);
-					copyOrMoveFile(itemPath, pathTo, pasteType, (err) =>
-					{
-						if (err)
-						{
-							onError(err);
-						}
-						else
-						{
-							onEnd();
-						}
-					});
+					copyOrMoveFile(itemPath, pathTo, pasteType, onEnd);
 				}
 			}
 		});
 
-		function copyDirectory(toPath, fromPath, onError, onEnd)
+		function copyDirectory(toPath, fromPath, onEnd)
 		{
 			const onFolderIn = function(fullPath, relativePath, next)
 			{
@@ -1462,7 +1469,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 				{
 					if (err)
 					{
-						onError(err);
+						onEnd(err);
 					}
 					else
 					{
@@ -1478,13 +1485,17 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 					{
 						if (err)
 						{
-							onError();
+							onEnd(err);
 						}
 						else
 						{
 							next();
 						}
 					});
+				}
+				else
+				{
+					next();
 				}
 			};
 			const onFile = function(fullPath, relativePath, next)
@@ -1494,7 +1505,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 				{
 					if (err)
 					{
-						onError(err);
+						onEnd(err);
 					}
 					else
 					{
@@ -1502,7 +1513,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 					}
 				});
 			};
-			readFolderRecursive(fromPath, onFolderIn, onFolderOut, onFile, onError, onEnd);
+			readFolderRecursive(fromPath, onFolderIn, onFolderOut, onFile, onEnd);
 		}
 	}
 

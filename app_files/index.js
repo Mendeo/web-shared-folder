@@ -216,7 +216,7 @@ function performCopyPaste()
 			}
 			if (items.length === 0)
 			{
-				copyButton.innerText = selectButtonName;
+				selectButton.innerText = selectButtonName;
 				sessionStorage.removeItem(ITEMS_KEY);
 				sessionStorage.removeItem(PATH_KEY);
 			}
@@ -224,7 +224,7 @@ function performCopyPaste()
 			{
 				sessionStorage.setItem(ITEMS_KEY, items.join(','));
 				sessionStorage.setItem(PATH_KEY, decodeURI(location.pathname));
-				copyButton.innerText = `${selectButtonName} (${items.length})`;
+				selectButton.innerText = `${selectButtonName} (${items.length})`;
 			}
 			items.length = 0;
 			copyButton.hidden = true;
