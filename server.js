@@ -1144,6 +1144,7 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 						if (isDirectory)
 						{
 							const relativePath = path.join(path.relative(rootPath, fullPath)).replace(/\\/g, '/');
+							const itemIndexCopy = itemIndex;
 							onFolderIn(fullPath, relativePath, () =>
 							{
 								read(fullPath, (err) =>
@@ -1156,7 +1157,7 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 									{
 										onFolderOut(fullPath, relativePath, () =>
 										{
-											if (itemIndex === items.length - 1)
+											if (itemIndexCopy === items.length - 1)
 											{
 												callback(null);
 											}
@@ -1168,9 +1169,10 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 						else if (isDirectory !== null)
 						{
 							const relativePath = path.join(path.relative(rootPath, folderPath), item.name).replace(/\\/g, '/');
+							const itemIndexCopy = itemIndex;
 							onFile(fullPath, relativePath, () =>
 							{
-								if (itemIndex === items.length - 1)
+								if (itemIndexCopy === items.length - 1)
 								{
 									callback(null);
 								}
@@ -1182,7 +1184,8 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 			else
 			{
 				const relativePath = path.join(path.relative(rootPath, folderPath));
-				onFolderIn(folderPath, relativePath, () =>
+				//Здесь должен быть путь к содержимому папки, но она пустая, поэтому вместо содержимого поставим звёздочку, её нужно обработать во внешнем коде.
+				onFolderIn(path.join(folderPath, '*'), path.join(relativePath, '*'), () =>
 				{
 					onFolderOut(folderPath, relativePath, () =>
 					{
@@ -1480,17 +1483,24 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 			const onFolderIn = function(fullPath, relativePath, next)
 			{
 				const itemDirName = path.basename(fullPath);
-				fs.mkdir(path.join(toPath, itemDirName), (err) =>
+				if (itemDirName === '*') //Содержимое родительской папки пустое, поэтому создавать папку не нужно, если её имя равно "*".
 				{
-					if (err)
+					next();
+				}
+				else
+				{
+					fs.mkdir(path.join(toPath, itemDirName), (err) =>
 					{
-						onEnd(err);
-					}
-					else
-					{
-						next();
-					}
-				});
+						if (err)
+						{
+							onEnd(err);
+						}
+						else
+						{
+							next();
+						}
+					});
+				}
 			};
 			const onFolderOut = function(fullPath, relativePath, next)
 			{
