@@ -13,10 +13,10 @@
 	"sizePiB": "PiB",
 	"linkToOpenInBrowser": "Link to open in browser",
 	"sendingFilesError": "An error occurred while transferring the file. Not all files have been saved: ",
+	"checkAll": "Check all",
+	"uncheckAll": "Uncheck all",
 	"deleteFiles": "Delete selected",
 	"uploadFiles": "Upload files",
-	"selectAll": "Select all",
-	"deselectAll": "Deselect all",
 	"createFolder": "Create folder",
 	"folderName": "Name for the new folder",
 	"createFolderError": "Failed to create folder",
@@ -42,7 +42,7 @@
 	"pageNotFound": "The requested page does not exist!",
 	"rename": "Rename",
 	"select": "Select",
-	"copy": "Copy",
+	"selectForCopyOrMove": "Select for copy or move",
 	"paste": "Paste",
 	"pasteError": "Failed to paste"
 }
