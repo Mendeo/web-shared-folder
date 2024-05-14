@@ -290,7 +290,6 @@ function performCopyPaste()
 
 function deleteFilesWarningDialog()
 {
-	if (sessionStorage.getItem('deleteWithoutAsk')) return;
 	const dialog = document.getElementById('delete-warning-dialog');
 	const dialogMessage = document.getElementById('dialog_message');
 	if (!dialog) return;
@@ -298,8 +297,17 @@ function deleteFilesWarningDialog()
 
 	deleteButton.addEventListener('click', (event) =>
 	{
-		event.preventDefault();
-		if (!hasSelectedChecboxes()) return;
+		{
+			const hsc = hasSelectedChecboxes();
+			if (sessionStorage.getItem('deleteWithoutAsk'))
+			{
+				if (!hsc) event.preventDefault();
+				return;
+			}
+			event.preventDefault();
+			if (!hsc) return;
+		}
+
 		if (dialog.showModal)
 		{
 			dialog.showModal();
