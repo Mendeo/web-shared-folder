@@ -43,6 +43,7 @@
 	"rename": "Rename",
 	"select": "Select",
 	"selectForCopyOrMove": "Select for copy or move",
-	"paste": "Paste",
-	"pasteError": "Failed to paste"
+	"copy": "Copy",
+	"move": "Move",
+	"pasteError": "Failed to copy or move"
 }

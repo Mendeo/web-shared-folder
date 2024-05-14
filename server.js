@@ -896,9 +896,9 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, coo
 							generateAndSendIndexHtmlAlias(errorMessage);
 						});
 					}
-					else if (reqPostData.paste_items && reqPostData.paste_from)
+					else if (reqPostData.paste_items && reqPostData.paste_from && reqPostData.paste_type)
 					{
-						pasteItems(filePath, reqPostData.paste_from, reqPostData.paste_items, localeTranslation, (errorMessage) =>
+						pasteItems(filePath, reqPostData.paste_from, reqPostData.paste_items, reqPostData.paste_type, localeTranslation, (errorMessage) =>
 						{
 							if (errorMessage)
 							{
@@ -1119,7 +1119,7 @@ function saveUserFiles(reqPostData, absolutePath, localeTranslation, callback)
 	}
 }
 
-function readFolderRecursive(folderPath, onFolder, onFile, onError, onEnd)
+function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onError, onEnd)
 {
 	let numberOfFile = 0;
 	let numberOfFolder = 0;
@@ -1145,11 +1145,14 @@ function readFolderRecursive(folderPath, onFolder, onFile, onError, onEnd)
 						if (isDirectory)
 						{
 							const relativePath = path.join(path.relative(rootPath, fullPath)).replace(/\\/g, '/');
-							onFolder(fullPath, relativePath, () =>
+							onFolderIn(fullPath, relativePath, () =>
 							{
 								numberOfFolder++;
 								read(fullPath);
-								numberOfFolder--;
+								onFolderOut(fullPath, relativePath, () =>
+								{
+									numberOfFolder--;
+								});
 							});
 						}
 						else if (isDirectory !== null)
@@ -1169,10 +1172,13 @@ function readFolderRecursive(folderPath, onFolder, onFile, onError, onEnd)
 			else
 			{
 				const relativePath = path.join(path.relative(rootPath, folderPath));
-				onFolder(folderPath, relativePath, () =>
+				onFolderIn(folderPath, relativePath, () =>
 				{
-					numberOfFolder--;
-					if (numberOfFolder === 0 && numberOfFile === 0) onEnd();
+					onFolderOut(folderPath, relativePath, () =>
+					{
+						numberOfFolder--;
+						if (numberOfFolder === 0 && numberOfFile === 0) onEnd();
+					});
 				});
 			}
 		});
@@ -1259,9 +1265,13 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 
 	function zipDirectory(toPathRelative, fromPath, onError, onEnd)
 	{
-		const onFolder = function(fullPath, relativePath, next)
+		const onFolderIn = function(fullPath, relativePath, next)
 		{
 			zip.folder(path.join(toPathRelative, relativePath));
+			next();
+		};
+		const onFolderOut = function(fullPath, relativePath, next)
+		{
 			next();
 		};
 		const onFile = function(fullPath, relativePath, next)
@@ -1279,7 +1289,7 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 				}
 			});
 		};
-		readFolderRecursive(fromPath, onFolder, onFile, onError, onEnd);
+		readFolderRecursive(fromPath, onFolderIn, onFolderOut, onFile, onError, onEnd);
 	}
 
 	function zipError(err, res)
@@ -1351,7 +1361,7 @@ function createUserDir(absolutePath, postData, localeTranslation, callback)
 	}
 }
 
-function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callback)
+function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTranslation, callback)
 {
 	if (!UPLOAD_ENABLE)
 	{
@@ -1428,7 +1438,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callb
 				{
 					const fileName = path.basename(itemPath);
 					const pathTo = path.join(absolutePath, fileName);
-					fs.copyFile(itemPath, pathTo, (err) =>
+					copyOrMoveFile(itemPath, pathTo, pasteType, (err) =>
 					{
 						if (err)
 						{
@@ -1445,7 +1455,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callb
 
 		function copyDirectory(toPath, fromPath, onError, onEnd)
 		{
-			const onFolder = function(fullPath, relativePath, next)
+			const onFolderIn = function(fullPath, relativePath, next)
 			{
 				const itemDirName = path.basename(fullPath);
 				fs.mkdir(path.join(toPath, itemDirName), (err) =>
@@ -1460,10 +1470,27 @@ function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callb
 					}
 				});
 			};
+			const onFolderOut = function(fullPath, relativePath, next)
+			{
+				if (pasteType === 'move')
+				{
+					fs.rmdir(fullPath, (err) =>
+					{
+						if (err)
+						{
+							onError();
+						}
+						else
+						{
+							next();
+						}
+					});
+				}
+			};
 			const onFile = function(fullPath, relativePath, next)
 			{
 				const pathTo = path.join(toPath, relativePath);
-				fs.copyFile(fullPath, pathTo, (err) =>
+				copyOrMoveFile(fullPath, pathTo, pasteType, (err) =>
 				{
 					if (err)
 					{
@@ -1475,7 +1502,23 @@ function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callb
 					}
 				});
 			};
-			readFolderRecursive(fromPath, onFolder, onFile, onError, onEnd);
+			readFolderRecursive(fromPath, onFolderIn, onFolderOut, onFile, onError, onEnd);
+		}
+	}
+
+	function copyOrMoveFile(from, to, type, callback)
+	{
+		if (type === 'copy')
+		{
+			fs.copyFile(from, to, callback);
+		}
+		else if (type === 'move')
+		{
+			fs.rename(from, to, callback);
+		}
+		else
+		{
+			callback('Invalid paste_type parameter');
 		}
 	}
 }
@@ -1717,43 +1760,44 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[6] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
 						_indexHtmlbase[8] + getTranslation('selectForCopyOrMove', localeTranslation) +
-						_indexHtmlbase[9] + getTranslation('paste', localeTranslation) +
-						_indexHtmlbase[10]) : ''}` +
-						_indexHtmlbase[11] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
-						_indexHtmlbase[12] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[13] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[14] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[15] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[16] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[17] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[18] + hrefsResult +
-						_indexHtmlbase[19] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[20] + getTranslation('createFolder', localeTranslation) +
-						_indexHtmlbase[21] + getTranslation('invalidName', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('folderName', localeTranslation) +
-						_indexHtmlbase[23] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[24] + getTranslation('dragAndDropText', localeTranslation) +
-						_indexHtmlbase[25] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[26] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[27] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[28] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[29]) : ''}` +
-						_indexHtmlbase[30] + errorMessage +
-						_indexHtmlbase[31] + getTranslation('poweredBy', localeTranslation) +
-						_indexHtmlbase[32] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[9] + getTranslation('copy', localeTranslation) +
+						_indexHtmlbase[10] + getTranslation('move', localeTranslation) +
+						_indexHtmlbase[11]) : ''}` +
+						_indexHtmlbase[12] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
+						_indexHtmlbase[13] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[14] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[15] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[16] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[17] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[18] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[19] + hrefsResult +
+						_indexHtmlbase[20] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[21] + getTranslation('createFolder', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('invalidName', localeTranslation) +
+						_indexHtmlbase[23] + getTranslation('folderName', localeTranslation) +
+						_indexHtmlbase[24] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[25] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[26] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[27] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[28] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[29] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[30]) : ''}` +
+						_indexHtmlbase[31] + errorMessage +
+						_indexHtmlbase[32] + getTranslation('poweredBy', localeTranslation) +
 						_indexHtmlbase[33] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[34] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[34] + getTranslation('lightTheme', localeTranslation) +
 						_indexHtmlbase[35] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[36] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[36] + getTranslation('autoTheme', localeTranslation) +
 						_indexHtmlbase[37] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[38] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[39] + getTranslation('inputNewName', localeTranslation) +
-						_indexHtmlbase[40] + getTranslation('invalidName', localeTranslation) +
-						_indexHtmlbase[41] + getTranslation('newName', localeTranslation) +
-						_indexHtmlbase[42] + getTranslation('ok', localeTranslation) +
-						_indexHtmlbase[43] + getTranslation('cancel', localeTranslation) +
-						_indexHtmlbase[44]) : ''}` +
-						_indexHtmlbase[45];
+						_indexHtmlbase[38] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[39] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[40] + getTranslation('inputNewName', localeTranslation) +
+						_indexHtmlbase[41] + getTranslation('invalidName', localeTranslation) +
+						_indexHtmlbase[42] + getTranslation('newName', localeTranslation) +
+						_indexHtmlbase[43] + getTranslation('ok', localeTranslation) +
+						_indexHtmlbase[44] + getTranslation('cancel', localeTranslation) +
+						_indexHtmlbase[45]) : ''}` +
+						_indexHtmlbase[46];
 			}
 		}
 	});

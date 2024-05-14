@@ -191,20 +191,23 @@ function backspaceToPreviousFolder()
 function performCopyPaste()
 {
 	const items = [];
+	const selectButton = document.getElementById('select_for_copy_or_move_button');
 	const copyButton = document.getElementById('copy_button');
-	const pasteButton = document.getElementById('paste_button');
+	const moveButton = document.getElementById('move_button');
 	const selectForm = document.getElementById('select_form');
 
 	const ITEMS_KEY = 'paste_items';
 	const PATH_KEY = 'paste_from';
-	performCopyButton();
-	performPasteButton();
+	const PASTE_TYPE_KEY = 'paste_type';
 
-	function performCopyButton()
+	performSelectForCopyOrMoveButton();
+	performCopyOrPasteButtons();
+
+	function performSelectForCopyOrMoveButton()
 	{
-		const copyButtonName = copyButton.innerText;
-		copyButton.hidden = false;
-		copyButton.addEventListener('click', (e) =>
+		const selectButtonName = selectButton.innerText;
+		selectButton.hidden = false;
+		selectButton.addEventListener('click', (e) =>
 		{
 			e.preventDefault();
 			for (let item of _checkboxes)
@@ -213,7 +216,7 @@ function performCopyPaste()
 			}
 			if (items.length === 0)
 			{
-				copyButton.innerText = copyButtonName;
+				copyButton.innerText = selectButtonName;
 				sessionStorage.removeItem(ITEMS_KEY);
 				sessionStorage.removeItem(PATH_KEY);
 			}
@@ -221,43 +224,65 @@ function performCopyPaste()
 			{
 				sessionStorage.setItem(ITEMS_KEY, items.join(','));
 				sessionStorage.setItem(PATH_KEY, decodeURI(location.pathname));
-				copyButton.innerText = `${copyButtonName} (${items.length})`;
+				copyButton.innerText = `${selectButtonName} (${items.length})`;
 			}
 			items.length = 0;
-			pasteButton.hidden = true;
+			copyButton.hidden = true;
+			moveButton.hidden = true;
 		});
 	}
 
-	function performPasteButton()
+	function performCopyOrPasteButtons()
 	{
-		const pasteButtonName = pasteButton.innerText;
+		const copyButtonName = copyButton.innerText;
+		const moveButtonName = moveButton.innerText;
 		const items = sessionStorage.getItem(ITEMS_KEY);
 		const itemsPath = sessionStorage.getItem(PATH_KEY);
 		if (items && itemsPath && itemsPath !== location.pathname)
 		{
-			pasteButton.innerText = `${pasteButtonName} (${items.split(',').length})`;
-			pasteButton.hidden = false;
-			pasteButton.addEventListener('click', (e) =>
+			copyButton.innerText = `${copyButtonName} (${items.split(',').length})`;
+			copyButton.hidden = false;
+			moveButton.innerText = `${moveButtonName} (${items.split(',').length})`;
+			moveButton.hidden = false;
+
+			copyButton.addEventListener('click', (e) =>
+			{
+				onCopyOrMoveButtonsClick(e, 'copy');
+			});
+			moveButton.addEventListener('click', (e) =>
+			{
+				onCopyOrMoveButtonsClick(e, 'move');
+			});
+
+			function onCopyOrMoveButtonsClick(e, type)
 			{
 				e.preventDefault();
 				sessionStorage.removeItem(ITEMS_KEY);
 				sessionStorage.removeItem(PATH_KEY);
-				submit();
-			});
+				submit(type);
+			}
 		}
 
-		function submit()
+		function submit(type)
 		{
 			const itemsPathInput = document.createElement('input');
 			itemsPathInput.type = 'hidden';
 			itemsPathInput.name = PATH_KEY;
 			itemsPathInput.value = itemsPath;
+
 			const itemsInput = document.createElement('input');
 			itemsInput.type = 'hidden';
 			itemsInput.name = ITEMS_KEY;
 			itemsInput.value = items;
+
+			const typeInput = document.createElement('input');
+			typeInput.type = 'hidden';
+			typeInput.name = PASTE_TYPE_KEY;
+			typeInput.value = type;
+
 			selectForm.append(itemsPathInput);
 			selectForm.append(itemsInput);
+			selectForm.append(typeInput);
 			selectForm.submit();
 		}
 	}
