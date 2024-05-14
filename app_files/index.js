@@ -220,7 +220,7 @@ function performCopyPaste()
 			else
 			{
 				sessionStorage.setItem(ITEMS_KEY, items.join(','));
-				sessionStorage.setItem(PATH_KEY, location.pathname);
+				sessionStorage.setItem(PATH_KEY, decodeURI(location.pathname));
 				copyButton.innerText = `${copyButtonName} (${items.length})`;
 			}
 			items.length = 0;
