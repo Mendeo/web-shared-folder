@@ -1128,7 +1128,6 @@ function readFolderRecursive(folderPath, onFolder, onFile, onError, onEnd)
 
 	function read(folderPath)
 	{
-		numberOfFolder++;
 		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
 		{
 			if (err)
@@ -1148,6 +1147,7 @@ function readFolderRecursive(folderPath, onFolder, onFile, onError, onEnd)
 							const relativePath = path.join(path.relative(rootPath, fullPath)).replace(/\\/g, '/');
 							onFolder(fullPath, relativePath, () =>
 							{
+								numberOfFolder++;
 								read(fullPath);
 								numberOfFolder--;
 							});
@@ -1217,7 +1217,7 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 				if (stats.isDirectory())
 				{
 					zip.folder(item);
-					zipDirectory(itemPath, (err) =>
+					zipDirectory(item, itemPath, (err) =>
 					{
 						zipError('Zip error: ' + err, res);
 					}, () =>
@@ -1257,29 +1257,29 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 		}
 	}
 
-	function zipDirectory(dirPath, onError, onEnd)
+	function zipDirectory(toPathRelative, fromPath, onError, onEnd)
 	{
 		const onFolder = function(fullPath, relativePath, next)
 		{
-			zip.folder(relativePath);
+			zip.folder(path.join(toPathRelative, relativePath));
 			next();
 		};
 		const onFile = function(fullPath, relativePath, next)
 		{
 			fs.readFile(fullPath, (err, data) =>
 			{
-				if (!err)
+				if (err)
 				{
-					zip.file(relativePath, data);
+					onError(err);
 				}
 				else
 				{
-					zipError(err, res);
+					zip.file(path.join(toPathRelative, relativePath), data);
+					next();
 				}
-				next();
 			});
 		};
-		readFolderRecursive(dirPath, onFolder, onFile, onError, onEnd);
+		readFolderRecursive(fromPath, onFolder, onFile, onError, onEnd);
 	}
 
 	function zipError(err, res)
@@ -1410,7 +1410,19 @@ function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callb
 			{
 				if (stats.isDirectory())
 				{
-					copyDirectory(onError, onEnd);
+					const itemDirName = path.basename(itemPath);
+					const dirPath = path.join(absolutePath, itemDirName);
+					fs.mkdir(dirPath, (err) =>
+					{
+						if (err)
+						{
+							onError(err);
+						}
+						else
+						{
+							copyDirectory(dirPath, itemPath, onError, onEnd); //Копирует содержимое папки.
+						}
+					});
 				}
 				else
 				{
@@ -1431,12 +1443,12 @@ function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callb
 			}
 		});
 
-		function copyDirectory(onError, onEnd)
+		function copyDirectory(toPath, fromPath, onError, onEnd)
 		{
 			const onFolder = function(fullPath, relativePath, next)
 			{
-				const itemDirName = path.dirname(fullPath);
-				fs.mkdir(path.join(absolutePath, itemDirName), (err) =>
+				const itemDirName = path.basename(fullPath);
+				fs.mkdir(path.join(toPath, itemDirName), (err) =>
 				{
 					if (err)
 					{
@@ -1450,18 +1462,20 @@ function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callb
 			};
 			const onFile = function(fullPath, relativePath, next)
 			{
-				const fileName = path.basename(fullPath);
-				const pathTo = path.join(absolutePath, fileName);
+				const pathTo = path.join(toPath, relativePath);
 				fs.copyFile(fullPath, pathTo, (err) =>
 				{
 					if (err)
 					{
 						onError(err);
 					}
-					next();
+					else
+					{
+						next();
+					}
 				});
 			};
-			readFolderRecursive(itemPath, onFolder, onFile, onError, onEnd);
+			readFolderRecursive(fromPath, onFolder, onFile, onError, onEnd);
 		}
 	}
 }
