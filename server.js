@@ -1180,7 +1180,7 @@ function readFolderRecursive(folderPath, onFolder, onFile, onError, onEnd)
 
 function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeTranslation, clientLang)
 {
-	const selectedFiles = [];
+	const selectedItems = [];
 	const rootFolderName = urlPath === '/' ? 'archive' : path.basename(absolutePath);
 	let keys = Object.keys(postData);
 	for (let key of keys)
@@ -1188,40 +1188,98 @@ function zipFolder(res, urlPath, absolutePath, postData, acceptEncoding, localeT
 		if (key === 'download') continue;
 		if (postData[key] === 'on')
 		{
-			const file = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key))
-			selectedFiles.push(file);
+			const item = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key))
+			selectedItems.push(item);
 		}
 	}
 	const zip = new JSZip();
-	const onFolder = function(fullPath, relativePath, next)
+	zipItems(0);
+
+	function zipItems(index)
 	{
-		zip.folder(relativePath);
-		next();
-	};
-	const onFile = function(fullPath, relativePath, next)
-	{
-		fs.readFile(fullPath, (err, data) =>
+		const item = selectedItems[index];
+		if (item.match(FILES_REG_EXP) !== null)
 		{
-			if (!err)
+			zipError('Item path incorrect', res);
+			console.log('Zip error: Item path incorrect');
+			return;
+		}
+		const itemPath = path.join(absolutePath, item);
+		fs.stat(itemPath, (err, stats) =>
+		{
+			if (err)
 			{
-				zip.file(relativePath, data);
+				zipError('Zip error: ' + err, res);
 			}
 			else
 			{
-				zipError(err, res);
+				if (stats.isDirectory())
+				{
+					zip.folder(item);
+					zipDirectory(itemPath, (err) =>
+					{
+						zipError('Zip error: ' + err, res);
+					}, () =>
+					{
+						next();
+					});
+				}
+				else
+				{
+					fs.readFile(itemPath, (err, data) =>
+					{
+						if (err)
+						{
+							zipError('Zip error: ' + err, res);
+						}
+						else
+						{
+							zip.file(item, data);
+							next();
+						}
+					});
+				}
 			}
-			next();
 		});
-	};
-	const onError = function(err)
+
+		function next()
+		{
+			index++;
+			if (index < selectedItems.length)
+			{
+				zipItems(index);
+			}
+			else
+			{
+				sendZip();
+			}
+		}
+	}
+
+	function zipDirectory(dirPath, onError, onEnd)
 	{
-		zipError(err, res);
-	};
-	const onEnd = function()
-	{
-		sendZip();
-	};
-	readFolderRecursive(absolutePath, onFolder, onFile, onError, onEnd);
+		const onFolder = function(fullPath, relativePath, next)
+		{
+			zip.folder(relativePath);
+			next();
+		};
+		const onFile = function(fullPath, relativePath, next)
+		{
+			fs.readFile(fullPath, (err, data) =>
+			{
+				if (!err)
+				{
+					zip.file(relativePath, data);
+				}
+				else
+				{
+					zipError(err, res);
+				}
+				next();
+			});
+		};
+		readFolderRecursive(dirPath, onFolder, onFile, onError, onEnd);
+	}
 
 	function zipError(err, res)
 	{
@@ -1274,6 +1332,7 @@ function createUserDir(absolutePath, postData, localeTranslation, callback)
 		if (dpath.match(FILES_REG_EXP) !== null)
 		{
 			callback(getTranslation('createFolderError', localeTranslation));
+			console.log('Paste error: Dir name incorrect');
 			return;
 		}
 		fs.mkdir(path.join(absolutePath, dpath), { recursive: true }, (err) =>
@@ -1281,6 +1340,7 @@ function createUserDir(absolutePath, postData, localeTranslation, callback)
 			if (err)
 			{
 				callback(getTranslation('createFolderError', localeTranslation));
+				console.log('Paste error: ' + err);
 			}
 			else
 			{
@@ -1295,68 +1355,106 @@ function pasteItems(absolutePath, itemsPath, itemsList, localeTranslation, callb
 	if (!UPLOAD_ENABLE)
 	{
 		callback('Writing is not allowed!');
+		console.log('Paste error: Writing is not allowed!');
 		return;
 	}
 	let fromPath = decodeURIComponent(itemsPath.replace(/\+/g, ' '));
 	if (fromPath.match(FILES_REG_EXP) !== null)
 	{
 		callback(getTranslation('pasteError', localeTranslation));
+		console.log('Paste error: Item path incorrect');
 		return;
 	}
 	fromPath = path.join(absolutePath, fromPath);
 	const items = itemsList.splite(',');
-	for (let item of items)
+	pasteItems(0);
+
+	function pasteItems(index)
 	{
+		const item = items[index];
 		let itemPath = Buffer.from(item, 'base64url').toString();
 		if (itemPath.match(FILES_REG_EXP) !== null)
 		{
 			callback(`${getTranslation('pasteError', localeTranslation)}: ${itemPath}`);
+			console.log('Paste error: Item path incorrect');
 			return;
 		}
 		itemPath = path.join(fromPath, itemPath);
-		paste(itemPath);
+		paste(itemPath, (err) =>
+		{
+			callback(getTranslation('pasteError', localeTranslation));
+			console.log('Paste error:' + err);
+		}, () =>
+		{
+			index++;
+			if (index < item.length)
+			{
+				pasteItems(index);
+			}
+		});
 	}
 
-	// function paste(itemPath)
-	// {
-	// 	const onFolder = function(fullPath, relativePath, next)
-	// 	{
-	// 		fs.mkdir(fullPath, (err) =>
-	// 		{
-	// 			if (err)
-	// 			{
-	// 				callback(`${getTranslation('pasteError', localeTranslation)}: ${itemPath}`);
-	// 			}
-	// 			else
-	// 			{
-	// 				next();
-	// 			}
-	// 		});
-	// 	};
-	// 	const onFile = function(fullPath, relativePath, next)
-	// 	{
-	// 		fs.copyFile(fullPath, (err, data) =>
-	// 		{
-	// 			if (err)
-	// 			{
-	// 				callback(`${getTranslation('pasteError', localeTranslation)}: ${itemPath}`);
-	// 			}
-	// 			else
-	// 			{
-	// 				zipError(err, res);
-	// 			}
-	// 			next();
-	// 		});
-	// 	};
-	// 	const onError = function(err)
-	// 	{
-	// 		zipError(err, res);
-	// 	};
-	// 	const onEnd = function()
-	// 	{
-	// 		sendZip();
-	// 	};
-	// 	readFolderRecursive(absolutePath, onFolder, onFile, onError, onEnd);
+	function paste(itemPath, onError, onEnd)
+	{
+		fs.stat(itemPath, (err, stats) =>
+		{
+			if (err)
+			{
+				onError(err);
+			}
+			else
+			{
+				if (stats.isDirectory())
+				{
+					copyDirectory(onError, onEnd);
+				}
+				else
+				{
+					fs.copyFile(itemPath, absolutePath, (err) =>
+					{
+						if (err)
+						{
+							onError(err);
+						}
+						else
+						{
+							onEnd();
+						}
+					});
+				}
+			}
+		});
+
+		function copyDirectory(onError, onEnd)
+		{
+			const onFolder = function(fullPath, relativePath, next)
+			{
+				const itemDirName = path.dirname(fullPath);
+				fs.mkdir(path.join(absolutePath, itemDirName), (err) =>
+				{
+					if (err)
+					{
+						onError(err);
+					}
+					else
+					{
+						next();
+					}
+				});
+			};
+			const onFile = function(fullPath, relativePath, next)
+			{
+				fs.copyFile(fullPath, absolutePath, (err) =>
+				{
+					if (err)
+					{
+						onError(err);
+					}
+					next();
+				});
+			};
+			readFolderRecursive(itemPath, onFolder, onFile, onError, onEnd);
+		}
 	}
 }
 
@@ -1365,6 +1463,7 @@ function renameItem(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, loc
 	if (!UPLOAD_ENABLE)
 	{
 		callback('Writing is not allowed!');
+		console.log('Rename error: Writing is not allowed!');
 		return;
 	}
 	const newName = decodeURIComponent(renameTo_uriEncoded.replace(/\+/g, ' '));
@@ -1377,6 +1476,7 @@ function renameItem(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, loc
 	if ((newName.length > 255) || (newName.match(FILES_REG_EXP) !== null) || (oldName.match(FILES_REG_EXP) !== null))
 	{
 		callback(getTranslation('invalidName', localeTranslation));
+		console.log('Rename error: Invalid item name!');
 		return;
 	}
 	fs.rename(path.join(absolutePath, oldName), path.join(absolutePath, newName), (err) =>
@@ -1385,6 +1485,7 @@ function renameItem(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, loc
 		{
 			console.log(err.message);
 			callback(`${getTranslation('renameError', localeTranslation)}: ${oldName}`);
+			console.log('Rename error: ' + err);
 			return;
 		}
 		else
@@ -1399,6 +1500,7 @@ function deleteFiles(absolutePath, postData, localeTranslation, callback)
 	if (!UPLOAD_ENABLE)
 	{
 		callback('Writing is not allowed!');
+		console.log('Delete error: Writing is not allowed!');
 		return;
 	}
 	let keys = Object.keys(postData);
@@ -1412,6 +1514,7 @@ function deleteFiles(absolutePath, postData, localeTranslation, callback)
 			if (fileName.match(FILES_REG_EXP) !== null)
 			{
 				callback(getTranslation('deleteError', localeTranslation));
+				console.log('Delete error: Item name error!');
 				return;
 			}
 			const filePath = path.join(absolutePath, fileName);
@@ -1421,6 +1524,7 @@ function deleteFiles(absolutePath, postData, localeTranslation, callback)
 				{
 					console.log(err.message);
 					callback(getTranslation('deleteError', localeTranslation));
+					console.log('Delete error: ' + err);
 					return;
 				}
 				else
