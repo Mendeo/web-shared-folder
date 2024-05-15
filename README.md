@@ -55,6 +55,11 @@ Suppose the ip address of the computer is 192.168.1.2. It is required to share t
 ```bash
 web-shared-folder /home/user/shared 8080
 ```
+If we want this folder to become available for editing, then we simply add the "-u" key
+
+```bash
+web-shared-folder /home/user/shared 8080 -u
+```
 Access to files from the "/home/user/shared" folder can be obtained by typing in the browser address bar:
 
 ```
