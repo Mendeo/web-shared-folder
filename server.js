@@ -1817,8 +1817,12 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						_indexHtmlbase[42] + getTranslation('newName', localeTranslation) +
 						_indexHtmlbase[43] + getTranslation('ok', localeTranslation) +
 						_indexHtmlbase[44] + getTranslation('cancel', localeTranslation) +
-						_indexHtmlbase[45]) : ''}` +
-						_indexHtmlbase[46];
+						_indexHtmlbase[45] + getTranslation('replaceWarningDialog', localeTranslation) +
+						_indexHtmlbase[46] + getTranslation('ok', localeTranslation) +
+						_indexHtmlbase[47] + getTranslation('cancel', localeTranslation) +
+						_indexHtmlbase[48] + getTranslation('doNotAsk', localeTranslation) +
+						_indexHtmlbase[49]) : ''}` +
+						_indexHtmlbase[50];
 			}
 		}
 	});

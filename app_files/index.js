@@ -236,6 +236,7 @@ function performCopyPaste()
 	{
 		const dialog = document.getElementById('replace-warning-dialog');
 		const dialogMessage = document.querySelector('#replace-warning-dialog [data-id="dialog_message"]');
+		const doNotAsk = document.querySelector('#replace-warning-dialog input[type="checkbox"]');
 		const copyButtonName = copyButton.innerText;
 		const moveButtonName = moveButton.innerText;
 		const items = sessionStorage.getItem(ITEMS_KEY);
@@ -261,7 +262,8 @@ function performCopyPaste()
 				{
 					if (dialog.returnValue === 'ok')
 					{
-						
+						if (doNotAsk.checked) sessionStorage.setItem('replace-without-ask', true);
+						performClick(dialog.getAttribute('data-type'));
 					}
 				});
 			}
@@ -270,8 +272,13 @@ function performCopyPaste()
 		function onCopyOrMoveButtonsClick(e, type)
 		{
 			e.preventDefault();
-			if (dialog.showModal)
+			if (sessionStorage.getItem('replace-without-ask'))
 			{
+				performClick(type);
+			}
+			else if (dialog.showModal)
+			{
+				dialog.setAttribute('data-type', type);
 				dialog.showModal();
 			}
 			else
@@ -324,7 +331,7 @@ function deleteFilesWarningDialog()
 	{
 		{
 			const hsc = hasSelectedChecboxes();
-			if (sessionStorage.getItem('deleteWithoutAsk'))
+			if (sessionStorage.getItem('delete-without-ask'))
 			{
 				if (!hsc) event.preventDefault();
 				return;
@@ -352,7 +359,7 @@ function deleteFilesWarningDialog()
 		{
 			if (dialog.returnValue === 'yes')
 			{
-				if (doNotAsk.checked) sessionStorage.setItem('deleteWithoutAsk', true);
+				if (doNotAsk.checked) sessionStorage.setItem('delete-without-ask', true);
 				submit();
 			}
 		});

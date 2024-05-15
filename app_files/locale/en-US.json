@@ -45,5 +45,7 @@
 	"selectForCopyOrMove": "Select for copy or move",
 	"copy": "Copy",
 	"move": "Move",
-	"pasteError": "Failed to copy or move"
+	"pasteError": "Failed to copy or move",
+	"replaceWarningDialog": "Please note! If the names are the same, existing files in the destination folder will be replaced with new ones without warning!",
+	"doNotAsk": "Do not show this message again"
 }
