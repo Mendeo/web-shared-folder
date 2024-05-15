@@ -234,6 +234,8 @@ function performCopyPaste()
 
 	function performCopyOrPasteButtons()
 	{
+		const dialog = document.getElementById('replace-warning-dialog');
+		const dialogMessage = document.querySelector('#replace-warning-dialog [data-id="dialog_message"]');
 		const copyButtonName = copyButton.innerText;
 		const moveButtonName = moveButton.innerText;
 		const items = sessionStorage.getItem(ITEMS_KEY);
@@ -253,14 +255,37 @@ function performCopyPaste()
 			{
 				onCopyOrMoveButtonsClick(e, 'move');
 			});
-
-			function onCopyOrMoveButtonsClick(e, type)
+			if (dialog.showModal)
 			{
-				e.preventDefault();
-				sessionStorage.removeItem(ITEMS_KEY);
-				sessionStorage.removeItem(PATH_KEY);
-				submit(type);
+				dialog.addEventListener('close', () =>
+				{
+					if (dialog.returnValue === 'ok')
+					{
+						
+					}
+				});
 			}
+		}
+
+		function onCopyOrMoveButtonsClick(e, type)
+		{
+			e.preventDefault();
+			if (dialog.showModal)
+			{
+				dialog.showModal();
+			}
+			else
+			{
+				const message = dialogMessage.innerText;
+				if (confirm(message)) performClick(type);
+			}
+		}
+
+		function performClick(type)
+		{
+			sessionStorage.removeItem(ITEMS_KEY);
+			sessionStorage.removeItem(PATH_KEY);
+			submit(type);
 		}
 
 		function submit(type)
@@ -291,7 +316,7 @@ function performCopyPaste()
 function deleteFilesWarningDialog()
 {
 	const dialog = document.getElementById('delete-warning-dialog');
-	const dialogMessage = document.getElementById('dialog_message');
+	const dialogMessage = document.querySelector('#delete-warning-dialog [data-id="dialog_message"]');
 	if (!dialog) return;
 	const deleteButton = document.querySelector('#select_form button[name="delete"]');
 
@@ -321,7 +346,7 @@ function deleteFilesWarningDialog()
 	if (dialog.showModal)
 	{
 		const doNotAsk = document.querySelector('#delete-warning-dialog input[type="checkbox"]');
-		const doNotAskLabel = document.querySelector('#delete-warning-dialog label[for="doNotAsk"]');
+		const doNotAskLabel = document.querySelector('#delete-warning-dialog label');
 
 		dialog.addEventListener('close', () =>
 		{
