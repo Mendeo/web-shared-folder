@@ -21,10 +21,15 @@
 					<!--If JS is enabled, then the "Select all" and "Deselect all" buttons appears below.-->
 					<button id="selectAll" hidden>~%~</button>
 					<!--Download files submit-->
-					<input type="submit" name="download" value="~%~">
+					<button type="submit" name="download" value="true" formmethod="get">~%~</button>
 					<button id="deselectAll" hidden>~%~</button>~%~
 					<!--Delete files submit-->
-					<input type="submit" name="delete" value="~%~">~%~
+					<button type="submit" name="delete" value="true">~%~</button>
+					<button hidden id="select_for_copy_or_move_button">~%~</button>
+					<div class="header__controls">
+						<button hidden id="copy_button">~%~</button>
+						<button hidden id="move_button">~%~</button>
+					</div>~%~
 				</div>
 				<div class="header__stats">
 					~%~
@@ -57,8 +62,7 @@
 					</div>
 				</div>
 				<!--Links to files and folders-->
-~%~
-			</div>
+~%~			</div>
 		</form>~%~
 		<div class="footer">
 			<div class="footer__dnd_placer">
@@ -68,7 +72,7 @@
 					<form class="footer__mk_dir_form" method="post" enctype="application/x-www-form-urlencoded" name="mk_dir">
 						<!--Create folder files-->
 						<input type="submit" value="~%~">
-						<input type="text" name="dir" pattern="^[^&lt;&gt;&quot;:?*\|\\\/]+$">
+						<input type="text" name="dir" data-invalid-message="~%~" aria-label="~%~" required pattern="^[^&lt;&gt;&quot;:?*\|\\\/]+$">
 					</form>
 					<!--Upload files form-->
 					<form class="footer__upload_files_form" method="post" enctype="multipart/form-data" name="upload_files">
@@ -76,7 +80,7 @@
 						<!--Upload files-->
 						<input type="submit" value="~%~">
 					</form>
-					<progress max="100" class="hidden-in-flow"></progress>
+					<progress max="100" class="hidden_in_flow"></progress>
 				</div>
 				<div class="footer__drag_and_drop hidden">
 					~%~
@@ -85,14 +89,13 @@
 			<div></div>
 		</div>
 		<dialog id="delete-warning-dialog" class="dialog">
-			<p><b id="dialog_message">~%~</b></p>
+			<p><b data-id="dialog_message">~%~</b></p>
 			<form method="dialog">
 				<div class="dialog__buttons">
 					<button value="yes">~%~</button>
 					<button value="no">~%~</button>
 				</div>
-				<input type="checkbox" name="doNotAsk">
-				<label for="doNotAsk">~%~</label>
+				<label>~%~<input type="checkbox"></label>
 			</form>
 		</dialog>~%~
 		<!--Error while sending file-->
@@ -108,7 +111,29 @@
 			<label for="radio-dark-theme" aria-label="~%~"></label>
 			<input type="radio" id="radio-dark-theme" title="~%~" name="theme">
 			<div></div>
-		</fieldset>
+		</fieldset>~%~
+		<dialog id="rename-dialog" class="dialog">
+			<p><b>~%~:</b></p>
+			<p>
+				<input type="text" data-invalid-message="~%~" aria-label="~%~" pattern="^[^&lt;&gt;&quot;:?*\|\\\/]+$">
+			</p>
+			<form method="dialog">
+				<div class="dialog__buttons">
+					<button value="ok">~%~</button>
+					<button value="cancel">~%~</button>
+				</div>
+			</form>
+		</dialog>
+		<dialog id="replace-warning-dialog" class="dialog">
+			<p><b data-id="dialog_message">~%~</b></p>
+			<form method="dialog">
+				<div class="dialog__buttons">
+					<button value="ok">~%~</button>
+					<button value="cancel">~%~</button>
+				</div>
+				<label>~%~<input type="checkbox"></label>
+			</form>
+		</dialog>~%~
 		<script type="text/javascript" src="/wsf_app_files/index.js"></script>
 	</body>
 </html>

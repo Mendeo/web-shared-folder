@@ -30,3 +30,7 @@ h2
 {
 	color: #c8c8c8;
 }
+.rename_button > div
+{
+	filter: invert(100%);
+}

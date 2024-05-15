@@ -8,7 +8,7 @@
   },
   "name": "web-shared-folder",
   "description": "Web server for sharing folder on local network or Internet",
-  "version": "2.8.1",
+  "version": "3.0.0",
   "main": "server.js",
   "repository": {
     "type": "git",
@@ -34,6 +34,7 @@
   },
   "homepage": "https://github.com/Mendeo/web-shared-folder#readme",
   "bin": {
-    "web-shared-folder": "./server.js"
+    "web-shared-folder": "./server.js",
+    "wsf": "./server.js"
   }
 }

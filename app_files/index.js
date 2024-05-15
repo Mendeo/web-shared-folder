@@ -5,19 +5,95 @@ const _checkboxes =  document.querySelectorAll('#select_form input[type="checkbo
 themeChanger();
 setClientLanguage();
 performSelectButtons();
+preventDownloadIfNoFilesSelected();
+backspaceToPreviousFolder();
+/*---UPLOAD_SPLITTER---*/
 deleteFilesWarningDialog();
 upload();
 dragAndDropFiles();
-backspaceToPreviousFolder();
-preventDownloadIfNoFilesSelected();
-
-function hasSelectedChecboxes()
+createFolderValidity();
+renameFiles();
+performCopyPaste();
+/*---UPLOAD_SPLITTER---*/
+function themeChanger()
 {
-	for (let elem of _checkboxes)
+	const THEME_STORAGE_NAME = 'selected-theme';
+	const STORAGE_LIGHT_THEME = 'light';
+	const STORAGE_DARK_THEME = 'dark';
+	const STORAGE_AUTO_THEME = 'auto';
+
+	const radioLight = document.getElementById('radio-light-theme');
+	const radioDark = document.getElementById('radio-dark-theme');
+	const radioAuto = document.getElementById('radio-auto-theme');
+
+	const styleLight = document.getElementById('light-theme-css');
+	const styleDark = document.getElementById('dark-theme-css');
+
+	const selectedTheme = localStorage.getItem(THEME_STORAGE_NAME);
+	setTheme(selectedTheme);
+
+	radioLight.addEventListener('change', onThemeChange);
+	radioDark.addEventListener('change', onThemeChange);
+	radioAuto.addEventListener('change', onThemeChange);
+
+	function setTheme(selectedTheme)
 	{
-		if (elem.checked) return true;
+		if (selectedTheme !== STORAGE_LIGHT_THEME && selectedTheme !== STORAGE_DARK_THEME && selectedTheme !== STORAGE_AUTO_THEME)
+		{
+			selectedTheme = STORAGE_AUTO_THEME;
+			setThemeToLocalStorage(STORAGE_AUTO_THEME);
+		}
+
+		if (selectedTheme === STORAGE_LIGHT_THEME)
+		{
+			styleLight.media = 'all';
+			styleDark.media = 'not all';
+			radioLight.checked = true;
+		}
+		else if (selectedTheme === STORAGE_DARK_THEME)
+		{
+			styleLight.media = 'not all';
+			styleDark.media = 'all';
+			radioDark.checked = true;
+		}
+		else
+		{
+			styleLight.media = '(prefers-color-scheme: light)';
+			styleDark.media = '(prefers-color-scheme: dark)';
+			radioAuto.checked = true;
+		}
 	}
-	return false;
+
+	function onThemeChange()
+	{
+		let selectedTheme = '';
+		let ifSet = false;
+		if (radioLight.checked)
+		{
+			selectedTheme = STORAGE_LIGHT_THEME;
+			ifSet = true;
+		}
+		else if (radioDark.checked)
+		{
+			selectedTheme = STORAGE_DARK_THEME;
+			ifSet = true;
+		}
+		else if (radioAuto.checked)
+		{
+			selectedTheme = STORAGE_AUTO_THEME;
+			ifSet = true;
+		}
+		if (ifSet)
+		{
+			setThemeToLocalStorage(selectedTheme);
+			setTheme(selectedTheme);
+		}
+	}
+
+	function setThemeToLocalStorage(value)
+	{
+		localStorage.setItem(THEME_STORAGE_NAME, value);
+	}
 }
 
 function setClientLanguage()
@@ -49,8 +125,7 @@ function performSelectButtons()
 {
 	const selectAllButton = document.getElementById('selectAll');
 	const deselectAllButton = document.getElementById('deselectAll');
-	const checkboxes = document.querySelectorAll('.main_container__first_column > input[type="checkbox"]');
-
+	const checkboxes = document.querySelectorAll('input[id^="item-checkbox-"]');
 	selectAllButton.addEventListener('click', (event) =>
 	{
 		event.preventDefault();
@@ -78,19 +153,193 @@ function performSelectButtons()
 	}
 }
 
+function preventDownloadIfNoFilesSelected()
+{
+	const downloadButton = document.querySelector('#select_form button[name="download"]');
+	downloadButton.addEventListener('click', (e) =>
+	{
+		if (!hasSelectedChecboxes()) e.preventDefault();
+	});
+}
+
+function hasSelectedChecboxes()
+{
+	for (let elem of _checkboxes)
+	{
+		if (elem.checked) return true;
+	}
+	return false;
+}
+
+function backspaceToPreviousFolder()
+{
+	const selectForm = document.getElementById('select_form');
+	selectForm.focus();
+	selectForm.addEventListener('keydown', (e) =>
+	{
+		if (e.code === 'Backspace' && location.pathname !== '/')
+		{
+			//history.back();
+			const arr = location.pathname.split('/');
+			let backPath = arr.slice(0, arr.length - 1).join('/');
+			if (backPath === '') backPath = '/';
+			location.assign(backPath);
+		}
+	});
+}
+/*---UPLOAD_SPLITTER---*/
+function performCopyPaste()
+{
+	const items = [];
+	const selectButton = document.getElementById('select_for_copy_or_move_button');
+	const copyButton = document.getElementById('copy_button');
+	const moveButton = document.getElementById('move_button');
+	const selectForm = document.getElementById('select_form');
+
+	const ITEMS_KEY = 'paste_items';
+	const PATH_KEY = 'paste_from';
+	const PASTE_TYPE_KEY = 'paste_type';
+
+	performSelectForCopyOrMoveButton();
+	performCopyOrPasteButtons();
+
+	function performSelectForCopyOrMoveButton()
+	{
+		const selectButtonName = selectButton.innerText;
+		selectButton.hidden = false;
+		selectButton.addEventListener('click', (e) =>
+		{
+			e.preventDefault();
+			for (let item of _checkboxes)
+			{
+				if (item.checked) items.push(item.name);
+			}
+			if (items.length === 0)
+			{
+				selectButton.innerText = selectButtonName;
+				sessionStorage.removeItem(ITEMS_KEY);
+				sessionStorage.removeItem(PATH_KEY);
+			}
+			else
+			{
+				sessionStorage.setItem(ITEMS_KEY, items.join(','));
+				sessionStorage.setItem(PATH_KEY, decodeURI(location.pathname));
+				selectButton.innerText = `${selectButtonName} (${items.length})`;
+			}
+			items.length = 0;
+			copyButton.hidden = true;
+			moveButton.hidden = true;
+		});
+	}
+
+	function performCopyOrPasteButtons()
+	{
+		const dialog = document.getElementById('replace-warning-dialog');
+		const dialogMessage = document.querySelector('#replace-warning-dialog [data-id="dialog_message"]');
+		const doNotAsk = document.querySelector('#replace-warning-dialog input[type="checkbox"]');
+		const copyButtonName = copyButton.innerText;
+		const moveButtonName = moveButton.innerText;
+		const items = sessionStorage.getItem(ITEMS_KEY);
+		const itemsPath = sessionStorage.getItem(PATH_KEY);
+		if (items && itemsPath && itemsPath !== location.pathname)
+		{
+			copyButton.innerText = `${copyButtonName} (${items.split(',').length})`;
+			copyButton.hidden = false;
+			moveButton.innerText = `${moveButtonName} (${items.split(',').length})`;
+			moveButton.hidden = false;
+
+			copyButton.addEventListener('click', (e) =>
+			{
+				onCopyOrMoveButtonsClick(e, 'copy');
+			});
+			moveButton.addEventListener('click', (e) =>
+			{
+				onCopyOrMoveButtonsClick(e, 'move');
+			});
+			if (dialog.showModal)
+			{
+				dialog.addEventListener('close', () =>
+				{
+					if (dialog.returnValue === 'ok')
+					{
+						if (doNotAsk.checked) sessionStorage.setItem('replace-without-ask', true);
+						performClick(dialog.getAttribute('data-type'));
+					}
+				});
+			}
+		}
+
+		function onCopyOrMoveButtonsClick(e, type)
+		{
+			e.preventDefault();
+			if (sessionStorage.getItem('replace-without-ask'))
+			{
+				performClick(type);
+			}
+			else if (dialog.showModal)
+			{
+				dialog.setAttribute('data-type', type);
+				dialog.showModal();
+			}
+			else
+			{
+				const message = dialogMessage.innerText;
+				if (confirm(message)) performClick(type);
+			}
+		}
+
+		function performClick(type)
+		{
+			sessionStorage.removeItem(ITEMS_KEY);
+			sessionStorage.removeItem(PATH_KEY);
+			submit(type);
+		}
+
+		function submit(type)
+		{
+			const itemsPathInput = document.createElement('input');
+			itemsPathInput.type = 'hidden';
+			itemsPathInput.name = PATH_KEY;
+			itemsPathInput.value = itemsPath;
+
+			const itemsInput = document.createElement('input');
+			itemsInput.type = 'hidden';
+			itemsInput.name = ITEMS_KEY;
+			itemsInput.value = items;
+
+			const typeInput = document.createElement('input');
+			typeInput.type = 'hidden';
+			typeInput.name = PASTE_TYPE_KEY;
+			typeInput.value = type;
+
+			selectForm.append(itemsPathInput);
+			selectForm.append(itemsInput);
+			selectForm.append(typeInput);
+			selectForm.submit();
+		}
+	}
+}
+
 function deleteFilesWarningDialog()
 {
-	if (sessionStorage.getItem('deleteWithoutAsk')) return;
 	const dialog = document.getElementById('delete-warning-dialog');
-	const dialogMessage = document.getElementById('dialog_message');
+	const dialogMessage = document.querySelector('#delete-warning-dialog [data-id="dialog_message"]');
 	if (!dialog) return;
-	const selectForm = document.getElementById('select_form');
-	const deleteButton = document.querySelector('#select_form input[name="delete"]');
+	const deleteButton = document.querySelector('#select_form button[name="delete"]');
 
 	deleteButton.addEventListener('click', (event) =>
 	{
-		event.preventDefault();
-		if (!hasSelectedChecboxes()) return;
+		{
+			const hsc = hasSelectedChecboxes();
+			if (sessionStorage.getItem('delete-without-ask'))
+			{
+				if (!hsc) event.preventDefault();
+				return;
+			}
+			event.preventDefault();
+			if (!hsc) return;
+		}
+
 		if (dialog.showModal)
 		{
 			dialog.showModal();
@@ -104,13 +353,13 @@ function deleteFilesWarningDialog()
 	if (dialog.showModal)
 	{
 		const doNotAsk = document.querySelector('#delete-warning-dialog input[type="checkbox"]');
-		const doNotAskLabel = document.querySelector('#delete-warning-dialog label[for="doNotAsk"]');
+		const doNotAskLabel = document.querySelector('#delete-warning-dialog label');
 
 		dialog.addEventListener('close', () =>
 		{
 			if (dialog.returnValue === 'yes')
 			{
-				if (doNotAsk.checked) sessionStorage.setItem('deleteWithoutAsk', true);
+				if (doNotAsk.checked) sessionStorage.setItem('delete-without-ask', true);
 				submit();
 			}
 		});
@@ -121,13 +370,14 @@ function deleteFilesWarningDialog()
 		});
 	}
 
+	const selectForm = document.getElementById('select_form');
 	function submit()
 	{
-		const deleteInput = document.createElement('input');
-		deleteInput.type = 'hidden';
-		deleteInput.name = 'delete';
-		deleteInput.value = true;
-		selectForm.append(deleteInput);
+		const tmpElement = document.createElement('input');
+		tmpElement.type = 'hidden';
+		tmpElement.name = 'delete';
+		tmpElement.value = true;
+		selectForm.append(tmpElement);
 		selectForm.submit();
 	}
 }
@@ -225,12 +475,12 @@ function upload(formData, callback)
 
 	function showProgressBar()
 	{
-		progressBar.classList.remove('hidden-in-flow');
+		progressBar.classList.remove('hidden_in_flow');
 	}
 
 	function removeProgressBar()
 	{
-		progressBar.classList.add('hidden-in-flow');
+		progressBar.classList.add('hidden_in_flow');
 	}
 }
 
@@ -274,109 +524,77 @@ function dragAndDropFiles()
 	});
 }
 
-function backspaceToPreviousFolder()
+function createFolderValidity()
 {
-	const selectForm = document.getElementById('select_form');
-	selectForm.focus();
-	selectForm.addEventListener('keydown', (e) =>
+	const input = document.querySelector('form[name="mk_dir"] > input[name="dir"]');
+	if (!input) return;
+	input.addEventListener('input', () =>
 	{
-		if (e.code === 'Backspace' && location.pathname !== '/')
+		if (input.validity.patternMismatch)
 		{
-			//history.back();
-			const arr = location.pathname.split('/');
-			let backPath = arr.slice(0, arr.length - 1).join('/');
-			if (backPath === '') backPath = '/';
-			location.assign(backPath);
-		}
-	});
-}
-
-function preventDownloadIfNoFilesSelected()
-{
-	const downloadButton = document.querySelector('#select_form input[name="download"]');
-	downloadButton.addEventListener('click', (e) =>
-	{
-		if (!hasSelectedChecboxes()) e.preventDefault();
-	});
-}
-
-function themeChanger()
-{
-	const THEME_STORAGE_NAME = 'selected-theme';
-	const STORAGE_LIGHT_THEME = 'light';
-	const STORAGE_DARK_THEME = 'dark';
-	const STORAGE_AUTO_THEME = 'auto';
-
-	const radioLight = document.getElementById('radio-light-theme');
-	const radioDark = document.getElementById('radio-dark-theme');
-	const radioAuto = document.getElementById('radio-auto-theme');
-
-	const styleLight = document.getElementById('light-theme-css');
-	const styleDark = document.getElementById('dark-theme-css');
-
-	const selectedTheme = localStorage.getItem(THEME_STORAGE_NAME);
-	setTheme(selectedTheme);
-
-	radioLight.addEventListener('change', onThemeChange);
-	radioDark.addEventListener('change', onThemeChange);
-	radioAuto.addEventListener('change', onThemeChange);
-
-	function setTheme(selectedTheme)
-	{
-		if (selectedTheme !== STORAGE_LIGHT_THEME && selectedTheme !== STORAGE_DARK_THEME && selectedTheme !== STORAGE_AUTO_THEME)
-		{
-			selectedTheme = STORAGE_AUTO_THEME;
-			setThemeToLocalStorage(STORAGE_AUTO_THEME);
-		}
-
-		if (selectedTheme === STORAGE_LIGHT_THEME)
-		{
-			styleLight.media = 'all';
-			styleDark.media = 'not all';
-			radioLight.checked = true;
-		}
-		else if (selectedTheme === STORAGE_DARK_THEME)
-		{
-			styleLight.media = 'not all';
-			styleDark.media = 'all';
-			radioDark.checked = true;
+			input.setCustomValidity(input.getAttribute('data-invalid-message'));
 		}
 		else
 		{
-			styleLight.media = '(prefers-color-scheme: light)';
-			styleDark.media = '(prefers-color-scheme: dark)';
-			radioAuto.checked = true;
+			input.setCustomValidity('');
 		}
-	}
+		input.reportValidity();
+	});
+}
 
-	function onThemeChange()
-	{
-		let selectedTheme = '';
-		let ifSet = false;
-		if (radioLight.checked)
-		{
-			selectedTheme = STORAGE_LIGHT_THEME;
-			ifSet = true;
-		}
-		else if (radioDark.checked)
-		{
-			selectedTheme = STORAGE_DARK_THEME;
-			ifSet = true;
-		}
-		else if (radioAuto.checked)
-		{
-			selectedTheme = STORAGE_AUTO_THEME;
-			ifSet = true;
-		}
-		if (ifSet)
-		{
-			setThemeToLocalStorage(selectedTheme);
-			setTheme(selectedTheme);
-		}
-	}
+function renameFiles()
+{
+	const dialog = document.getElementById('rename-dialog');
+	if (!dialog || !dialog.showModal) return;
+	const renameButtons = document.querySelectorAll('button[id^="rename-button-"]');
+	const fileName = document.querySelector('#rename-dialog input[type="text"]');
 
-	function setThemeToLocalStorage(value)
+	let oldNameBase64 = '';
+	for (let rb of renameButtons)
 	{
-		localStorage.setItem(THEME_STORAGE_NAME, value);
+		rb.hidden = false;
+		rb.addEventListener('click', (e) =>
+		{
+			e.preventDefault();
+			const id = rb.id.split('-')[2];
+			const checkboxBeforeButton = document.getElementById(`item-checkbox-${id}`);
+			oldNameBase64 = checkboxBeforeButton.getAttribute('name');
+			dialog.showModal();
+		});
+	}
+	fileName.addEventListener('input', () =>
+	{
+		if (fileName.validity.patternMismatch)
+		{
+			fileName.setCustomValidity(fileName.getAttribute('data-invalid-message'));
+		}
+		else
+		{
+			fileName.setCustomValidity('');
+		}
+		fileName.reportValidity();
+	});
+	dialog.addEventListener('close', () =>
+	{
+		if (dialog.returnValue === 'ok')
+		{
+			submit(oldNameBase64, fileName.value);
+		}
+	});
+
+	function submit(oldName, newName)
+	{
+		const selectForm = document.getElementById('select_form');
+		const from = document.createElement('input');
+		from.type = 'hidden';
+		from.name = 'rename_from';
+		from.value = oldName;
+		selectForm.append(from);
+		const to = document.createElement('input');
+		to.type = 'hidden';
+		to.name = 'rename_to';
+		to.value = newName;
+		selectForm.append(to);
+		selectForm.submit();
 	}
 }

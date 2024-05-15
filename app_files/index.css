@@ -9,7 +9,7 @@
 /*Блок, отвечающий за переключение темы (светлая, авто, тёмная)*/
 .theme_selector
 {
-	position: absolute;
+	position: fixed;
 	bottom: 1rem;
 	right: 1rem;
 	padding: 0.125rem;
@@ -93,10 +93,6 @@
 }
 /*Конец блока, отвечающего за переключение темы*/
 
-.hidden-in-flow
-{
-	visibility: hidden;
-}
 .main_container
 {
 	display: inline-grid;
@@ -133,10 +129,6 @@
 {
 	background-image: url("/wsf_app_files/eye.svg");
 }
-.unzip-icon
-{
-	background-image: url("/wsf_app_files/unzip.svg");
-}
 .main_container__first_column
 {
 	display: flex;
@@ -152,7 +144,7 @@
 {
 	display: flex;
 	flex-wrap: wrap;
-	max-width: 300px;
+	max-width: 25rem;
 	justify-content: space-between;
 	row-gap: 0.2rem;
 }
@@ -172,6 +164,39 @@
 	width: 100%;
 	z-index: 1;
 }
+.hidden
+{
+	display: none;
+}
+#select_form
+{
+	outline: none;
+}
+.block_center
+{
+	display: flex;
+	justify-content: center;
+}
+@media screen and (max-width: 900px)
+{
+	.main_container
+	{
+		grid-template-columns: max-content repeat(2, auto);
+	}
+	.header
+	{
+		position: static;
+	}
+}
+/*---UPLOAD_SPLITTER---*/
+.hidden_in_flow
+{
+	visibility: hidden;
+}
+.unzip_icon
+{
+	background-image: url("/wsf_app_files/unzip.svg");
+}
 .footer
 {
 	position: sticky;
@@ -188,6 +213,7 @@
 }
 .footer__controls > progress
 {
+	max-width: 100vw;
 	width: 100%;
 }
 .footer__controls hr
@@ -230,17 +256,14 @@
 	background-color: var(--dragenter-color);
 	color: black;
 }
-
 .footer__drag_and_drop__while_upload
 {
 	filter: contrast(0%);
 }
-
 .footer > div:last-child
 {
 	height: 0.3rem;
 }
-
 .dialog p
 {
 	text-align: center;
@@ -251,6 +274,7 @@
 	flex-wrap: nowrap;
 	justify-content: space-around;
 	margin-bottom: 0.5rem;
+	min-width: 12rem;
 }
 .dialog__buttons button
 {
@@ -260,31 +284,40 @@
 {
 	max-width: 500px;
 }
-.hidden
+input[type="text"]:invalid
 {
-	display: none;
+	color: red;
 }
-#select_form
+.rename_button
 {
-	outline: none;
+	width: 1.3rem;
+	position: relative;
 }
-.block_center
+.rename_button > button
 {
-	display: flex;
-	justify-content: center;
+	cursor: pointer;
+	border: none;
+	background: none;
+	padding: 0px;
+	width: 100%;
+	height: 100%;
 }
-
+.rename_button > div
+{
+	position: absolute;
+	top: 0px;
+	bottom: 0px;
+	left: 0px;
+	right: 0px;
+	background-image: url("/wsf_app_files/rename.svg");
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: 0.9rem;
+	z-index: -1;
+}
 
 @media screen and (max-width: 900px)
 {
-	.main_container
-	{
-		grid-template-columns: max-content repeat(2, auto);
-	}
-	.header
-	{
-		position: static;
-	}
 	.footer
 	{
 		position: static;

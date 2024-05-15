@@ -141,6 +141,8 @@ else
 	}
 }
 
+const FILE_REG_EXP = new RegExp(/[<>":?*|\\/]/g);
+const PATH_REG_EXP = new RegExp(/([<>":?*|]+)|\.{2,}(\/|\\)/g);
 const DEFAULT_LANG = 'en-US';
 let DEFAULT_LOCALE_TRANSLATION = null;
 
@@ -193,6 +195,8 @@ let _dark_css = null;
 let _robots_txt = null;
 let _locales = null;
 let _icons_css = null;
+let _404_css = null;
+let _404_html = null;
 let _icons_svg_map = new Map();
 let _icons_catalog = new Set();
 
@@ -229,14 +233,19 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			}
 			_indexHtmlbase = fs.readFileSync(path.join(__dirname, 'app_files', 'index.html')).toString().split('~%~');
 			_favicon = fs.readFileSync(path.join(__dirname, 'app_files', 'favicon.ico'));
-			_index_js = fs.readFileSync(path.join(__dirname, 'app_files', 'index.js'));
-			_index_css = fs.readFileSync(path.join(__dirname, 'app_files', 'index.css'));
+			const index_js_splitted = fs.readFileSync(path.join(__dirname, 'app_files', 'index.js')).toString().split('/*---UPLOAD_SPLITTER---*/');
+			_index_js = UPLOAD_ENABLE ? index_js_splitted.join('') : index_js_splitted[0] + index_js_splitted[2];
+			const index_css_splitted = fs.readFileSync(path.join(__dirname, 'app_files', 'index.css')).toString().split('/*---UPLOAD_SPLITTER---*/');
+			_index_css = UPLOAD_ENABLE ? index_css_splitted.join('') : index_css_splitted[0];
 			_light_css = fs.readFileSync(path.join(__dirname, 'app_files', 'light.css'));
 			_dark_css = fs.readFileSync(path.join(__dirname, 'app_files', 'dark.css'));
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
 			readIconsFiles();
-			readTranslationFiles();
 		}
+		readTranslationFiles();
+		_404_css = fs.readFileSync(path.join(__dirname, 'app_files', '404.css'));
+		_404_html = fs.readFileSync(path.join(__dirname, 'app_files', '404.html')).toString().split('~%~');
+
 		const isHttps = key && cert;
 		if (cluster.isPrimary)
 		{
@@ -307,6 +316,7 @@ function readIconsFiles()
 	_icons_svg_map.set('/wsf_app_files/auto.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'auto.svg')));
 	_icons_svg_map.set('/wsf_app_files/moon.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'moon.svg')));
 	_icons_svg_map.set('/wsf_app_files/circle.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'circle.svg')));
+	_icons_svg_map.set('/wsf_app_files/rename.svg', fs.readFileSync(path.join(__dirname, 'app_files', 'img', 'rename.svg')));
 }
 
 function readTranslationFiles()
@@ -432,17 +442,19 @@ function app(req, res)
 	function normalWork()
 	{
 		const url = req.url.split('?');
-		const urlPath = decodeURI(url[0]);
+		const urlPath = decodeURIComponent(url[0]);
 		console.log('url: ' + urlPath);
-		if (urlPath.match(/[/\\]\.+\.[/\\]/))
-		{
-			error(`You can watch only ${ROOT_PATH} directory`, res);
-			return;
-		}
 		const cookie = parseCookie(req.headers?.cookie);
-		const paramsGet = parseRequest(url[1]);
+		const reqGetData = parseRequest(url[1]);
 		const acceptEncoding = req.headers['accept-encoding'];
 		const acceptLanguage = req.headers['accept-language'];
+		if (urlPath.match(/[/\\]\.+\.[/\\]/))
+		{
+			const clientLang = getClientLanguage(acceptLanguage, cookie);
+			const localeTranslation = _locales.get(clientLang);
+			error404(`You can watch only ${ROOT_PATH} directory`, res, acceptEncoding, localeTranslation, clientLang);
+			return;
+		}
 		/*Post данные*/
 		const contentType = req.headers['content-type']?.split(';').map((value) => value.trim());
 		if (contentType)
@@ -453,7 +465,7 @@ function app(req, res)
 				{
 					if (err)
 					{
-						answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, { error: err.message });
+						answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, { error: err.message });
 					}
 					else
 					{
@@ -469,32 +481,32 @@ function app(req, res)
 									break;
 								}
 							}
-							parseMultiPartFormData(postBody, boundary, (postData) =>
+							parseMultiPartFormData(postBody, boundary, (reqPostData) =>
 							{
 								//console.log('parse complete');
-								answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+								answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData);
 							});
 						}
 						else if (contentType[0] === 'application/x-www-form-urlencoded')
 						{
-							const postData = parseXwwwFormUrlEncoded(postBody);
-							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+							const reqPostData = parseXwwwFormUrlEncoded(postBody);
+							answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData);
 						}
 						else
 						{
-							answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+							answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage);
 						}
 					}
 				});
 			}
 			else
 			{
-				answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+				answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage);
 			}
 		}
 		else
 		{
-			answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage);
+			answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage);
 		}
 	}
 }
@@ -659,18 +671,18 @@ function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage,
 	//if (postData) console.log(postData);
 }
 
-function sendCachedFile(res, file, contentType, acceptEncoding)
+function sendCachedFile(res, file, contentType, acceptEncoding, code)
 {
 	const headers =
 	{
 		'Content-Type': contentType,
-		'Cache-Control': 'max-age=86400',
+		'Cache-Control': 'no-cache',
 		'Content-Security-Policy': 'default-src \'self\''
 	};
-	sendCompressed(res, headers, file, acceptEncoding);
+	sendCompressed(res, headers, file, acceptEncoding, code);
 }
 
-function sendCompressed(res, headers, data, acceptEncoding)
+function sendCompressed(res, headers, data, acceptEncoding, code)
 {
 	const compress = compressPrepare(acceptEncoding);
 	if (compress)
@@ -680,20 +692,21 @@ function sendCompressed(res, headers, data, acceptEncoding)
 		{
 			if (err) error500(err, res);
 			headers['Content-Length'] = cData.byteLength;
-			send200(res, headers, cData);
+			send(res, headers, cData, code);
 		});
 	}
 	else
 	{
 		if (!data.byteLength) data = Buffer.from(data);
 		headers['Content-Length'] = data.byteLength;
-		send200(res, headers, data);
+		send(res, headers, data, code);
 	}
 }
 
-function send200(res, headers, data)
+function send(res, headers, data, code)
 {
-	res.writeHead(200, headers);
+	if (!code) code = 200;
+	res.writeHead(code, headers);
 	res.end(data);
 }
 
@@ -729,8 +742,11 @@ function compressPrepare(acceptEncoding)
 }
 
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData)
+function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData)
 {
+	const responseCookie = [];
+	let clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
+	let localeTranslation = _locales.get(clientLang);
 	if (_generateIndex)
 	{
 		switch (urlPath)
@@ -774,6 +790,9 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 		case '/wsf_app_files/circle.svg':
 			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
 			return;
+		case '/wsf_app_files/rename.svg':
+			sendCachedFile(res, _icons_svg_map.get(urlPath), 'image/svg+xml; charset=utf-8', acceptEncoding);
+			return;
 		case '/_index.html':
 			urlPath = '/index.html';
 			break;
@@ -790,23 +809,25 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			}
 		}
 	}
+	if (urlPath === '/wsf_app_files/404.css')
+	{
+		sendCachedFile(res, _404_css, 'text/css; charset=utf-8', acceptEncoding);
+		return;
+	}
 	let filePath = path.join(ROOT_PATH, urlPath);
 	fs.stat(filePath, (err, stats) =>
 	{
 		if (err)
 		{
-			error(err, res);
+			error404(err, res, acceptEncoding, localeTranslation, clientLang);
 		}
 		else if (_generateIndex)
 		{
-			const responseCookie = [];
-			const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
-			let localeTranslation = _locales.get(clientLang);
-			ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, stats.isFile(), stats.size);
+			ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, stats.isFile(), stats.size);
 		}
 		else if (stats.isFile())
 		{
-			sendFile(res, filePath, stats.size);
+			sendFile(res, filePath, stats.size, acceptEncoding, localeTranslation, clientLang);
 		}
 		else
 		{
@@ -815,56 +836,69 @@ function sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLa
 			{
 				if (err)
 				{
-					error(err, res);
+					error404(err, res, acceptEncoding, localeTranslation, clientLang);
 				}
 				else
 				{
-					sendFile(res, filePath, stats.size);
+					sendFile(res, filePath, stats.size, acceptEncoding, localeTranslation, clientLang);
 				}
 			});
 		}
 	});
 }
 
-function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, postData, isFile, fileSize)
+function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, isFile, fileSize)
 {
 	if (!isFile)
 	{
-		if (postData && !Array.isArray(postData) && typeof postData === 'object')
+		if (reqPostData && !Array.isArray(reqPostData) && typeof reqPostData === 'object')
 		{
-			if (postData.error)
+			if (reqPostData.error)
 			{
-				generateAndSendIndexHtmlAlias(postData.error);
-			}
-			else if (postData.dir)
-			{
-				if (UPLOAD_ENABLE)
-				{
-					createUserDir(postData, filePath, localeTranslation, (errorMessage) =>
-					{
-						generateAndSendIndexHtmlAlias(errorMessage);
-					});
-				}
-				else
-				{
-					generateAndSendIndexHtmlAlias();
-				}
-			}
-			else if (Object.keys(postData).length < 2)
-			{
-				generateAndSendIndexHtmlAlias('No files selected!');
+				generateAndSendIndexHtmlAlias(reqPostData.error);
 			}
 			else
 			{
-				if (postData.download)
+				if (UPLOAD_ENABLE)
 				{
-					zipFolder(res, urlPath, filePath, postData);
-				}
-				else if (postData.delete)
-				{
-					if (UPLOAD_ENABLE)
+					if (reqPostData.delete)
 					{
-						deleteFiles(filePath, postData, (errorMessage) =>
+						deleteFiles(filePath, reqPostData, localeTranslation, (errorMessage) =>
+						{
+							if (errorMessage)
+							{
+								generateAndSendIndexHtmlAlias(errorMessage);
+							}
+							else
+							{
+								reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+							}
+						});
+					}
+					else if (reqPostData.rename_from && reqPostData.rename_to)
+					{
+						renameItem(filePath, reqPostData.rename_from, reqPostData.rename_to, localeTranslation, (errorMessage) =>
+						{
+							if (errorMessage)
+							{
+								generateAndSendIndexHtmlAlias(errorMessage);
+							}
+							else
+							{
+								reloadResponse(res, urlPath); //Отправляем заголовок Location, чтобы стереть кэшированную форму.
+							}
+						});
+					}
+					else if (reqPostData.dir)
+					{
+						createUserDir(filePath, reqPostData, localeTranslation, (errorMessage) =>
+						{
+							generateAndSendIndexHtmlAlias(errorMessage);
+						});
+					}
+					else if (reqPostData.paste_items && reqPostData.paste_from && reqPostData.paste_type)
+					{
+						pasteItems(filePath, reqPostData.paste_from, reqPostData.paste_items, reqPostData.paste_type, localeTranslation, (errorMessage) =>
 						{
 							if (errorMessage)
 							{
@@ -878,20 +912,20 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 					}
 					else
 					{
-						generateAndSendIndexHtmlAlias();
+						generateAndSendIndexHtmlAlias('Invalid request parameters!');
 					}
 				}
 				else
 				{
-					generateAndSendIndexHtmlAlias();
+					generateAndSendIndexHtmlAlias('Uploading is not allowed!');
 				}
 			}
 		}
-		else if (postDataHasFiles(postData))
+		else if (UPLOAD_ENABLE && postDataHasFiles(reqPostData))
 		{
-			saveUserFiles(postData, filePath, localeTranslation, (errorMessage) =>
+			saveUserFiles(reqPostData, filePath, localeTranslation, (errorMessage) =>
 			{
-				if (paramsGet?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
+				if (reqGetData?.xhr) //Если запрос пришёл из xhr, то обновление происходит в скрипте на странице. Мы просто отсылаем сообщение об ошибке без html.
 				{
 					simpleAnswer(res, errorMessage);
 				}
@@ -905,12 +939,23 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 				}
 			});
 		}
+		else if (reqGetData?.download)
+		{
+			if (Object.keys(reqGetData).length < 2)
+			{
+				generateAndSendIndexHtmlAlias('No files selected!');
+			}
+			else
+			{
+				zipItems(res, urlPath, filePath, reqGetData, acceptEncoding, localeTranslation, clientLang);
+			}
+		}
 		else
 		{
 			generateAndSendIndexHtmlAlias();
 		}
 	}
-	else if (paramsGet?.unzip && UPLOAD_ENABLE)
+	else if (reqGetData?.unzip && UPLOAD_ENABLE)
 	{
 		unzip(filePath, errorMessage =>
 		{
@@ -931,12 +976,12 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, paramsGet, cook
 	}
 	else
 	{
-		sendFile(res, filePath, fileSize);
+		sendFile(res, filePath, fileSize, acceptEncoding, localeTranslation, clientLang);
 	}
 
 	function generateAndSendIndexHtmlAlias(errorMessage)
 	{
-		generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
+		generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
 	}
 }
 
@@ -944,7 +989,7 @@ function reloadResponse(res, urlPath)
 {
 	res.writeHead(302,
 		{
-			'Location': urlPath
+			'Location': encodeURI(urlPath)
 		});
 	res.end();
 }
@@ -1001,10 +1046,10 @@ function getClientLanguage(acceptLanguage, cookie, responseCookie)
 	}
 	if (success)
 	{
-		if (!cookie?.lang)
+		if (!cookie?.lang && _generateIndex)
 		{
 			//Сохраним в куках найденную локаль, чтобы каждый раз не искать.
-			responseCookie.push(`lang=${clientLang}; path=/; max-age=86400; samesite=strict`);
+			if (responseCookie) responseCookie.push(`lang=${clientLang}; path=/; max-age=86400; samesite=strict`);
 			return clientLang;
 		}
 	}
@@ -1044,41 +1089,17 @@ function postDataHasFiles(postData)
 	return Array.isArray(postData) && postData.length > 0 && postData.reduce((hasFileName, item) => hasFileName & (item.fileName && item.fileName !== '' && item.data !== undefined), true);
 }
 
-function createUserDir(postData, absolutePath, localeTranslation, callback)
+function saveUserFiles(reqPostData, absolutePath, localeTranslation, callback)
 {
-	if (!postData.dir || postData.dir.length === 0)
-	{
-		callback(`${getTranslation('createFolderError', localeTranslation)}`);
-	}
-	else
-	{
-		let dpath = postData.dir.replace(/\+/g, ' ');
-		dpath = decodeURIComponent(dpath).replace(/[<>":?*|\\/]/g, '');
-		fs.mkdir(path.join(absolutePath, dpath), { recursive: true }, (err) =>
-		{
-			if (err)
-			{
-				callback(`${getTranslation('createFolderError', localeTranslation)}`);
-			}
-			else
-			{
-				callback(null);
-			}
-		});
-	}
-}
-
-function saveUserFiles(postData, absolutePath, localeTranslation, callback)
-{
-	if (!postData?.length || postData.length === 0)
+	if (!reqPostData?.length || reqPostData.length === 0)
 	{
 		callback(`${getTranslation('sendingFilesError', localeTranslation)} No data received.`);
 	}
 	else
 	{
 		let errorSendingFile = '';
-		let numOfFiles = postData.length;
-		for (let fileData of postData)
+		let numOfFiles = reqPostData.length;
+		for (let fileData of reqPostData)
 		{
 			fs.writeFile(path.join(absolutePath, fileData.fileName), fileData.data, (err) =>
 			{
@@ -1098,60 +1119,62 @@ function saveUserFiles(postData, absolutePath, localeTranslation, callback)
 	}
 }
 
-function zipFolder(res, urlPath, absolutePath, postData)
+function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 {
-	const selectedFiles = [];
-	const rootFolderName = urlPath === '/' ? 'archive' : path.basename(absolutePath);
-	let keys = Object.keys(postData);
-	for (let key of keys)
+	const rootPath = folderPath;
+	read(folderPath, onEnd);
+
+	function read(folderPath, callback)
 	{
-		if (key === 'download') continue;
-		if (postData[key] === 'on')
-		{
-			const file = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key))
-			selectedFiles.push(file);
-		}
-	}
-	const zip = new JSZip();
-
-	let numberOfFile = 0;
-	let numberOfRecursive = 0;
-
-	readFolderRecursive(absolutePath, true);
-
-	function readFolderRecursive(folderPath, isRoot)
-	{
-		numberOfRecursive++;
-		fs.readdir(folderPath, { withFileTypes: true }, (err, files) =>
+		fs.readdir(folderPath, { withFileTypes: true }, (err, items) =>
 		{
 			if (err)
 			{
-				zipError(err, res);
+				callback(err);
 			}
-			else if (files.length > 0)
+			else if (items.length > 0)
 			{
-				for (let file of files)
+				let numberOfItems = items.length;
+				for (let item of items)
 				{
-					if (isRoot && !selectedFiles.includes(file.name)) continue;
-					const fullPath = path.join(folderPath, file.name);
-					checkIsDirectory(fullPath, file, afterIsDirectory);
+					const fullPath = path.join(folderPath, item.name);
+					checkIsDirectory(fullPath, item, afterIsDirectory);
 					function afterIsDirectory(isDirectory)
 					{
 						if (isDirectory)
 						{
-							readFolderRecursive(fullPath, false);
+							const relativePath = path.join(path.relative(rootPath, fullPath)).replace(/\\/g, '/');
+							onFolderIn(fullPath, relativePath, () =>
+							{
+								read(fullPath, (err) =>
+								{
+									if (err)
+									{
+										callback(err);
+									}
+									else
+									{
+										onFolderOut(fullPath, relativePath, () =>
+										{
+											numberOfItems--;
+											if (numberOfItems === 0)
+											{
+												callback(null);
+											}
+										});
+									}
+								});
+							});
 						}
 						else if (isDirectory !== null)
 						{
-							numberOfFile++;
-							fs.readFile(fullPath, (err, data) =>
+							const relativePath = path.join(path.relative(rootPath, folderPath), item.name).replace(/\\/g, '/');
+							onFile(fullPath, relativePath, () =>
 							{
-								numberOfFile--;
-								if (!err)
+								numberOfItems--;
+								if (numberOfItems === 0)
 								{
-									const relativePath = path.join(path.relative(absolutePath, folderPath), file.name);
-									zip.file(relativePath, data);
-									if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
+									callback(null);
 								}
 							});
 						}
@@ -1160,12 +1183,121 @@ function zipFolder(res, urlPath, absolutePath, postData)
 			}
 			else
 			{
-				const relativePath = path.join(path.relative(absolutePath, folderPath));
-				zip.folder(relativePath);
+				callback(null);
 			}
-			numberOfRecursive--;
-			if (numberOfRecursive === 0 && numberOfFile === 0) sendZip();
 		});
+	}
+}
+
+function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTranslation, clientLang)
+{
+	const selectedItems = [];
+	const rootFolderName = urlPath === '/' ? 'archive' : path.basename(absolutePath);
+	let keys = Object.keys(postData);
+	for (let key of keys)
+	{
+		if (key === 'download') continue;
+		if (postData[key] === 'on')
+		{
+			const item = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key))
+			selectedItems.push(item);
+		}
+	}
+	const zip = new JSZip();
+	zipItemsByIndex(0);
+
+	function zipItemsByIndex(index)
+	{
+		const item = selectedItems[index];
+		if (item.match(FILE_REG_EXP) !== null)
+		{
+			zipError('Item path incorrect', res);
+			console.log('Zip error: Item path incorrect');
+			return;
+		}
+		const itemPath = path.join(absolutePath, item);
+		fs.stat(itemPath, (err, stats) =>
+		{
+			if (err)
+			{
+				zipError('Zip error: ' + err, res);
+			}
+			else
+			{
+				if (stats.isDirectory())
+				{
+					zip.folder(item);
+					zipDirectory(item, itemPath, (err) =>
+					{
+						if (err)
+						{
+							zipError('Zip error: ' + err, res);
+						}
+						else
+						{
+							next();
+						}
+					});
+				}
+				else
+				{
+					fs.readFile(itemPath, (err, data) =>
+					{
+						if (err)
+						{
+							zipError('Zip error: ' + err, res);
+						}
+						else
+						{
+							zip.file(item, data);
+							next();
+						}
+					});
+				}
+			}
+		});
+
+		function next()
+		{
+			index++;
+			if (index < selectedItems.length)
+			{
+				zipItemsByIndex(index);
+			}
+			else
+			{
+				sendZip();
+			}
+		}
+	}
+
+	function zipDirectory(toPathRelative, fromPath, onEnd)
+	{
+		const onFolderIn = function(fullPath, relativePath, next)
+		{
+			zip.folder(path.join(toPathRelative, relativePath));
+			next();
+		};
+		const onFolderOut = function(fullPath, relativePath, next)
+		{
+			next();
+		};
+		const onFile = function(fullPath, relativePath, next)
+		{
+			fs.readFile(fullPath, (err, data) =>
+			{
+				if (err)
+				{
+					onEnd(err);
+				}
+				else
+				{
+					zip.file(path.join(toPathRelative, relativePath), data);
+					next();
+				}
+			});
+		};
+		readFolderRecursive(fromPath, onFolderIn, onFolderOut, onFile, onEnd);
 	}
 
 	function zipError(err, res)
@@ -1178,9 +1310,9 @@ function zipFolder(res, urlPath, absolutePath, postData)
 
 	function sendZip()
 	{
-		const zipStream = zip.generateNodeStream();
+		const zipStream = zip.generateNodeStream({ compression: 'STORE' });
 		zipStream.pipe(res);
-		zipStream.on('error', (err) => error(err, res));
+		zipStream.on('error', (err) => error404(err, res, acceptEncoding, localeTranslation, clientLang));
 		res.writeHead(200,
 			{
 				'Content-Type': 'application/zip',
@@ -1196,13 +1328,267 @@ function zipFolder(res, urlPath, absolutePath, postData)
 		});
 		res.on('finish', () =>
 		{
-			console.log('Zip archive sent successfully: ' + selectedFiles.join(', '));
+			console.log('Zip archive sent successfully: ' + selectedItems.join(', '));
 		});
 	}
 }
 
-function deleteFiles(absolutePath, postData, callback)
+function createUserDir(absolutePath, postData, localeTranslation, callback)
 {
+	if (!UPLOAD_ENABLE)
+	{
+		callback('Writing is not allowed!');
+		return;
+	}
+	if (!postData.dir || postData.dir.length === 0 || postData.dir.length > 255)
+	{
+		callback(getTranslation('createFolderError', localeTranslation));
+	}
+	else
+	{
+		let dpath = postData.dir.replace(/\+/g, ' ');
+		dpath = decodeURIComponent(dpath);
+		if (dpath.match(FILE_REG_EXP) !== null)
+		{
+			callback(getTranslation('createFolderError', localeTranslation));
+			console.log('Paste error: Dir name incorrect');
+			return;
+		}
+		fs.mkdir(path.join(absolutePath, dpath), { recursive: true }, (err) =>
+		{
+			if (err)
+			{
+				callback(getTranslation('createFolderError', localeTranslation));
+				console.log('Paste error: ' + err);
+			}
+			else
+			{
+				callback(null);
+			}
+		});
+	}
+}
+
+function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTranslation, callback)
+{
+	if (!UPLOAD_ENABLE)
+	{
+		callback('Writing is not allowed!');
+		console.log('Paste error: Writing is not allowed!');
+		return;
+	}
+	let fromPath = decodeURIComponent(itemsPath.replace(/\+/g, ' '));
+	if (fromPath.match(PATH_REG_EXP) !== null)
+	{
+		callback(getTranslation('pasteError', localeTranslation));
+		console.log('Paste error: Item path incorrect');
+		return;
+	}
+	fromPath = path.join(ROOT_PATH, fromPath);
+	const items = decodeURIComponent(itemsList).split(',').map((item) => Buffer.from(item, 'base64url').toString());
+	pasteItemsByIndex(0);
+
+	function pasteItemsByIndex(index)
+	{
+		const item = items[index];
+		if (item.match(FILE_REG_EXP) !== null)
+		{
+			callback(`${getTranslation('pasteError', localeTranslation)}: ${item}`);
+			console.log('Paste error: Item path incorrect');
+			return;
+		}
+		const itemPath = path.join(fromPath, item);
+		paste(itemPath, (err) =>
+		{
+			if (err)
+			{
+				callback(getTranslation('pasteError', localeTranslation));
+				console.log('Paste error:' + err);
+			}
+			else
+			{
+				index++;
+				if (index < items.length)
+				{
+					pasteItemsByIndex(index);
+				}
+				else
+				{
+					callback(null);
+				}
+			}
+		});
+	}
+
+	function paste(itemPath, onEnd)
+	{
+		fs.stat(itemPath, (err, stats) =>
+		{
+			if (err)
+			{
+				onEnd(err);
+			}
+			else
+			{
+				if (stats.isDirectory())
+				{
+					const itemDirName = path.basename(itemPath);
+					const dirPath = path.join(absolutePath, itemDirName);
+					fs.mkdir(dirPath, { recursive: true }, (err) =>
+					{
+						if (err)
+						{
+							onEnd(err);
+						}
+						else
+						{
+							//Копирует содержимое папки.
+							copyOrMoveDirectory(dirPath, itemPath, (err) =>
+							{
+								if (err)
+								{
+									onEnd(err);
+								}
+								else if (pasteType === 'move')
+								{
+									fs.rmdir(itemPath, onEnd);
+								}
+								else
+								{
+									onEnd(null);
+								}
+							});
+						}
+					});
+				}
+				else
+				{
+					const fileName = path.basename(itemPath);
+					const pathTo = path.join(absolutePath, fileName);
+					copyOrMoveFile(itemPath, pathTo, pasteType, onEnd);
+				}
+			}
+		});
+
+		function copyOrMoveDirectory(toPath, fromPath, onEnd)
+		{
+			const onFolderIn = function(fullPath, relativePath, next)
+			{
+				const itemDirName = path.basename(fullPath);
+				fs.mkdir(path.join(toPath, itemDirName), { recursive: true }, (err) =>
+				{
+					if (err)
+					{
+						onEnd(err);
+					}
+					else
+					{
+						next();
+					}
+				});
+			};
+			const onFolderOut = function(fullPath, relativePath, next)
+			{
+				if (pasteType === 'move')
+				{
+					fs.rmdir(fullPath, (err) =>
+					{
+						if (err)
+						{
+							onEnd(err);
+						}
+						else
+						{
+							next();
+						}
+					});
+				}
+				else
+				{
+					next();
+				}
+			};
+			const onFile = function(fullPath, relativePath, next)
+			{
+				const pathTo = path.join(toPath, relativePath);
+				copyOrMoveFile(fullPath, pathTo, pasteType, (err) =>
+				{
+					if (err)
+					{
+						onEnd(err);
+					}
+					else
+					{
+						next();
+					}
+				});
+			};
+			readFolderRecursive(fromPath, onFolderIn, onFolderOut, onFile, onEnd);
+		}
+	}
+
+	function copyOrMoveFile(from, to, type, callback)
+	{
+		if (type === 'copy')
+		{
+			fs.copyFile(from, to, callback);
+		}
+		else if (type === 'move')
+		{
+			fs.rename(from, to, callback);
+		}
+		else
+		{
+			callback('Invalid paste_type parameter');
+		}
+	}
+}
+
+function renameItem(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, localeTranslation, callback)
+{
+	if (!UPLOAD_ENABLE)
+	{
+		callback('Writing is not allowed!');
+		console.log('Rename error: Writing is not allowed!');
+		return;
+	}
+	const newName = decodeURIComponent(renameTo_uriEncoded.replace(/\+/g, ' '));
+	const oldName = Buffer.from(renameFrom_base64Url, 'base64url').toString();
+	if (newName === oldName)
+	{
+		callback(null);
+		return;
+	}
+	if ((newName.length > 255) || (newName.match(FILE_REG_EXP) !== null) || (oldName.match(FILE_REG_EXP) !== null))
+	{
+		callback(getTranslation('invalidName', localeTranslation));
+		console.log('Rename error: Invalid item name!');
+		return;
+	}
+	fs.rename(path.join(absolutePath, oldName), path.join(absolutePath, newName), (err) =>
+	{
+		if (err)
+		{
+			console.log(err.message);
+			callback(`${getTranslation('renameError', localeTranslation)}: ${oldName}`);
+			console.log('Rename error: ' + err);
+			return;
+		}
+		else
+		{
+			callback(null);
+		}
+	});
+}
+
+function deleteFiles(absolutePath, postData, localeTranslation, callback)
+{
+	if (!UPLOAD_ENABLE)
+	{
+		callback('Writing is not allowed!');
+		console.log('Delete error: Writing is not allowed!');
+		return;
+	}
 	let keys = Object.keys(postData);
 	let numOfFiles = keys.length - 1;
 	for (let key of keys)
@@ -1210,14 +1596,21 @@ function deleteFiles(absolutePath, postData, callback)
 		if (key === 'delete') continue;
 		if (postData[key] === 'on')
 		{
-			const fileName = Buffer.from(key, 'base64url').toString(); //decodeURIComponent(decodeURIComponent(key));
+			const fileName = Buffer.from(key, 'base64url').toString();
+			if (fileName.match(FILE_REG_EXP) !== null)
+			{
+				callback(getTranslation('deleteError', localeTranslation));
+				console.log('Delete error: Item name error!');
+				return;
+			}
 			const filePath = path.join(absolutePath, fileName);
 			fs.rm(filePath, { force: true, recursive: true }, (err) =>
 			{
 				if (err)
 				{
 					console.log(err.message);
-					callback(`Server error. Can't delete ${fileName}`);
+					callback(getTranslation('deleteError', localeTranslation));
+					console.log('Delete error: ' + err);
 					return;
 				}
 				else
@@ -1242,7 +1635,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 	{
 		if (err)
 		{
-			error(err, res);
+			error404(err, res, acceptEncoding, localeTranslation, clientLang);
 		}
 		else
 		{
@@ -1263,14 +1656,14 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				const iconnClassName = getIconClassName('folder');
 				hrefsResult =
 `			<div class="main_container__first_column">
-				<input type="checkbox" class="hidden-in-flow">
+				<input type="checkbox" class="hidden_in_flow">
 				<div class="${iconnClassName}"></div>
 				<a href="/">[/]</a>
 			</div>
 			<span>${folderSizeStub}</span>
 			<span>-</span>
 			<div class="main_container__first_column">
-			<input type="checkbox" class="hidden-in-flow">
+			<input type="checkbox" class="hidden_in_flow">
 				<div class = "${iconnClassName}"></div>
 				<a href="${backUrl}">[..]</a>
 			</div>
@@ -1282,6 +1675,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 			if (files.length > 0)
 			{
 				let countFiles = files.length;
+				let fileIndex = -1;
 				for (let file of files)
 				{
 					const filePath = path.join(absolutePath, file.name);
@@ -1294,7 +1688,9 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							if (countFiles === 0) prepareToSendFiles();
 							return;
 						}
+						fileIndex++;
 						checkIsDirectory(filePath, file, afterIsDirectory);
+
 						function afterIsDirectory(isDirectory)
 						{
 							countFiles--;
@@ -1304,22 +1700,29 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 								return;
 							}
 							let linkName = isDirectory ? `[${file.name}]` : file.name;
+							const ext = isDirectory ? 'folder' : path.extname(file.name);
+							const maxNameLength = 70;
+							const isNameTruncated = linkName.length > maxNameLength;
+							if (isNameTruncated)
+							{
+								linkName = linkName.slice(0, maxNameLength - ext.length - 5) + '&nbsp;...&nbsp;' + ext;
+							}
 							linkName = linkName.replace(/ /g, '&nbsp;');
 							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
-							let fileName = file.name;
-							if (urlHeader === '' && (fileName === 'index.html' || fileName === 'robots.txt')) fileName = '_' + fileName;
-							const linkHref = encodeURI(`${urlHeader}/${fileName}`);
-							const ext = isDirectory ? 'folder' : path.extname(file.name);
+							if (urlHeader === '' && (file.name === 'index.html' || file.name === 'robots.txt')) file.name = '_' + file.name;
+							const linkHref = encodeURI(urlHeader) + '/' + encodeURIComponent(file.name);
 							const iconnClassName = getIconClassName(ext);
 							const showInBrowser = !isDirectory && canShowInBrowser(ext);
+							const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
 							hrefs.push({ value:
 `				<div class="main_container__first_column">
-					<input type="checkbox" name="${Buffer.from(file.name).toString('base64url')}">
+					<input id="item-checkbox-${fileIndex}" aria-label="${getTranslation('select', localeTranslation)}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
+					<div class="rename_button"><button hidden title="${getTranslation('rename', localeTranslation)}" id="rename-button-${fileIndex}"></button><div></div></div>` : ''}
 					<div class="${iconnClassName}"></div>
-					<a href="${linkHref}"${isDirectory ? '' : ' download'}>${linkName}</a>
-					${ext === '.zip' && UPLOAD_ENABLE ? `<a href="${linkHref}?unzip=true" class="flex_right_icons unzip-icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}
-					${showInBrowser ? `<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+					<a href="${linkHref}"${isDirectory ? '' : ' download'} ${isNameTruncated ? `title="${file.name}"` : ''}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
+					<a href="${linkHref}?unzip=true" class="flex_right_icons unzip_icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
+					<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
 				</div>
 				<span>${sizeStr}</span>
 				<span>${modify}</span>
@@ -1372,38 +1775,54 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 				return  _indexHtmlbase[0] + clientLang +
 						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
 						_indexHtmlbase[2] + folderName +
-						_indexHtmlbase[3] + getTranslation('selectAll', localeTranslation) +
+						_indexHtmlbase[3] + getTranslation('checkAll', localeTranslation) +
 						_indexHtmlbase[4] + getTranslation('downloadZip', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('deselectAll', localeTranslation) +
+						_indexHtmlbase[5] + getTranslation('uncheckAll', localeTranslation) +
 						_indexHtmlbase[6] +
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
-						_indexHtmlbase[8]) : ''}` +
-						_indexHtmlbase[9] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
-						_indexHtmlbase[10] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[11] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[12] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[13] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[14] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[15] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[16] + hrefsResult +
-						_indexHtmlbase[17] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[18] + getTranslation('createFolder', localeTranslation) +
-						_indexHtmlbase[19] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[20] + getTranslation('dragAndDropText', localeTranslation) +
-						_indexHtmlbase[21] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[23] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[24] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[25]) : ''}` +
-						_indexHtmlbase[26] + errorMessage +
-						_indexHtmlbase[27] + getTranslation('poweredBy', localeTranslation) +
-						_indexHtmlbase[28] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[29] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[30] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[31] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[32] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[33] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[34];
+						_indexHtmlbase[8] + getTranslation('selectForCopyOrMove', localeTranslation) +
+						_indexHtmlbase[9] + getTranslation('copy', localeTranslation) +
+						_indexHtmlbase[10] + getTranslation('move', localeTranslation) +
+						_indexHtmlbase[11]) : ''}` +
+						_indexHtmlbase[12] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
+						_indexHtmlbase[13] + getTranslation('fileName', localeTranslation) +
+						_indexHtmlbase[14] + (hasFiles ? sortLinks[0] : '') +
+						_indexHtmlbase[15] + getTranslation('fileSize', localeTranslation) +
+						_indexHtmlbase[16] + (hasFiles ? sortLinks[1] : '') +
+						_indexHtmlbase[17] + getTranslation('modifyDate', localeTranslation) +
+						_indexHtmlbase[18] + (hasFiles ? sortLinks[2] : '') +
+						_indexHtmlbase[19] + hrefsResult +
+						_indexHtmlbase[20] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[21] + getTranslation('createFolder', localeTranslation) +
+						_indexHtmlbase[22] + getTranslation('invalidName', localeTranslation) +
+						_indexHtmlbase[23] + getTranslation('folderName', localeTranslation) +
+						_indexHtmlbase[24] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[25] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[26] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[27] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[28] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[29] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[30]) : ''}` +
+						_indexHtmlbase[31] + errorMessage +
+						_indexHtmlbase[32] + getTranslation('poweredBy', localeTranslation) +
+						_indexHtmlbase[33] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[34] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[35] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[36] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[37] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[38] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[39] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[40] + getTranslation('inputNewName', localeTranslation) +
+						_indexHtmlbase[41] + getTranslation('invalidName', localeTranslation) +
+						_indexHtmlbase[42] + getTranslation('newName', localeTranslation) +
+						_indexHtmlbase[43] + getTranslation('ok', localeTranslation) +
+						_indexHtmlbase[44] + getTranslation('cancel', localeTranslation) +
+						_indexHtmlbase[45] + getTranslation('replaceWarningDialog', localeTranslation) +
+						_indexHtmlbase[46] + getTranslation('ok', localeTranslation) +
+						_indexHtmlbase[47] + getTranslation('cancel', localeTranslation) +
+						_indexHtmlbase[48] + getTranslation('doNotAsk', localeTranslation) +
+						_indexHtmlbase[49]) : ''}` +
+						_indexHtmlbase[50];
 			}
 		}
 	});
@@ -1550,16 +1969,16 @@ function getStrSize(size, localeTranslation)
 	return (size / Math.pow(2, sizeOfSize * 10)).toFixed(1) + ' ' + suffix;
 }
 
-function error(err, res)
+function error404(err, res, acceptEncoding, localeTranslation, clientLang)
 {
+	sendCachedFile(res,
+		_404_html[0] + clientLang +
+		_404_html[1] + (_generateIndex ? (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) : '404') +
+		_404_html[2] + (_generateIndex ? 'wsf_app_files/' : '') +
+		_404_html[3] + getTranslation('pageNotFound', localeTranslation) +
+		_404_html[4],
+		'text/html; charset=utf-8', acceptEncoding, 404);
 	console.log('Not found: ' + err);
-	const msg = '404 Not Found';
-	res.writeHead(404,
-		{
-			'Content-Length': msg.length,
-			'Content-Type': 'text/plain'
-		});
-	res.end(msg);
 }
 function error500(err, res)
 {
@@ -1593,11 +2012,11 @@ function sendHtmlString(res, data, cookie, acceptEncoding)
 }
 
 //Отправка файлов с использованием файловых потоков.
-function sendFile(res, filePath, size)
+function sendFile(res, filePath, size, acceptEncoding, localeTranslation, clientLang)
 {
 	let file = fs.createReadStream(filePath);
 	file.pipe(res);
-	file.on('error', (err) => error(err, res));
+	file.on('error', (err) => error404(err, res, acceptEncoding, localeTranslation, clientLang));
 	res.writeHead(200,
 		{
 			'Content-Length': size,
@@ -1651,9 +2070,20 @@ function unzip(pathToZip, callback)
 					{
 						zipData.files[file].async('uint8array').then(data =>
 						{
-							fs.writeFile(fullPath, data, err =>
+							const fileDir = path.dirname(fullPath);
+							fs.mkdir(fileDir, { recursive: true }, err =>
 							{
-								perform(err);
+								if (err)
+								{
+									perform(err);
+								}
+								else
+								{
+									fs.writeFile(fullPath, data, err =>
+									{
+										perform(err);
+									});
+								}
 							});
 						}).catch(perform);
 					}
@@ -1726,6 +2156,8 @@ function canShowInBrowser(ext)
 	case '.mng':
 	case '.asx':
 	case '.md':
+	case '.mjs':
+	case '.csv':
 		return true;
 	}
 	return false;
@@ -1741,6 +2173,7 @@ function getContentType(ext)
 	if (ext === '.gif') return 'image/gif';
 	if (ext === '.jpeg' || ext === '.jpg') return 'image/jpeg';
 	if (ext === '.js') return 'text/javascript; charset=utf-8';
+	if (ext === '.mjs') return 'text/javascript; charset=utf-8';
 	if (ext === '.atom') return 'application/atom+xml';
 	if (ext === '.rss') return 'application/rss+xml';
 	if (ext === '.mml') return 'text/mathml';
@@ -1821,6 +2254,7 @@ function getContentType(ext)
 	if (ext === '.avi') return 'video/x-msvideo';
 	if (ext === '.wasm') return 'application/wasm';
 	if (ext === '.md') return 'text/plain; charset=UTF-8';
+	if (ext === '.csv') return 'text/plain; charset=UTF-8';
 	if (ext === '.yml' || ext === '.yaml') return 'text/yaml; charset=UTF-8';
 	return 'application/octet-stream';
 }
