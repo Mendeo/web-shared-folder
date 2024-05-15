@@ -1434,7 +1434,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 				{
 					const itemDirName = path.basename(itemPath);
 					const dirPath = path.join(absolutePath, itemDirName);
-					fs.mkdir(dirPath, (err) =>
+					fs.mkdir(dirPath, { recursive: true }, (err) =>
 					{
 						if (err)
 						{
@@ -1443,7 +1443,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 						else
 						{
 							//Копирует содержимое папки.
-							copyDirectory(dirPath, itemPath, (err) =>
+							copyOrMoveDirectory(dirPath, itemPath, (err) =>
 							{
 								if (err)
 								{
@@ -1451,7 +1451,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 								}
 								else if (pasteType === 'move')
 								{
-									fs.rmdir(itemPath, onEnd);
+									rmDirReliably(itemPath, onEnd);
 								}
 								else
 								{
@@ -1470,12 +1470,12 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 			}
 		});
 
-		function copyDirectory(toPath, fromPath, onEnd)
+		function copyOrMoveDirectory(toPath, fromPath, onEnd)
 		{
 			const onFolderIn = function(fullPath, relativePath, next)
 			{
 				const itemDirName = path.basename(fullPath);
-				fs.mkdir(path.join(toPath, itemDirName), (err) =>
+				fs.mkdir(path.join(toPath, itemDirName), { recursive: true }, (err) =>
 				{
 					if (err)
 					{
@@ -1491,7 +1491,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 			{
 				if (pasteType === 'move')
 				{
-					fs.rmdir(fullPath, (err) =>
+					rmDirReliably(fullPath, (err) =>
 					{
 						if (err)
 						{
@@ -1542,6 +1542,39 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 			callback('Invalid paste_type parameter');
 		}
 	}
+}
+
+function rmDirReliably(fullPath, callback)
+{
+	fs.rmdir(fullPath, (err) =>
+	{
+		if (err)
+		{
+			callback(err);
+		}
+		else
+		{
+			fs.stat(fullPath, (err) =>
+			{
+				if (err)
+				{
+					console.log(err);
+					callback(null);
+				}
+				else
+				{
+					try
+					{
+						fs.rmdirSync(fullPath);
+					}
+					catch (err)
+					{
+						callback(err);
+					}
+				}
+			});
+		}
+	});
 }
 
 function renameItem(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, localeTranslation, callback)
