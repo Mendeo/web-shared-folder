@@ -676,7 +676,7 @@ function sendCachedFile(res, file, contentType, acceptEncoding, code)
 	const headers =
 	{
 		'Content-Type': contentType,
-		'Cache-Control': 'max-age=86400',
+		'Cache-Control': 'no-cache',
 		'Content-Security-Policy': 'default-src \'self\''
 	};
 	sendCompressed(res, headers, file, acceptEncoding, code);
