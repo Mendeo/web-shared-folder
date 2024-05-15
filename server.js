@@ -1183,15 +1183,7 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 			}
 			else
 			{
-				const relativePath = path.join(path.relative(rootPath, folderPath));
-				//Здесь должен быть путь к содержимому папки, но она пустая, поэтому вместо содержимого поставим звёздочку, её нужно обработать во внешнем коде.
-				onFolderIn(path.join(folderPath, '*'), path.join(relativePath, '*'), () =>
-				{
-					onFolderOut(folderPath, relativePath, () =>
-					{
-						callback(null);
-					});
-				});
+				callback(null);
 			}
 		});
 	}
@@ -1483,24 +1475,17 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 			const onFolderIn = function(fullPath, relativePath, next)
 			{
 				const itemDirName = path.basename(fullPath);
-				if (itemDirName === '*') //Содержимое родительской папки пустое, поэтому создавать папку не нужно, если её имя равно "*".
+				fs.mkdir(path.join(toPath, itemDirName), (err) =>
 				{
-					next();
-				}
-				else
-				{
-					fs.mkdir(path.join(toPath, itemDirName), (err) =>
+					if (err)
 					{
-						if (err)
-						{
-							onEnd(err);
-						}
-						else
-						{
-							next();
-						}
-					});
-				}
+						onEnd(err);
+					}
+					else
+					{
+						next();
+					}
+				});
 			};
 			const onFolderOut = function(fullPath, relativePath, next)
 			{
