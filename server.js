@@ -1134,9 +1134,9 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 			}
 			else if (items.length > 0)
 			{
-				for (let itemIndex = 0; itemIndex < items.length; itemIndex++)
+				let numberOfItems = items.length;
+				for (let item of items)
 				{
-					const item = items[itemIndex];
 					const fullPath = path.join(folderPath, item.name);
 					checkIsDirectory(fullPath, item, afterIsDirectory);
 					function afterIsDirectory(isDirectory)
@@ -1144,7 +1144,6 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 						if (isDirectory)
 						{
 							const relativePath = path.join(path.relative(rootPath, fullPath)).replace(/\\/g, '/');
-							const itemIndexCopy = itemIndex;
 							onFolderIn(fullPath, relativePath, () =>
 							{
 								read(fullPath, (err) =>
@@ -1157,7 +1156,8 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 									{
 										onFolderOut(fullPath, relativePath, () =>
 										{
-											if (itemIndexCopy === items.length - 1)
+											numberOfItems--;
+											if (numberOfItems === 0)
 											{
 												callback(null);
 											}
@@ -1169,10 +1169,10 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 						else if (isDirectory !== null)
 						{
 							const relativePath = path.join(path.relative(rootPath, folderPath), item.name).replace(/\\/g, '/');
-							const itemIndexCopy = itemIndex;
 							onFile(fullPath, relativePath, () =>
 							{
-								if (itemIndexCopy === items.length - 1)
+								numberOfItems--;
+								if (numberOfItems === 0)
 								{
 									callback(null);
 								}
@@ -1451,7 +1451,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 								}
 								else if (pasteType === 'move')
 								{
-									rmDirReliably(itemPath, onEnd);
+									fs.rmdir(itemPath, onEnd);
 								}
 								else
 								{
@@ -1491,7 +1491,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 			{
 				if (pasteType === 'move')
 				{
-					rmDirReliably(fullPath, (err) =>
+					fs.rmdir(fullPath, (err) =>
 					{
 						if (err)
 						{
@@ -1542,39 +1542,6 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 			callback('Invalid paste_type parameter');
 		}
 	}
-}
-
-function rmDirReliably(fullPath, callback)
-{
-	fs.rmdir(fullPath, (err) =>
-	{
-		if (err)
-		{
-			callback(err);
-		}
-		else
-		{
-			fs.stat(fullPath, (err) =>
-			{
-				if (err)
-				{
-					console.log(err);
-					callback(null);
-				}
-				else
-				{
-					try
-					{
-						fs.rmdirSync(fullPath);
-					}
-					catch (err)
-					{
-						callback(err);
-					}
-				}
-			});
-		}
-	});
 }
 
 function renameItem(absolutePath, renameFrom_base64Url, renameTo_uriEncoded, localeTranslation, callback)
