@@ -26,8 +26,13 @@ npm i -g web-shared-folder
 
 ## Usage
 ```bash
+wsf [--upload or -u] <path to the folder for sharing> <port> [<key> <cert>] [<username> <password>]
+```
+Or
+```bash
 web-shared-folder [--upload or -u] <path to the folder for sharing> <port> [<key> <cert>] [<username> <password>]
 ```
+
 **If there is the "index.html" file in the specified folder, then the server will start in the static web site mode, not in the folder viewing mode.** The folder contents viewing mode can be forced by setting the environment variable **SERVER_DIRECTORY_MODE=1**. Also, this mode can be forcibly disabled by setting **SERVER_DIRECTORY_MODE=0**.
 
 In order to start the server to work over https, you must specify the path to the private key file (\<key\>) and the path to the certificate file (\<cert\>).
@@ -53,12 +58,12 @@ The server uses the [file-icon-vectors](https://www.npmjs.com/package/file-icon-
 Suppose the ip address of the computer is 192.168.1.2. It is required to share the folder "/home/user/shared" on the local network from this computer. Execute:
 
 ```bash
-web-shared-folder /home/user/shared 8080
+wsf /home/user/shared 8080
 ```
 If we want this folder to become available for editing, then we simply add the "-u" key
 
 ```bash
-web-shared-folder /home/user/shared 8080 -u
+wsf /home/user/shared 8080 -u
 ```
 Access to files from the "/home/user/shared" folder can be obtained by typing in the browser address bar:
 
