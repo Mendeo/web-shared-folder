@@ -1143,7 +1143,7 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 					{
 						if (isDirectory)
 						{
-							const relativePath = path.join(path.relative(rootPath, fullPath)).replace(/\\/g, '/');
+							const relativePath = path.join(path.relative(rootPath, fullPath));
 							onFolderIn(fullPath, relativePath, () =>
 							{
 								read(fullPath, (err) =>
@@ -1168,7 +1168,7 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 						}
 						else if (isDirectory !== null)
 						{
-							const relativePath = path.join(path.relative(rootPath, folderPath), item.name).replace(/\\/g, '/');
+							const relativePath = path.join(path.relative(rootPath, folderPath), item.name);
 							onFile(fullPath, relativePath, () =>
 							{
 								numberOfItems--;
@@ -1275,7 +1275,8 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 	{
 		const onFolderIn = function(fullPath, relativePath, next)
 		{
-			zip.folder(path.join(toPathRelative, relativePath));
+			const zipPath = path.join(toPathRelative, relativePath).replace(/\\/g, '/');
+			zip.folder(zipPath);
 			next();
 		};
 		const onFolderOut = function(fullPath, relativePath, next)
@@ -1292,7 +1293,8 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 				}
 				else
 				{
-					zip.file(path.join(toPathRelative, relativePath), data);
+					const zipPath = path.join(toPathRelative, relativePath).replace(/\\/g, '/');
+					zip.file(zipPath, data);
 					next();
 				}
 			});
