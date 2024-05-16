@@ -1711,8 +1711,8 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 							linkName = linkName.replace(/ /g, '&nbsp;');
 							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
 							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
-							if (urlHeader === '' && (file.name === 'index.html' || file.name === 'robots.txt')) file.name = '_' + file.name;
-							const linkHref = encodeURI(urlHeader) + '/' + encodeURIComponent(file.name);
+							const fileNameModified = (urlHeader === '' && (file.name === 'index.html' || file.name === 'robots.txt')) ? '_' + file.name : file.name;
+							const linkHref = encodeURI(urlHeader) + '/' + encodeURIComponent(fileNameModified);
 							const iconnClassName = getIconClassName(ext);
 							const showInBrowser = !isDirectory && canShowInBrowser(ext);
 							const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
