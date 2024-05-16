@@ -10,3 +10,4 @@
 .editorconfig
 /docker
 .gitattributes
+.gitignore
