@@ -1305,9 +1305,8 @@ function zipItems(res, urlPath, absolutePath, postData, acceptEncoding, localeTr
 	function zipError(err, res)
 	{
 		const commonMsg = 'Zip generate error!';
-		console.log(commonMsg + ' ' + err?.message);
-		const msg = commonMsg + (err?.code === 'ERR_FS_FILE_TOO_LARGE' ? ' File size is greater than 2 GiB' : '');
-		error500(msg, res);
+		console.log(commonMsg + ' ' + err);
+		error500(commonMsg, res);
 	}
 
 	function sendZip()
