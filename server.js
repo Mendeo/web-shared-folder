@@ -2034,7 +2034,7 @@ function sendFile(res, filePath, size, acceptEncoding, localeTranslation, client
 	});
 	res.on('finish', () =>
 	{
-		console.log('Sent successfully: ' + filePath);
+		//console.log('Sent successfully: ' + filePath);
 	});
 
 }
