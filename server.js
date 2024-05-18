@@ -197,8 +197,8 @@ let _locales = null;
 let _icons_css = null;
 let _404_css = null;
 let _404_html = null;
-let _icons_svg_map = new Map();
-let _icons_catalog = new Set();
+const _icons_svg_map = new Map();
+const _icons_catalog = new Set();
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
@@ -1835,9 +1835,9 @@ function checkIsDirectory(pathToItem, dirent, next)
 	{
 		fs.readlink(pathToItem, (err, linkPath) =>
 		{
-			if (path.relative(ROOT_PATH, linkPath).match(/\.\.(\/|\\)/g) !== null)
+			if (path.relative(ROOT_PATH, linkPath).match(/\.{2,}(\/|\\)/g) !== null)
 			{
-				console.log('Link to path above root!');
+				console.log('The directory contains a link to the path above the root!');
 				next(null);
 				return;
 			}
