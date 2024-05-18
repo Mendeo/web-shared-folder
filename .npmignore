@@ -11,3 +11,4 @@
 /docker
 .gitattributes
 .gitignore
+test.js
