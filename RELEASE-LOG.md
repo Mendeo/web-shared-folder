@@ -1,3 +1,6 @@
+# v 3.1.0
+* Prohibition of following symbolic links in a path above the server root.
+
 # v 3.0.0
 * Improved security.
 * Added the ability to rename files and folders.
