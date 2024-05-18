@@ -1835,7 +1835,7 @@ function checkIsDirectory(pathToItem, dirent, next)
 	{
 		fs.readlink(pathToItem, (err, linkPath) =>
 		{
-			if (path.relative(ROOT_PATH, linkPath).includes('../'))
+			if (path.relative(ROOT_PATH, linkPath).match(/\.\.(\/|\\)/g) !== null)
 			{
 				console.log('Link to path above root!');
 				next(null);
