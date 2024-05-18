@@ -1829,16 +1829,23 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 	});
 }
 
-function checkIsDirectory(path, dirent, next)
+function checkIsDirectory(pathToItem, dirent, next)
 {
 	if (dirent.isSymbolicLink())
 	{
-		fs.readlink(path, (err, linkPath) =>
+		fs.readlink(pathToItem, (err, linkPath) =>
 		{
+			if (path.relative(ROOT_PATH, linkPath).includes('..'))
+			{
+				console.log('Link to path above root!');
+				next(null);
+				return;
+			}
 			if (err)
 			{
 				console.log(err?.message);
 				next(null);
+				return;
 			}
 			fs.stat(linkPath, (err, stats) =>
 			{
@@ -1846,6 +1853,7 @@ function checkIsDirectory(path, dirent, next)
 				{
 					console.log(err?.message);
 					next(null);
+					return;
 				}
 				next(stats.isDirectory());
 			});
