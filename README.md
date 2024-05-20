@@ -39,7 +39,7 @@ In order to start the server to work over https, you must specify the path to th
 In https mode, it is possible to enable automatic redirection from http to https. To do this, in the **SERVER_AUTO_REDIRECT_HTTP_PORT** environment variable, specify the port number from which the redirection will be performed (usually 80).
 
 In order to allow users not only download files from server, but also upload it to the server, it is necessary to add command key **--upload** or **-u** or set the environment variable **SERVER_UPLOAD_ENABLE** to 1. **The maximum upload size at one time is about 2 GiB.**
-In particular, in this mode, the user can upload a zip archive to the server and then unzip it by clicking on the unzip icon.
+In particular, in this mode, the user can upload a zip archive to the server and then unzip it by clicking on the unzip icon. And also user can copy or move files and directories within the root directory.
 
 If the keys \<username\> and \<password\> are given, then HTTP authentication is enabled with the given login and password.
 
@@ -47,6 +47,8 @@ If the keys \<username\> and \<password\> are given, then HTTP authentication is
 The password can be set as a md5 hash in the **SERVER_PASSWORD_MD5** environment variable.
 
 You can set the page title in the **SERVER_DIRECTORY_MODE_TITLE** environment variable.
+
+You can set prohibited paths in the environment variable SERVER_FORBIDDEN_PATHS (relative to the root and separated by the symbol ":"). Such files or directories will not be displayed in the client's browser.
 
 **It is possible to run server in cluster mode.** To do this, set the **SERVER_USE_CLUSTER_MODE** environment variable to 1. In cluster mode, nodejs child processes will be created according to the number of processor cores. This mode allows you to use all the processor resources, but at the same time it increases the consumption of RAM. If **SERVER_SHOULD_RESTART_WORKER=1** is given, the child process will be automatically restarted if it terminates unexpectedly.
 

@@ -83,10 +83,15 @@ the server password can be set as a md5 hash.
 Options specified on the command line have higher precedence.
 
 In particular, in this mode, the user can upload a zip archive to the server
-and then unzip it by clicking on the unzip icon.
+and then unzip it by clicking on the unzip icon. And also user can copy or move
+files and directories within the root directory.
 
 User can set the page title in the
 SERVER_DIRECTORY_MODE_TITLE environment variable.
+
+User can set prohibited paths in the environment variable SERVER_FORBIDDEN_PATHS
+(relative to the root directory and separated by the symbol ":").
+Such files or directories will not be displayed in the client's browser.
 
 It is possible to run server in cluster mode.
 To do this, set the SERVER_USE_CLUSTER_MODE environment variable to 1.
