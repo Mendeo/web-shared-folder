@@ -142,7 +142,6 @@ else
 }
 
 const FILE_REG_EXP = new RegExp(/[<>":?*|\\/]/g);
-const PATH_REG_EXP = new RegExp(/([<>":?*|]+)|\.{2,}(\/|\\)/g);
 const DEFAULT_LANG = 'en-US';
 let DEFAULT_LOCALE_TRANSLATION = null;
 
@@ -199,6 +198,7 @@ let _404_css = null;
 let _404_html = null;
 const _icons_svg_map = new Map();
 const _icons_catalog = new Set();
+const FORBIDDEN_PATHS = new Set();
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
@@ -1370,6 +1370,16 @@ function createUserDir(absolutePath, postData, localeTranslation, callback)
 	}
 }
 
+function testToWrongPath(pathToTest)
+{
+	if (pathToTest === '..') return false;
+	const index = pathToTest.indexOf('..');
+	if (index === -1) return true;
+	if (pathToTest[index - 1] === '/' || pathToTest[index - 1] === '\\') return false;
+	if (pathToTest[index + 2] === '/' || pathToTest[index + 2] === '\\') return false;
+	return pathToTest.match(/[<>":?*|]/g) === null;
+}
+
 function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTranslation, callback)
 {
 	if (!UPLOAD_ENABLE)
@@ -1379,7 +1389,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 		return;
 	}
 	let fromPath = decodeURIComponent(itemsPath.replace(/\+/g, ' '));
-	if (fromPath.match(PATH_REG_EXP) !== null)
+	if (!testToWrongPath(fromPath))
 	{
 		callback(getTranslation('pasteError', localeTranslation));
 		console.log('Paste error: Item path incorrect');
@@ -1631,200 +1641,207 @@ function deleteFiles(absolutePath, postData, localeTranslation, callback)
 
 function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
 {
+	//Проверка на переход по запрещённым путям.
+	for (let forbiddenPath of FORBIDDEN_PATHS.values())
+	{
+		if (absolutePath.startsWith(forbiddenPath))
+		{
+			error404('Attempting to follow a prohibited path', res, acceptEncoding, localeTranslation, clientLang);
+			return;
+		}
+	}
 	if (!errorMessage) errorMessage = '';
 	fs.readdir(absolutePath, { withFileTypes: true }, (err, files) =>
 	{
 		if (err)
 		{
 			error404(err, res, acceptEncoding, localeTranslation, clientLang);
+			return;
 		}
-		else
+		let hrefs = [];
+		const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
+		let folderName = '/';
+		const folderSizeStub = getTranslation('folderSizeStub', localeTranslation);
+		let hrefsResult = '';
+		let filesNumber = 0;
+		let foldersNumber = 0;
+		let filesSize = 0;
+		//Массив sortLinks содержит html код ссылок для сортировки.
+		const sortLinks = new Array(3);
+		if (urlPath !== '/')
 		{
-			let hrefs = [];
-			const urlHeader = urlPath[urlPath.length - 1] === '/' ? urlPath.slice(0, urlPath.length - 1) : urlPath;
-			let folderName = '/';
-			const folderSizeStub = getTranslation('folderSizeStub', localeTranslation);
-			let hrefsResult = '';
-			let filesNumber = 0;
-			let foldersNumber = 0;
-			let filesSize = 0;
-			//Массив sortLinks содержит html код ссылок для сортировки.
-			const sortLinks = new Array(3);
-			if (urlPath !== '/')
-			{
-				const lastField = urlHeader.lastIndexOf('/');
-				const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
-				const iconnClassName = getIconClassName('folder');
-				hrefsResult =
+			const lastField = urlHeader.lastIndexOf('/');
+			const backUrl = lastField === 0 ? '/' : urlHeader.slice(0, lastField);
+			const iconnClassName = getIconClassName('folder');
+			hrefsResult =
 `			<div class="main_container__first_column">
-				<input type="checkbox" class="hidden_in_flow">
-				<div class="${iconnClassName}"></div>
-				<a href="/">[/]</a>
-			</div>
-			<span>${folderSizeStub}</span>
-			<span>-</span>
-			<div class="main_container__first_column">
 			<input type="checkbox" class="hidden_in_flow">
-				<div class = "${iconnClassName}"></div>
-				<a href="${backUrl}">[..]</a>
-			</div>
-			<span>${folderSizeStub}</span>
-			<span>-</span>
+			<div class="${iconnClassName}"></div>
+			<a href="/">[/]</a>
+		</div>
+		<span>${folderSizeStub}</span>
+		<span>-</span>
+		<div class="main_container__first_column">
+		<input type="checkbox" class="hidden_in_flow">
+			<div class = "${iconnClassName}"></div>
+			<a href="${backUrl}">[..]</a>
+		</div>
+		<span>${folderSizeStub}</span>
+		<span>-</span>
 `;
-				folderName = urlHeader.slice(lastField + 1);
-			}
-			if (files.length > 0)
+			folderName = urlHeader.slice(lastField + 1);
+		}
+		if (files.length > 0)
+		{
+			let countFiles = files.length;
+			let fileIndex = -1;
+			for (let file of files)
 			{
-				let countFiles = files.length;
-				let fileIndex = -1;
-				for (let file of files)
+				const filePath = path.join(absolutePath, file.name);
+				fs.stat(filePath, (err, stats) =>
 				{
-					const filePath = path.join(absolutePath, file.name);
-					fs.stat(filePath, (err, stats) =>
+					if (err)
 					{
-						if (err)
+						console.log(err?.message);
+						countFiles--;
+						if (countFiles === 0) prepareToSendFiles();
+						return;
+					}
+					fileIndex++;
+					checkIsDirectory(filePath, file, afterIsDirectory);
+
+					function afterIsDirectory(isDirectory)
+					{
+						countFiles--;
+						if (isDirectory === null)
 						{
-							console.log(err?.message);
-							countFiles--;
 							if (countFiles === 0) prepareToSendFiles();
 							return;
 						}
-						fileIndex++;
-						checkIsDirectory(filePath, file, afterIsDirectory);
-
-						function afterIsDirectory(isDirectory)
+						let linkName = isDirectory ? `[${file.name}]` : file.name;
+						const ext = isDirectory ? 'folder' : path.extname(file.name);
+						const maxNameLength = 70;
+						const isNameTruncated = linkName.length > maxNameLength;
+						if (isNameTruncated)
 						{
-							countFiles--;
-							if (isDirectory === null)
-							{
-								if (countFiles === 0) prepareToSendFiles();
-								return;
-							}
-							let linkName = isDirectory ? `[${file.name}]` : file.name;
-							const ext = isDirectory ? 'folder' : path.extname(file.name);
-							const maxNameLength = 70;
-							const isNameTruncated = linkName.length > maxNameLength;
-							if (isNameTruncated)
-							{
-								linkName = linkName.slice(0, maxNameLength - ext.length - 5) + '&nbsp;...&nbsp;' + ext;
-							}
-							linkName = linkName.replace(/ /g, '&nbsp;');
-							const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
-							const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
-							const fileNameModified = (urlHeader === '' && (file.name === 'index.html' || file.name === 'robots.txt')) ? '_' + file.name : file.name;
-							const linkHref = encodeURI(urlHeader) + '/' + encodeURIComponent(fileNameModified);
-							const iconnClassName = getIconClassName(ext);
-							const showInBrowser = !isDirectory && canShowInBrowser(ext);
-							const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
-							hrefs.push({ value:
-`				<div class="main_container__first_column">
-					<input id="item-checkbox-${fileIndex}" aria-label="${getTranslation('select', localeTranslation)}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
-					<div class="rename_button"><button hidden title="${getTranslation('rename', localeTranslation)}" id="rename-button-${fileIndex}"></button><div></div></div>` : ''}
-					<div class="${iconnClassName}"></div>
-					<a href="${linkHref}"${isDirectory ? '' : ' download'} ${isNameTruncated ? `title="${file.name}"` : ''}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
-					<a href="${linkHref}?unzip=true" class="flex_right_icons unzip_icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
-					<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
-				</div>
-				<span>${sizeStr}</span>
-				<span>${modify}</span>
-`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
-							if (isDirectory)
-							{
-								foldersNumber++;
-							}
-							else
-							{
-								filesNumber++;
-								filesSize += stats.size;
-							}
-							if (countFiles === 0) prepareToSendFiles();
+							linkName = linkName.slice(0, maxNameLength - ext.length - 5) + '&nbsp;...&nbsp;' + ext;
 						}
-					});
-				}
-				function prepareToSendFiles()
-				{
-					const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
-					const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'asc', setSortCookie, null, setSortCookie);
-					sortHrefs(sortType, sortDirection, hrefs);
-					for (let h of hrefs)
-					{
-						hrefsResult += h.value;
+						linkName = linkName.replace(/ /g, '&nbsp;');
+						const sizeStr = isDirectory ? folderSizeStub : getStrSize(stats.size, localeTranslation);
+						const modify = stats.mtime.toLocaleDateString(clientLang) + ' ' + stats.mtime.toLocaleTimeString(clientLang);
+						const fileNameModified = (urlHeader === '' && (file.name === 'index.html' || file.name === 'robots.txt')) ? '_' + file.name : file.name;
+						const linkHref = encodeURI(urlHeader) + '/' + encodeURIComponent(fileNameModified);
+						const iconnClassName = getIconClassName(ext);
+						const showInBrowser = !isDirectory && canShowInBrowser(ext);
+						const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
+						hrefs.push({ value:
+`				<div class="main_container__first_column">
+				<input id="item-checkbox-${fileIndex}" aria-label="${getTranslation('select', localeTranslation)}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
+				<div class="rename_button"><button hidden title="${getTranslation('rename', localeTranslation)}" id="rename-button-${fileIndex}"></button><div></div></div>` : ''}
+				<div class="${iconnClassName}"></div>
+				<a href="${linkHref}"${isDirectory ? '' : ' download'} ${isNameTruncated ? `title="${file.name}"` : ''}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
+				<a href="${linkHref}?unzip=true" class="flex_right_icons unzip_icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
+				<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+			</div>
+			<span>${sizeStr}</span>
+			<span>${modify}</span>
+`, isDirectory, name: file.name, size: stats.size, modify: stats.mtime });
+						if (isDirectory)
+						{
+							foldersNumber++;
+						}
+						else
+						{
+							filesNumber++;
+							filesSize += stats.size;
+						}
+						if (countFiles === 0) prepareToSendFiles();
 					}
-					//Массив sortLinks содержит html код ссылок для сортировки.
-					sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
-					sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
-					sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
-					sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
+				});
+			}
+			function prepareToSendFiles()
+			{
+				const sortType = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortType', 'name', setSortCookie, null, setSortCookie);
+				const sortDirection = getFromObjectsWithEqualKeys(paramsGet, cookie, 'sortDirection', 'asc', setSortCookie, null, setSortCookie);
+				sortHrefs(sortType, sortDirection, hrefs);
+				for (let h of hrefs)
+				{
+					hrefsResult += h.value;
 				}
+				//Массив sortLinks содержит html код ссылок для сортировки.
+				sortLinks[0] = setSortHref(sortType, sortDirection, 'name');
+				sortLinks[1] = setSortHref(sortType, sortDirection, 'size');
+				sortLinks[2] = setSortHref(sortType, sortDirection, 'time');
+				sendHtmlString(res, combineHtml(true), responseCookie, acceptEncoding);
 			}
-			else
-			{
-				sendHtmlString(res, combineHtml(false), responseCookie, acceptEncoding);
-			}
-			function setSortHref(sortType, sortDirection, sortHrefType)
-			{
-				const sortHrefUp = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=desc">&uarr;</a>`;
-				const sortHrefDown = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=asc">&darr;</a>`;
-				return sortType === sortHrefType ? (sortDirection === 'asc' ? sortHrefUp : sortHrefDown) : sortHrefUp + sortHrefDown;
-			}
-			function setSortCookie(key, value)
-			{
-				responseCookie.push(`${key}=${value}; path=/; max-age=86400; samesite=strict`);
-			}
-			function combineHtml(hasFiles)
-			{
-				return  _indexHtmlbase[0] + clientLang +
-						_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
-						_indexHtmlbase[2] + folderName +
-						_indexHtmlbase[3] + getTranslation('checkAll', localeTranslation) +
-						_indexHtmlbase[4] + getTranslation('downloadZip', localeTranslation) +
-						_indexHtmlbase[5] + getTranslation('uncheckAll', localeTranslation) +
-						_indexHtmlbase[6] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
-						_indexHtmlbase[8] + getTranslation('selectForCopyOrMove', localeTranslation) +
-						_indexHtmlbase[9] + getTranslation('copy', localeTranslation) +
-						_indexHtmlbase[10] + getTranslation('move', localeTranslation) +
-						_indexHtmlbase[11]) : ''}` +
-						_indexHtmlbase[12] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
-						_indexHtmlbase[13] + getTranslation('fileName', localeTranslation) +
-						_indexHtmlbase[14] + (hasFiles ? sortLinks[0] : '') +
-						_indexHtmlbase[15] + getTranslation('fileSize', localeTranslation) +
-						_indexHtmlbase[16] + (hasFiles ? sortLinks[1] : '') +
-						_indexHtmlbase[17] + getTranslation('modifyDate', localeTranslation) +
-						_indexHtmlbase[18] + (hasFiles ? sortLinks[2] : '') +
-						_indexHtmlbase[19] + hrefsResult +
-						_indexHtmlbase[20] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[21] + getTranslation('createFolder', localeTranslation) +
-						_indexHtmlbase[22] + getTranslation('invalidName', localeTranslation) +
-						_indexHtmlbase[23] + getTranslation('folderName', localeTranslation) +
-						_indexHtmlbase[24] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[25] + getTranslation('dragAndDropText', localeTranslation) +
-						_indexHtmlbase[26] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[27] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[28] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[29] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[30]) : ''}` +
-						_indexHtmlbase[31] + errorMessage +
-						_indexHtmlbase[32] + getTranslation('poweredBy', localeTranslation) +
-						_indexHtmlbase[33] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[34] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[35] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[36] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[37] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[38] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[39] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[40] + getTranslation('inputNewName', localeTranslation) +
-						_indexHtmlbase[41] + getTranslation('invalidName', localeTranslation) +
-						_indexHtmlbase[42] + getTranslation('newName', localeTranslation) +
-						_indexHtmlbase[43] + getTranslation('ok', localeTranslation) +
-						_indexHtmlbase[44] + getTranslation('cancel', localeTranslation) +
-						_indexHtmlbase[45] + getTranslation('replaceWarningDialog', localeTranslation) +
-						_indexHtmlbase[46] + getTranslation('ok', localeTranslation) +
-						_indexHtmlbase[47] + getTranslation('cancel', localeTranslation) +
-						_indexHtmlbase[48] + getTranslation('doNotAsk', localeTranslation) +
-						_indexHtmlbase[49]) : ''}` +
-						_indexHtmlbase[50];
-			}
+		}
+		else
+		{
+			sendHtmlString(res, combineHtml(false), responseCookie, acceptEncoding);
+		}
+		function setSortHref(sortType, sortDirection, sortHrefType)
+		{
+			const sortHrefUp = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=desc">&uarr;</a>`;
+			const sortHrefDown = `<a href="${urlHeader}/?sortType=${sortHrefType}&sortDirection=asc">&darr;</a>`;
+			return sortType === sortHrefType ? (sortDirection === 'asc' ? sortHrefUp : sortHrefDown) : sortHrefUp + sortHrefDown;
+		}
+		function setSortCookie(key, value)
+		{
+			responseCookie.push(`${key}=${value}; path=/; max-age=86400; samesite=strict`);
+		}
+		function combineHtml(hasFiles)
+		{
+			return  _indexHtmlbase[0] + clientLang +
+					_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
+					_indexHtmlbase[2] + folderName +
+					_indexHtmlbase[3] + getTranslation('checkAll', localeTranslation) +
+					_indexHtmlbase[4] + getTranslation('downloadZip', localeTranslation) +
+					_indexHtmlbase[5] + getTranslation('uncheckAll', localeTranslation) +
+					_indexHtmlbase[6] +
+					`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
+					_indexHtmlbase[8] + getTranslation('selectForCopyOrMove', localeTranslation) +
+					_indexHtmlbase[9] + getTranslation('copy', localeTranslation) +
+					_indexHtmlbase[10] + getTranslation('move', localeTranslation) +
+					_indexHtmlbase[11]) : ''}` +
+					_indexHtmlbase[12] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
+					_indexHtmlbase[13] + getTranslation('fileName', localeTranslation) +
+					_indexHtmlbase[14] + (hasFiles ? sortLinks[0] : '') +
+					_indexHtmlbase[15] + getTranslation('fileSize', localeTranslation) +
+					_indexHtmlbase[16] + (hasFiles ? sortLinks[1] : '') +
+					_indexHtmlbase[17] + getTranslation('modifyDate', localeTranslation) +
+					_indexHtmlbase[18] + (hasFiles ? sortLinks[2] : '') +
+					_indexHtmlbase[19] + hrefsResult +
+					_indexHtmlbase[20] +
+					`${UPLOAD_ENABLE ? (_indexHtmlbase[21] + getTranslation('createFolder', localeTranslation) +
+					_indexHtmlbase[22] + getTranslation('invalidName', localeTranslation) +
+					_indexHtmlbase[23] + getTranslation('folderName', localeTranslation) +
+					_indexHtmlbase[24] + getTranslation('uploadFiles', localeTranslation) +
+					_indexHtmlbase[25] + getTranslation('dragAndDropText', localeTranslation) +
+					_indexHtmlbase[26] + getTranslation('deleteFilesWarning', localeTranslation) +
+					_indexHtmlbase[27] + getTranslation('yes', localeTranslation) +
+					_indexHtmlbase[28] + getTranslation('no', localeTranslation) +
+					_indexHtmlbase[29] + getTranslation('deleteWithoutAsk', localeTranslation) +
+					_indexHtmlbase[30]) : ''}` +
+					_indexHtmlbase[31] + errorMessage +
+					_indexHtmlbase[32] + getTranslation('poweredBy', localeTranslation) +
+					_indexHtmlbase[33] + getTranslation('lightTheme', localeTranslation) +
+					_indexHtmlbase[34] + getTranslation('lightTheme', localeTranslation) +
+					_indexHtmlbase[35] + getTranslation('autoTheme', localeTranslation) +
+					_indexHtmlbase[36] + getTranslation('autoTheme', localeTranslation) +
+					_indexHtmlbase[37] + getTranslation('darkTheme', localeTranslation) +
+					_indexHtmlbase[38] + getTranslation('darkTheme', localeTranslation) +
+					_indexHtmlbase[39] +
+					`${UPLOAD_ENABLE ? (_indexHtmlbase[40] + getTranslation('inputNewName', localeTranslation) +
+					_indexHtmlbase[41] + getTranslation('invalidName', localeTranslation) +
+					_indexHtmlbase[42] + getTranslation('newName', localeTranslation) +
+					_indexHtmlbase[43] + getTranslation('ok', localeTranslation) +
+					_indexHtmlbase[44] + getTranslation('cancel', localeTranslation) +
+					_indexHtmlbase[45] + getTranslation('replaceWarningDialog', localeTranslation) +
+					_indexHtmlbase[46] + getTranslation('ok', localeTranslation) +
+					_indexHtmlbase[47] + getTranslation('cancel', localeTranslation) +
+					_indexHtmlbase[48] + getTranslation('doNotAsk', localeTranslation) +
+					_indexHtmlbase[49]) : ''}` +
+					_indexHtmlbase[50];
 		}
 	});
 }
@@ -1835,9 +1852,10 @@ function checkIsDirectory(pathToItem, dirent, next)
 	{
 		fs.readlink(pathToItem, (err, linkPath) =>
 		{
-			if (path.relative(ROOT_PATH, linkPath).match(/\.{2,}(\/|\\)/g) !== null)
+			if (!testToWrongPath(path.relative(ROOT_PATH, linkPath)))
 			{
 				console.log('The directory contains a link to the path above the root!');
+				FORBIDDEN_PATHS.add(pathToItem);
 				next(null);
 				return;
 			}
