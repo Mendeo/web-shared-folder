@@ -48,7 +48,7 @@ The password can be set as a md5 hash in the **SERVER_PASSWORD_MD5** environment
 
 You can set the page title in the **SERVER_DIRECTORY_MODE_TITLE** environment variable.
 
-You can set prohibited paths in the environment variable SERVER_FORBIDDEN_PATHS (relative to the root and separated by the symbol ":"). Such files or directories will not be displayed in the client's browser.
+You can set prohibited paths in the environment variable **SERVER_FORBIDDEN_PATHS** (relative to the root and separated by the symbol ":"). Such files or directories will not be displayed in the client's browser.
 
 **It is possible to run server in cluster mode.** To do this, set the **SERVER_USE_CLUSTER_MODE** environment variable to 1. In cluster mode, nodejs child processes will be created according to the number of processor cores. This mode allows you to use all the processor resources, but at the same time it increases the consumption of RAM. If **SERVER_SHOULD_RESTART_WORKER=1** is given, the child process will be automatically restarted if it terminates unexpectedly.
 
