@@ -198,7 +198,14 @@ let _404_css = null;
 let _404_html = null;
 const _icons_svg_map = new Map();
 const _icons_catalog = new Set();
-const FORBIDDEN_PATHS = new Set();
+const _forbidden_paths = new Set();
+
+const FORBIDDEN_PATHS = process.env.SERVER_FORBIDDEN_PATHS;
+if (FORBIDDEN_PATHS)
+{
+	FORBIDDEN_PATHS.split(':').forEach(fp => _forbidden_paths.add(path.join(ROOT_PATH, fp)));
+}
+const ROOT_PATH_DISK = getDiskName(ROOT_PATH);
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
@@ -1373,11 +1380,13 @@ function createUserDir(absolutePath, postData, localeTranslation, callback)
 function testToWrongPath(pathToTest)
 {
 	if (pathToTest === '..') return false;
+	if (getDiskName(pathToTest) !== ROOT_PATH_DISK) return false;
+	if (pathToTest.match(/[<>":?*|]/g) !== null) return false;
 	const index = pathToTest.indexOf('..');
 	if (index === -1) return true;
-	if (pathToTest[index - 1] === '/' || pathToTest[index - 1] === '\\') return false;
-	if (pathToTest[index + 2] === '/' || pathToTest[index + 2] === '\\') return false;
-	return pathToTest.match(/[<>":?*|]/g) === null;
+	if (pathToTest[index - 1] === path.sep) return false;
+	if (pathToTest[index + 2] === path.sep) return false;
+	return true;
 }
 
 function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTranslation, callback)
@@ -1642,7 +1651,7 @@ function deleteFiles(absolutePath, postData, localeTranslation, callback)
 function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
 {
 	//Проверка на переход по запрещённым путям.
-	for (let forbiddenPath of FORBIDDEN_PATHS.values())
+	for (let forbiddenPath of _forbidden_paths.values())
 	{
 		if (absolutePath.startsWith(forbiddenPath))
 		{
@@ -1848,14 +1857,19 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 
 function checkIsDirectory(pathToItem, dirent, next)
 {
+	if (_forbidden_paths.has(pathToItem))
+	{
+		next(null);
+		return;
+	}
 	if (dirent.isSymbolicLink())
 	{
 		fs.readlink(pathToItem, (err, linkPath) =>
 		{
 			if (!testToWrongPath(path.relative(ROOT_PATH, linkPath)))
 			{
-				console.log('The directory contains a link to the path above the root!');
-				FORBIDDEN_PATHS.add(pathToItem);
+				console.log('The directory contains a link to the path above the root! Adding it to forbidden paths list.');
+				_forbidden_paths.add(pathToItem);
 				next(null);
 				return;
 			}
@@ -2428,4 +2442,12 @@ function checkUpload(args)
 	let env = Number(process.env.SERVER_UPLOAD_ENABLE);
 	if (!Number.isNaN(env) && env > 0) flag = true;
 	return flag;
+}
+
+function getDiskName(pathToTest)
+{
+	if (path.sep === '/') return '';
+	const index = pathToTest.indexOf(':');
+	if (index === -1) return '';
+	return pathToTest.slice(0, index);
 }

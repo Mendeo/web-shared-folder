@@ -1,3 +1,7 @@
+# v 3.2.0
+* Removed the ability to follow symbolic links in a shared directory that point to a path above this directory.
+* Added the ability to set prohibited paths in the environment variable SERVER_FORBIDDEN_PATHS (paths are separated by the symbol ":").
+
 # v 3.1.0
 * Prohibition of following symbolic links in a path above the server root.
 
