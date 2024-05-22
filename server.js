@@ -1564,7 +1564,34 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 		}
 		else if (type === 'move')
 		{
-			fs.rename(from, to, callback);
+			fs.lstat(from, (err, stats) =>
+			{
+				if (err)
+				{
+					callback(err);
+				}
+				{
+					if(stats.isSymbolicLink())
+					{
+						//Саму ссылку не перемещаем, перемещаем сам файл, на который она ссылается.
+						fs.copyFile(from, to, (err) =>
+						{
+							if (err)
+							{
+								callback(err);
+							}
+							else
+							{
+								fs.rm(from, callback);
+							}
+						});
+					}
+					else
+					{
+						fs.rename(from, to, callback);
+					}
+				}
+			});
 		}
 		else
 		{
@@ -1874,7 +1901,14 @@ function checkIsDirectory(pathToItem, dirent, next)
 	}
 	if (dirent.isSymbolicLink())
 	{
-		process.chdir(dirent.parentPath);
+		if (dirent.parentPath)
+		{
+			process.chdir(dirent.parentPath);
+		}
+		else
+		{
+			process.chdir(path.dirname(pathToItem));
+		}
 		fs.readlink(pathToItem, (err, linkPath) =>
 		{
 			if (err)
