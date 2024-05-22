@@ -1,5 +1,5 @@
 # v 3.2.0
-* Prohibition of following symbolic links in a path above the server root.
+* Symbolic links to directories are no longer allowed.
 * Added the ability to set prohibited paths in the environment variable SERVER_FORBIDDEN_PATHS (relative to the root and separated by the symbol ":").
 
 # v 3.1.0
