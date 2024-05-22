@@ -1385,7 +1385,7 @@ function createUserDir(absolutePath, postData, localeTranslation, callback)
 function testToWrongPath(pathToTest)
 {
 	if (pathToTest === '..') return false;
-	if (getDiskName(pathToTest) !== ROOT_PATH_DISK) return false;
+	if (path.isAbsolute() && getDiskName(pathToTest) !== ROOT_PATH_DISK) return false;
 	if (pathToTest.match(/[<>":?*|]/g) !== null) return false;
 	const index = pathToTest.indexOf('..');
 	if (index === -1) return true;
@@ -1869,15 +1869,9 @@ function checkIsDirectory(pathToItem, dirent, next)
 	}
 	if (dirent.isSymbolicLink())
 	{
+		process.chdir(dirent.parentPath);
 		fs.readlink(pathToItem, (err, linkPath) =>
 		{
-			if (!testToWrongPath(path.relative(ROOT_PATH, linkPath)))
-			{
-				console.log('The directory contains a link to the path above the root! Adding it to forbidden paths list.');
-				_forbidden_paths.add(pathToItem);
-				next(null);
-				return;
-			}
 			if (err)
 			{
 				console.log(err?.message);
@@ -1890,9 +1884,17 @@ function checkIsDirectory(pathToItem, dirent, next)
 				{
 					console.log(err?.message);
 					next(null);
-					return;
 				}
-				next(stats.isDirectory());
+				else if (stats.isDirectory())
+				{
+					console.log('Symbolic links to directories are not allowed! Adding it to forbidden paths list.');
+					_forbidden_paths.add(pathToItem);
+					next(null);
+				}
+				else
+				{
+					next(false);
+				}
 			});
 		});
 	}
@@ -2454,5 +2456,5 @@ function getDiskName(pathToTest)
 	if (path.sep === '/') return '';
 	const index = pathToTest.indexOf(':');
 	if (index === -1) return '';
-	return pathToTest.slice(0, index);
+	return pathToTest.slice(0, index).toLowerCase();
 }
