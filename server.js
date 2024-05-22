@@ -209,8 +209,7 @@ const FORBIDDEN_PATHS = process.env.SERVER_FORBIDDEN_PATHS;
 if (FORBIDDEN_PATHS)
 {
 	FORBIDDEN_PATHS.split(':').forEach(fp => _forbidden_paths.add(path.join(ROOT_PATH, fp)));
-}
-const ROOT_PATH_DISK = getDiskName(ROOT_PATH);
+};
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
@@ -1138,66 +1137,72 @@ function readFolderRecursive(folderPath, onFolderIn, onFolderOut, onFile, onEnd)
 
 	function read(folderPath, callback)
 	{
-		fs.readdir(folderPath, { withFileTypes: true }, (err, items) =>
+		if (_forbidden_paths.has(folderPath))
 		{
-			if (err)
+			callback(null);
+		}
+		else
+		{
+			fs.readdir(folderPath, { withFileTypes: true }, (err, items) =>
 			{
-				callback(err);
-			}
-			else if (items.length > 0)
-			{
-				let numberOfItems = items.length;
-				for (let item of items)
+				if (err)
 				{
-					const fullPath = path.join(folderPath, item.name);
-					checkIsDirectory(fullPath, item, afterIsDirectory);
-					function afterIsDirectory(isDirectory)
+					callback(err);
+				}
+				else if (items.length > 0)
+				{
+					let numberOfItems = items.length;
+					for (let item of items)
 					{
-						if (isDirectory)
+						const fullPath = path.join(folderPath, item.name);
+						checkIsDirectory(fullPath, item, afterIsDirectory);
+						function afterIsDirectory(isDirectory)
 						{
-							const relativePath = path.join(path.relative(rootPath, fullPath));
-							onFolderIn(fullPath, relativePath, () =>
+							if (isDirectory)
 							{
-								read(fullPath, (err) =>
+								const relativePath = path.join(path.relative(rootPath, fullPath));
+								onFolderIn(fullPath, relativePath, () =>
 								{
-									if (err)
+									read(fullPath, (err) =>
 									{
-										callback(err);
-									}
-									else
-									{
-										onFolderOut(fullPath, relativePath, () =>
+										if (err)
 										{
-											numberOfItems--;
-											if (numberOfItems === 0)
+											callback(err);
+										}
+										else
+										{
+											onFolderOut(fullPath, relativePath, () =>
 											{
-												callback(null);
-											}
-										});
-									}
+												numberOfItems--;
+												if (numberOfItems === 0) callback(null);
+											});
+										}
+									});
 								});
-							});
-						}
-						else if (isDirectory !== null)
-						{
-							const relativePath = path.join(path.relative(rootPath, folderPath), item.name);
-							onFile(fullPath, relativePath, () =>
+							}
+							else if (isDirectory !== null)
+							{
+								const relativePath = path.join(path.relative(rootPath, folderPath), item.name);
+								onFile(fullPath, relativePath, () =>
+								{
+									numberOfItems--;
+									if (numberOfItems === 0) callback(null);
+								});
+							}
+							else
 							{
 								numberOfItems--;
-								if (numberOfItems === 0)
-								{
-									callback(null);
-								}
-							});
+								if (numberOfItems === 0) callback(null);
+							}
 						}
 					}
 				}
-			}
-			else
-			{
-				callback(null);
-			}
-		});
+				else
+				{
+					callback(null);
+				}
+			});
+		}
 	}
 }
 
@@ -1385,7 +1390,6 @@ function createUserDir(absolutePath, postData, localeTranslation, callback)
 function testToWrongPath(pathToTest)
 {
 	if (pathToTest === '..') return false;
-	if (path.isAbsolute() && getDiskName(pathToTest) !== ROOT_PATH_DISK) return false;
 	if (pathToTest.match(/[<>":?*|]/g) !== null) return false;
 	const index = pathToTest.indexOf('..');
 	if (index === -1) return true;
@@ -2450,12 +2454,4 @@ function checkUpload(args)
 	let env = Number(process.env.SERVER_UPLOAD_ENABLE);
 	if (!Number.isNaN(env) && env > 0) flag = true;
 	return flag;
-}
-
-function getDiskName(pathToTest)
-{
-	if (path.sep === '/') return '';
-	const index = pathToTest.indexOf(':');
-	if (index === -1) return '';
-	return pathToTest.slice(0, index).toLowerCase();
 }
