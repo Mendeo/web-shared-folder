@@ -36,5 +36,10 @@
   "bin": {
     "web-shared-folder": "./server.js",
     "wsf": "./server.js"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
+    "@eslint/js": "^9.4.0",
+    "globals": "^15.3.0"
   }
 }
