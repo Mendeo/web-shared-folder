@@ -12,12 +12,23 @@
 	position: fixed;
 	bottom: 1rem;
 	right: 1rem;
+	top: auto;
 	padding: 0.125rem;
 	margin: 0px;
 	border: none;
 	display: flex;
 	width: 5rem;
 	z-index: 1;
+}
+@media screen and (max-width: 900px)
+{
+	.theme_selector
+	{
+		position: fixed;
+		top: 1rem;
+		right: 50%;
+		bottom: auto;
+	}
 }
 .theme_selector > label
 {
