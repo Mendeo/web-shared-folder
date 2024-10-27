@@ -1780,14 +1780,17 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						const iconnClassName = getIconClassName(ext);
 						const showInBrowser = !isDirectory && canShowInBrowser(ext);
 						const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
+						const linkToUnzipText = getTranslation('linkToUnzip', localeTranslation);
+						const linkToOpenInBrowserText = getTranslation('linkToOpenInBrowser', localeTranslation)
+						const renameText = getTranslation('rename', localeTranslation);
 						hrefs.push({ value:
 `				<div class="main_container__first_column">
 				<input id="item-checkbox-${fileIndexCopy}" aria-label="${getTranslation('select', localeTranslation)}" type="checkbox" name="${fileNameInBase64}">${UPLOAD_ENABLE ? `
-				<div class="rename_button"><button hidden title="${getTranslation('rename', localeTranslation)}" id="rename-button-${fileIndexCopy}"></button><div></div></div>` : ''}
+				<div class="rename_button"><button hidden title="${renameText}" aria-label="${renameText}" id="rename-button-${fileIndexCopy}"></button><div></div></div>` : ''}
 				<div class="${iconnClassName}"></div>
 				<a href="${linkHref}"${isDirectory ? '' : ' download'} ${isNameTruncated ? `title="${file.name}"` : ''}>${linkName}</a>${ext === '.zip' && UPLOAD_ENABLE ? `
-				<a href="${linkHref}?unzip=true" class="flex_right_icons unzip_icon" aria-label="${getTranslation('linkToUnzip', localeTranslation)}"></a>` : ''}${showInBrowser ? `
-				<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${getTranslation('linkToOpenInBrowser', localeTranslation)}"></a>` : ''}
+				<a href="${linkHref}?unzip=true" class="flex_right_icons unzip_icon" aria-label="${linkToUnzipText}" title="${linkToUnzipText}"></a>` : ''}${showInBrowser ? `
+				<a href="${linkHref}" class="flex_right_icons open-in-browser-icon" target="_blank" aria-label="${linkToOpenInBrowserText}" title = "${linkToOpenInBrowserText}"></a>` : ''}
 			</div>
 			<span>${sizeStr}</span>
 			<span>${modify}</span>

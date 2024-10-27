@@ -11,7 +11,7 @@
 	"sizeGiB": "GiB",
 	"sizeTiB": "TiB",
 	"sizePiB": "PiB",
-	"linkToOpenInBrowser": "Link to open in browser",
+	"linkToOpenInBrowser": "Open in new tab",
 	"sendingFilesError": "An error occurred while transferring the file. Not all files have been saved: ",
 	"checkAll": "Check all",
 	"uncheckAll": "Uncheck all",
