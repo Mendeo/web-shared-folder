@@ -38,9 +38,9 @@ web-shared-folder [--upload or -u] <path to the folder for sharing> <port> [<key
 In order to start the server to work over https, you must specify the path to the private key file (\<key\>) and the path to the certificate file (\<cert\>).
 In https mode, it is possible to enable automatic redirection from http to https. To do this, in the **SERVER_AUTO_REDIRECT_HTTP_PORT** environment variable, specify the port number from which the redirection will be performed (usually 80).
 
-In order to limit the number of network interfaces that the server will listen on, you need to use the environment variable SERVER_ALLOWED_INTERFACES.
+In order to limit the number of network interfaces that the server will listen on, you need to use the environment variable **SERVER_ALLOWED_INTERFACES**.
 In this variable, you should specify a comma-separated list of IP addresses that the server will listen on.
-For example, to limit the server to work only on the localhost, you need to specify SERVER_ALLOWED_INTERFACES=127.0.0.1
+For example, to limit the server to work only on the localhost, you need to specify **SERVER_ALLOWED_INTERFACES=127.0.0.1**
 
 In order to allow users not only download files from server, but also upload it to the server, it is necessary to add command key **--upload** or **-u** or set the environment variable **SERVER_UPLOAD_ENABLE** to 1. **The maximum upload size at one time is about 2 GiB.**
 In particular, in this mode, the user can upload a zip archive to the server and then unzip it by clicking on the unzip icon. And also user can copy or move files and directories within the root directory.
