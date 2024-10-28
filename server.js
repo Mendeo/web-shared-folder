@@ -62,6 +62,12 @@ The directory contents viewing mode can be forced.
 To do this, set the environment variable SERVER_DIRECTORY_MODE=1.
 Also, this mode can be forcibly disabled by setting SERVER_DIRECTORY_MODE=0.
 
+In order to limit the number of network interfaces that the server will listen on,
+you need to use the environment variable SERVER_ALLOWED_INTERFACES.
+In this variable, you should specify a comma-separated list of IP addresses that the server will listen on.
+For example, to limit the server to work only on the localhost, you need to specify
+SERVER_ALLOWED_INTERFACES=127.0.0.1
+
 In order to allow users to upload files to the server,
 it is necessary to add command key **--upload** or **-u** or set the environment variable SERVER_UPLOAD_ENABLE to 1.
 
@@ -176,6 +182,12 @@ To show help use "--help" key`);
 	process.exit(0);
 }
 
+let ALLOWED_INTERFACES = null;
+{
+	const ifs = process.env.SERVER_ALLOWED_INTERFACES;
+	if (ifs) ALLOWED_INTERFACES = ifs.split(',').map(v => v.trim());
+}
+
 const numCPUs = cpus().length;
 if (cluster.isPrimary)
 {
@@ -185,7 +197,23 @@ if (cluster.isPrimary)
 	if (USE_CLUSTER_MODE) console.log('CPUs number = ' + numCPUs);
 	console.log();
 	console.log('Available on:');
-	getIpV4().forEach((ip) => console.log(ip));
+	if (ALLOWED_INTERFACES)
+	{
+		const realIfs = [];
+		for (let ip of getIpV4())
+		{
+			if(ALLOWED_INTERFACES.includes(ip))
+			{
+				console.log(ip);
+				realIfs.push(ip);
+			}
+		}
+		ALLOWED_INTERFACES = realIfs;
+	}
+	else
+	{
+		getIpV4().forEach(ip => console.log(ip));
+	}
 	console.log();
 }
 
@@ -356,15 +384,44 @@ function start(isHttps)
 			key: fs.readFileSync(key),
 			cert: fs.readFileSync(cert)
 		};
-		https.createServer(ssl_cert, app).listen(PORT);
+		createServer(app, PORT, ssl_cert);
 		if (AUTO_REDIRECT_HTTP_PORT)
 		{
-			http.createServer(redirectApp).listen(AUTO_REDIRECT_HTTP_PORT);
+			createServer(app, AUTO_REDIRECT_HTTP_PORT);
 		}
 	}
 	else
 	{
-		http.createServer(app).listen(PORT);
+		createServer(app, PORT);
+	}
+}
+
+function createServer(app, port, ssl_cert)
+{
+	if (ALLOWED_INTERFACES)
+	{
+		for (let ip of ALLOWED_INTERFACES)
+		{
+			if (ssl_cert)
+			{
+				https.createServer(ssl_cert, app).listen(port, ip);
+			}
+			else
+			{
+				http.createServer(app).listen(port, ip);
+			}
+		}
+	}
+	else
+	{
+		if (ssl_cert)
+		{
+			https.createServer(ssl_cert, app).listen(port);
+		}
+		else
+		{
+			http.createServer(app).listen(port);
+		}
 	}
 }
 
