@@ -1,3 +1,6 @@
+# v 3.3.*
+Added the ability to specify which network interfaces the server will listen to.
+
 # v 3.2.*
 * Symbolic links to directories are no longer allowed.
 * Added the ability to set prohibited paths in the environment variable SERVER_FORBIDDEN_PATHS (relative to the root and separated by the symbol ":").
