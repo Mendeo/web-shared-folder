@@ -116,6 +116,9 @@ export SERVER_USE_CLUSTER_MODE=1
 #Restart worker process if destroyed
 export SERVER_SHOULD_RESTART_WORKER=1
 
+#Accept connections only from one specific network interface with ip = <ipv4>
+SERVER_ALLOWED_INTERFACES=<ipv4>
+
 #Start server from root with preserve environment key
 sudo -E web-shared-folder
 ```
