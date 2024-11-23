@@ -353,8 +353,6 @@ function deleteFilesWarningDialog()
 	if (dialog.showModal)
 	{
 		const doNotAsk = document.querySelector('#delete-warning-dialog input[type="checkbox"]');
-		const doNotAskLabel = document.querySelector('#delete-warning-dialog label');
-
 		dialog.addEventListener('close', () =>
 		{
 			if (dialog.returnValue === 'yes')
@@ -362,11 +360,6 @@ function deleteFilesWarningDialog()
 				if (doNotAsk.checked) sessionStorage.setItem('delete-without-ask', true);
 				submit();
 			}
-		});
-		doNotAskLabel.addEventListener('click', (e) =>
-		{
-			e.preventDefault();
-			doNotAsk.checked = !doNotAsk.checked;
 		});
 	}
 
