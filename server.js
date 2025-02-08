@@ -291,11 +291,11 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		{
 			if (isHttps)
 			{
-				console.log('Start in https mode');
+				console.log('Start in secure (https) mode.');
 			}
 			else
 			{
-				console.log('Start in http mode');
+				console.log('Start in not secure (http) mode.');
 			}
 			if (username && password) console.log('Using http authentication.');
 			if (USE_CLUSTER_MODE)
@@ -388,7 +388,8 @@ function start(isHttps)
 		createServer(app, PORT, ssl_cert);
 		if (AUTO_REDIRECT_HTTP_PORT)
 		{
-			createServer(app, AUTO_REDIRECT_HTTP_PORT);
+			console.log(`Auto redirect from http port ${AUTO_REDIRECT_HTTP_PORT} is enabled.`)
+			createServer(redirectApp, AUTO_REDIRECT_HTTP_PORT);
 		}
 	}
 	else
