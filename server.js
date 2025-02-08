@@ -501,7 +501,8 @@ function app(req, res)
 
 	function login()
 	{
-		const USERS = { username, password };
+		const USERS = {};
+		USERS[username] = password;
 
 		if (urlPath === '/wsf_app_files/credentials')
 		{
@@ -518,24 +519,24 @@ function app(req, res)
 					}
 					else
 					{
-						const reqPostData = parseRequest(postBody);
+						const reqPostData = parseXwwwFormUrlEncoded(postBody);
 						if (Object.prototype.hasOwnProperty.call(USERS, reqPostData?.username))
 						{
 							const username = reqPostData?.username;
 							const passwordHash = USERS[username];
 							if (passwordHash === crypto.createHash('sha256').update(reqPostData?.password).digest('hex'))
 							{
-								let url = '/';
-								if (cookie?.reflink) url = cookie.reflink;
+								let refLink = '/';
+								if (cookie?.reflink) refLink = cookie.reflink;
 								const sessionId = generateSessionId();
 								responseCookie.push(generateSessionCookie(sessionId, username));
-								if (cookie?.reflink) responseCookie.push('reflink=/; max-age=0; samesite=strict');
+								if (cookie?.reflink) responseCookie.push('reflink=/; path=/; max-age=0; samesite=strict');
 								const timerId = setTimeout(() =>
 								{
 									_sessions.delete(sessionId);
 								}, SESSION_TIMEOUT * 1000);
 								_sessions.set(sessionId, { username, timerId, timeStamp: Date.now() });
-								reload(res, url, responseCookie);
+								reload(res, refLink, responseCookie);
 							}
 							else
 							{
@@ -611,7 +612,7 @@ function app(req, res)
 				}
 				else
 				{
-					responseCookie.push(`reflink=${urlPath}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict`);
+					responseCookie.push(`reflink=${url}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict`);
 					reload(res, '/wsf_app_files/login.html', responseCookie);
 					return null;
 				}
@@ -675,7 +676,7 @@ function app(req, res)
 				{
 					if (err)
 					{
-						answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, { error: err.message }, responseCookie);
+						answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, { error: err.message });
 					}
 					else
 					{
@@ -694,13 +695,13 @@ function app(req, res)
 							parseMultiPartFormData(postBody, boundary, (reqPostData) =>
 							{
 								//console.log('parse complete');
-								answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, reqPostData, responseCookie);
+								answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
 							});
 						}
 						else if (contentType[0] === 'application/x-www-form-urlencoded')
 						{
 							const reqPostData = parseXwwwFormUrlEncoded(postBody);
-							answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, reqPostData, responseCookie);
+							answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
 						}
 						else
 						{
@@ -873,10 +874,9 @@ function parseRequest(str)
 	return params;
 }
 
-function answer(res, urlPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, postData, responseCookie)
+function answer(res, urlPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
 {
-
-	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, postData, responseCookie);
+	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
 	//if (paramsGet) console.log(paramsGet);
 	//if (postData) console.log(postData);
 }
@@ -959,7 +959,7 @@ function compressPrepare(acceptEncoding)
 }
 
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, reqPostData, responseCookie)
+function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
 {
 	if (_generateIndex)
 	{
