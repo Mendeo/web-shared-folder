@@ -157,24 +157,37 @@ const FILE_REG_EXP = new RegExp(/[<>":?*|\\/]/g);
 const DEFAULT_LANG = 'en-US';
 let DEFAULT_LOCALE_TRANSLATION = null;
 
-let cluster;
+let _cluster;
 if (USE_CLUSTER_MODE)
 {
-	cluster = require('cluster');
+	_cluster = require('cluster');
 }
 else
 {
-	cluster = { isPrimary: true };
+	_cluster = { isPrimary: true };
 }
 
 const ROOT_PATH_RAW = (ARGS[2] || process.env.SERVER_ROOT);
 const ROOT_PATH = ROOT_PATH_RAW ? ROOT_PATH_RAW.replace(/"/g, '') : null; //Папка относительно которой будут задаваться все папки, которые идут с адресом
 const PORT = Number(ARGS[3] || process.env.SERVER_PORT);
-const key = ARGS[4] || process.env.SERVER_KEY;
-const cert = ARGS[5] || process.env.SERVER_CERT;
+const KEY = ARGS[4] || process.env.SERVER_KEY;
+const CERT = ARGS[5] || process.env.SERVER_CERT;
 const username = ARGS[6] || process.env.SERVER_USERNAME;
-const _isMd5Password = process.env.SERVER_PASSWORD_MD5 ? true : false;
-const password = ARGS[7] || (_isMd5Password ? process.env.SERVER_PASSWORD_MD5.toLowerCase() : process.env.SERVER_PASSWORD);
+const password = ARGS[7] || process.env.SERVER_PASSWORD;
+
+let SESSION_TIMEOUT = null;
+let _sessions = null;
+let _loginExceptions = null;
+if (username && password)
+{
+	SESSION_TIMEOUT = Number(process.env.SERVER_SESSION_TIMEOUT);
+	if (!SESSION_TIMEOUT) SESSION_TIMEOUT = 1800;
+	_sessions = new Map();
+	_loginExceptions = new Set();
+	_loginExceptions.add('/wsf_app_files/login.css');
+	_loginExceptions.add('/wsf_app_files/favicon.ico');
+	_loginExceptions.add('/robots.txt');
+}
 
 if (!ROOT_PATH || !PORT)
 {
@@ -190,7 +203,7 @@ let ALLOWED_INTERFACES = null;
 }
 
 const numCPUs = cpus().length;
-if (cluster.isPrimary)
+if (_cluster.isPrimary)
 {
 	console.log('web-shared-folder, version ' + VERSION);
 	console.log('Port = ' + PORT);
@@ -230,6 +243,8 @@ let _locales = null;
 let _icons_css = null;
 let _404_css = null;
 let _404_html = null;
+let _login_css = null;
+let _login_html = null;
 const _icons_svg_map = new Map();
 const _icons_catalog = new Set();
 const _forbidden_paths = new Set();
@@ -265,7 +280,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		}
 		if (_generateIndex)
 		{
-			if (cluster.isPrimary)
+			if (_cluster.isPrimary)
 			{
 				console.log('Directory watch mode.');
 				if (DISABLE_COMPRESSION) console.log('Compression is disable.');
@@ -281,38 +296,44 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_dark_css = fs.readFileSync(path.join(__dirname, 'app_files', 'dark.css'));
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
 			readIconsFiles();
+			if (username && password)
+			{
+				_login_css = fs.readFileSync(path.join(__dirname, 'app_files', 'login.css'));
+				_login_html = fs.readFileSync(path.join(__dirname, 'app_files', 'login.html')).toString().split('~%~');
+			}
 		}
 		readTranslationFiles();
 		_404_css = fs.readFileSync(path.join(__dirname, 'app_files', '404.css'));
 		_404_html = fs.readFileSync(path.join(__dirname, 'app_files', '404.html')).toString().split('~%~');
 
-		const isHttps = key && cert;
-		if (cluster.isPrimary)
+		const isHttps = KEY && CERT;
+		if (_cluster.isPrimary)
 		{
 			if (isHttps)
 			{
 				console.log('Start in secure (https) mode.');
+				if (AUTO_REDIRECT_HTTP_PORT) console.log(`Auto redirect from http port ${AUTO_REDIRECT_HTTP_PORT} is enabled.`);
 			}
 			else
 			{
 				console.log('Start in not secure (http) mode.');
 			}
-			if (username && password) console.log('Using http authentication.');
+			if (username && password) console.log('Authentication required!');
 			if (USE_CLUSTER_MODE)
 			{
 				console.log(`Primary ${process.pid} is running`);
 				// Fork workers.
 				for (let i = 0; i < numCPUs; i++)
 				{
-					cluster.fork();
+					_cluster.fork();
 				}
-				cluster.on('exit', (worker, code, signal) =>
+				_cluster.on('exit', (worker, code, signal) =>
 				{
 					console.log(`Worker ${worker.process.pid} died. Code ${code}, signal: ${signal}`);
 					if (SHOULD_RESTART_WORKER)
 					{
 						console.log('Restarting...');
-						cluster.fork();
+						_cluster.fork();
 					}
 				});
 			}
@@ -382,15 +403,11 @@ function start(isHttps)
 	{
 		const ssl_cert =
 		{
-			key: fs.readFileSync(key),
-			cert: fs.readFileSync(cert)
+			key: fs.readFileSync(KEY),
+			cert: fs.readFileSync(CERT)
 		};
 		createServer(app, PORT, ssl_cert);
-		if (AUTO_REDIRECT_HTTP_PORT)
-		{
-			console.log(`Auto redirect from http port ${AUTO_REDIRECT_HTTP_PORT} is enabled.`)
-			createServer(redirectApp, AUTO_REDIRECT_HTTP_PORT);
-		}
+		if (AUTO_REDIRECT_HTTP_PORT) createServer(redirectApp, AUTO_REDIRECT_HTTP_PORT);
 	}
 	else
 	{
@@ -462,66 +479,189 @@ function app(req, res)
 	if (now - _lastReqTime > 1000 || _lastIP !== ip) console.log(`*******${ip}, ${now.toLocaleString()} *******`);
 	_lastReqTime = now;
 	_lastIP = ip;
+	const url = req.url.split('?');
+	const urlPath = decodeURIComponent(url[0]);
+	console.log('url: ' + urlPath);
+	const cookie = parseCookie(req.headers?.cookie);
+	const reqGetData = parseRequest(url[1]);
+	const acceptEncoding = req.headers['accept-encoding'];
+	const acceptLanguage = req.headers['accept-language'];
+	const responseCookie = [];
+	const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
+	const localeTranslation = _locales.get(clientLang);
 	//Проводим аутентификацию
 	if (username && password)
 	{
-		if (req.headers.authorization)
-		{
-			const data = req.headers.authorization.split(' ');
-			if (data[0] !== 'Basic')
-			{
-				authForm();
-			}
-			else
-			{
-				const cred = Buffer.from(data[1], 'base64').toString().split(':');
-				const passwordEntered = _isMd5Password ? createHash('md5').update(cred[1]).digest('hex') : cred[1];
-				if (cred[0] === username && passwordEntered === password)
-				{
-					normalWork();
-				}
-				else
-				{
-					authForm();
-				}
-			}
-		}
-		else
-		{
-			authForm();
-		}
-
-		function authForm()
-		{
-			console.log('Authentication form');
-			const msg = 'Authentication required.';
-			res.writeHead(401,
-				{
-					'WWW-Authenticate': 'Basic realm="Please input correct username and password before viewing this page."',
-					'Content-Length': msg.length,
-					'Content-Type': 'text/plain'
-				});
-			res.end(msg);
-		}
+		if (login()) normalWork();
 	}
 	else
 	{
 		normalWork();
 	}
 
+	function login()
+	{
+		const USERS = { username, password };
+
+		if (urlPath === '/wsf_app_files/credentials')
+		{
+			const contentType = req.headers['content-type']?.split(';')[0].trim();
+			if (contentType === 'application/x-www-form-urlencoded')
+			{
+				getPostBody(req, (err, postBody) =>
+				{
+					if (err)
+					{
+						console.log(err.message);
+						res.end('Error occured while handling request!');
+						return null;
+					}
+					else
+					{
+						const reqPostData = parseRequest(postBody);
+						if (Object.prototype.hasOwnProperty.call(USERS, reqPostData?.username))
+						{
+							const username = reqPostData?.username;
+							const passwordHash = USERS[username];
+							if (passwordHash === crypto.createHash('sha256').update(reqPostData?.password).digest('hex'))
+							{
+								let url = '/';
+								if (cookie?.reflink) url = cookie.reflink;
+								const sessionId = generateSessionId();
+								responseCookie.push(generateSessionCookie(sessionId, username));
+								if (cookie?.reflink) responseCookie.push('reflink=/; max-age=0; samesite=strict');
+								const timerId = setTimeout(() =>
+								{
+									_sessions.delete(sessionId);
+								}, SESSION_TIMEOUT * 1000);
+								_sessions.set(sessionId, { username, timerId, timeStamp: Date.now() });
+								reload(res, url, responseCookie);
+							}
+							else
+							{
+								reload(res, '/wsf_app_files/login_error.html', responseCookie);
+							}
+						}
+						else
+						{
+							reload(res, '/wsf_app_files/login_error.html', responseCookie);
+						}
+					}
+				});
+				return null;
+			}
+			else
+			{
+				reload(res, '/wsf_app_files/login.html', responseCookie);
+				return null;
+			}
+		}
+		else
+		{
+			let sessionId = null;
+			if (cookie?.sessionId && _sessions.has(cookie.sessionId)) sessionId = cookie.sessionId;
+			if (urlPath === '/wsf_app_files/login.html' || urlPath === '/wsf_app_files/login_error.html')
+			{
+				if (sessionId)
+				{
+					reload(res, '/', responseCookie);
+					return null;
+				}
+				else
+				{
+					const isErrorPage = urlPath === '/wsf_app_files/login_error.html';
+					sendCachedFile(res,
+						_login_html[0] + clientLang +
+						_login_html[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
+						_login_html[2] + getTranslation('needLoginAndPassword', localeTranslation) +
+						_login_html[3] + getTranslation('username', localeTranslation) +
+						_login_html[4] + getTranslation('password', localeTranslation) +
+						_login_html[5] + getTranslation('signIn', localeTranslation) +
+						_login_html[6] + (isErrorPage ? `<p class="error">${getTranslation('signInError', localeTranslation)}</p>` : '') +
+						_login_html[7],
+						'text/html; charset=utf-8', acceptEncoding, 200, responseCookie);
+					return null;
+				}
+			}
+			else if (urlPath === '/wsf_app_files/logout')
+			{
+				if (sessionId)
+				{
+					const userdata = _sessions.get(sessionId);
+					responseCookie.push(deleteSessionCookie(sessionId, userdata.username));
+					clearTimeout(userdata.timerId);
+					_sessions.delete(sessionId);
+					reload(res, '/wsf_app_files/login.html', responseCookie);
+					return null;
+				}
+				reload(res, '/wsf_app_files/login.html', responseCookie);
+				return null;
+			}
+			//Исключения
+			else if (_loginExceptions.has(urlPath))
+			{
+				normalWork();
+				return null;
+			}
+			else
+			{
+				if (sessionId)
+				{
+					return sessionId;
+				}
+				else
+				{
+					responseCookie.push(`reflink=${urlPath}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict`);
+					reload(res, '/wsf_app_files/login.html', responseCookie);
+					return null;
+				}
+			}
+		}
+
+		function generateSessionCookie(sessionId)
+		{
+			return `sessionId=${sessionId}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict; httpOnly`;
+		}
+
+		function deleteSessionCookie(sessionId)
+		{
+			return `sessionId=${sessionId}; path=/; max-age=0; samesite=strict; httpOnly`;
+		}
+
+		function reload(res, url, responseCookie)
+		{
+			const headers =
+			{
+				'Content-Security-Policy': 'default-src \'self\'',
+				'Refresh': `0;url=${url}`
+			};
+			if (responseCookie)
+			{
+				if (responseCookie?.length)
+				{
+					headers['Set-Cookie'] = responseCookie;
+				}
+			}
+			res.writeHead(200, headers);
+			res.end();
+		}
+
+		function generateSessionId()
+		{
+			const size = 64;
+			let key = Buffer.from(crypto.randomBytes(size)).toString('base64url');
+			while (_sessions.has(key))
+			{
+				key = Buffer.from(crypto.randomBytes(size)).toString('base64url');
+			}
+			return key;
+		}
+	}
+
 	function normalWork()
 	{
-		const url = req.url.split('?');
-		const urlPath = decodeURIComponent(url[0]);
-		console.log('url: ' + urlPath);
-		const cookie = parseCookie(req.headers?.cookie);
-		const reqGetData = parseRequest(url[1]);
-		const acceptEncoding = req.headers['accept-encoding'];
-		const acceptLanguage = req.headers['accept-language'];
 		if (urlPath.match(/[/\\]\.+\.[/\\]/))
 		{
-			const clientLang = getClientLanguage(acceptLanguage, cookie);
-			const localeTranslation = _locales.get(clientLang);
 			error404(`You can watch only ${ROOT_PATH} directory`, res, acceptEncoding, localeTranslation, clientLang);
 			return;
 		}
@@ -535,7 +675,7 @@ function app(req, res)
 				{
 					if (err)
 					{
-						answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, { error: err.message });
+						answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, { error: err.message }, responseCookie);
 					}
 					else
 					{
@@ -554,29 +694,29 @@ function app(req, res)
 							parseMultiPartFormData(postBody, boundary, (reqPostData) =>
 							{
 								//console.log('parse complete');
-								answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData);
+								answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, reqPostData, responseCookie);
 							});
 						}
 						else if (contentType[0] === 'application/x-www-form-urlencoded')
 						{
 							const reqPostData = parseXwwwFormUrlEncoded(postBody);
-							answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData);
+							answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, reqPostData, responseCookie);
 						}
 						else
 						{
-							answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage);
+							answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 						}
 					}
 				});
 			}
 			else
 			{
-				answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage);
+				answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 			}
 		}
 		else
 		{
-			answer(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage);
+			answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 		}
 	}
 }
@@ -733,15 +873,15 @@ function parseRequest(str)
 	return params;
 }
 
-function answer(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData)
+function answer(res, urlPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, postData, responseCookie)
 {
 
-	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, acceptLanguage, postData);
+	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, postData, responseCookie);
 	//if (paramsGet) console.log(paramsGet);
 	//if (postData) console.log(postData);
 }
 
-function sendCachedFile(res, file, contentType, acceptEncoding, code)
+function sendCachedFile(res, file, contentType, acceptEncoding, code, responseCookie)
 {
 	const headers =
 	{
@@ -749,6 +889,13 @@ function sendCachedFile(res, file, contentType, acceptEncoding, code)
 		'Cache-Control': 'no-cache',
 		'Content-Security-Policy': 'default-src \'self\''
 	};
+	if (responseCookie)
+	{
+		if (responseCookie?.length)
+		{
+			headers['Set-Cookie'] = responseCookie;
+		}
+	}
 	sendCompressed(res, headers, file, acceptEncoding, code);
 }
 
@@ -812,11 +959,8 @@ function compressPrepare(acceptEncoding)
 }
 
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, acceptLanguage, reqPostData)
+function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, reqPostData, responseCookie)
 {
-	const responseCookie = [];
-	let clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
-	let localeTranslation = _locales.get(clientLang);
 	if (_generateIndex)
 	{
 		switch (urlPath)
@@ -835,6 +979,9 @@ function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, acceptL
 			return;
 		case '/wsf_app_files/dark.css':
 			sendCachedFile(res, _dark_css, 'text/css; charset=utf-8', acceptEncoding);
+			return;
+		case '/wsf_app_files/login.css':
+			sendCachedFile(res, _login_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
 		case '/robots.txt':
 			sendCachedFile(res, _robots_txt, 'text/plain; charset=utf-8', acceptEncoding);
@@ -1840,7 +1987,7 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 						const showInBrowser = !isDirectory && canShowInBrowser(ext);
 						const fileNameInBase64 = Buffer.from(file.name).toString('base64url');
 						const linkToUnzipText = getTranslation('linkToUnzip', localeTranslation);
-						const linkToOpenInBrowserText = getTranslation('linkToOpenInBrowser', localeTranslation)
+						const linkToOpenInBrowserText = getTranslation('linkToOpenInBrowser', localeTranslation);
 						const renameText = getTranslation('rename', localeTranslation);
 						hrefs.push({ value:
 `				<div class="main_container__first_column">
@@ -2141,7 +2288,7 @@ function error500(err, res)
 	res.end(msg);
 }
 
-function sendHtmlString(res, data, cookie, acceptEncoding)
+function sendHtmlString(res, data, responseCookie, acceptEncoding)
 {
 	const headers =
 	{
@@ -2150,11 +2297,11 @@ function sendHtmlString(res, data, cookie, acceptEncoding)
 		'Content-Security-Policy': 'default-src \'self\'',
 		'Cache-Control': 'no-cache'
 	};
-	if (cookie)
+	if (responseCookie)
 	{
-		if (cookie?.length)
+		if (responseCookie?.length)
 		{
-			headers['Set-Cookie'] = cookie;
+			headers['Set-Cookie'] = responseCookie;
 		}
 	}
 	sendCompressed(res, headers, data, acceptEncoding);

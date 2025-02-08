@@ -1,3 +1,7 @@
+# v 3.4.*
+* Fixed autoredirect from http to https error.
+* Changed basic authentification to login page and cookie based authentification.
+
 # v 3.3.*
 Added the ability to specify which network interfaces the server will listen to.
 
