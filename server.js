@@ -387,7 +387,7 @@ function start(isHttps)
 		createServer(app, PORT, ssl_cert);
 		if (AUTO_REDIRECT_HTTP_PORT)
 		{
-			createServer(app, AUTO_REDIRECT_HTTP_PORT);
+			createServer(redirectApp, AUTO_REDIRECT_HTTP_PORT);
 		}
 	}
 	else
