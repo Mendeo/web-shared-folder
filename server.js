@@ -31,8 +31,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const zlib = require('zlib');
-const JSZip = require('jszip');
 const crypto = require('crypto');
+const JSZip = require('jszip');
 
 const cpus = os.cpus;
 const net = os.networkInterfaces();
@@ -60,32 +60,32 @@ web-shared-folder [--upload or -u] <path to the directory for sharing> <port> [<
 If there is the "index.html" file in the specified directory,
 then the server will start in the static web site mode.
 The directory contents viewing mode can be forced.
-To do this, set the environment variable SERVER_DIRECTORY_MODE=1.
-Also, this mode can be forcibly disabled by setting SERVER_DIRECTORY_MODE=0.
+To do this, set the environment variable WSF_DIRECTORY_MODE=1.
+Also, this mode can be forcibly disabled by setting WSF_DIRECTORY_MODE=0.
 
 In order to limit the number of network interfaces that the server will listen on,
-you need to use the environment variable SERVER_ALLOWED_INTERFACES.
+you need to use the environment variable WSF_ALLOWED_INTERFACES.
 In this variable, you should specify a comma-separated list of IP addresses that the server will listen on.
 For example, to limit the server to work only on the localhost, you need to specify
-SERVER_ALLOWED_INTERFACES=127.0.0.1
+WSF_ALLOWED_INTERFACES=127.0.0.1
 
 In order to allow users to upload files to the server,
-it is necessary to add command key **--upload** or **-u** or set the environment variable SERVER_UPLOAD_ENABLE to 1.
+it is necessary to add command key **--upload** or **-u** or set the environment variable WSF_UPLOAD_ENABLE to 1.
 
 In order to start the server to work over https, you must specify the files:
 the private key file (<key>) and the certificate file (<cert>).
 
 In https mode, it is possible to enable automatic redirection from http.
-To do this, set to the SERVER_AUTO_REDIRECT_HTTP_PORT environment variable
+To do this, set to the WSF_AUTO_REDIRECT_HTTP_PORT environment variable
 the port number from which the redirection will be performed (usually 80).
 
 If the keys <username> and <password> are given,
 then HTTP authentication is enabled with the given login and password.
 
 All command line options can also be set in the environment variables:
-SERVER_ROOT, SERVER_PORT, SERVER_KEY,
-SERVER_CERT, SERVER_USERNAME, SERVER_PASSWORD.
-Also in the SERVER_PASSWORD_MD5 environment variable
+WSF_ROOT, WSF_PORT, WSF_KEY,
+WSF_CERT, WSF_USERNAME, WSF_PASSWORD.
+Also in the WSF_PASSWORD_MD5 environment variable
 the server password can be set as a md5 hash.
 Options specified on the command line have higher precedence.
 
@@ -94,28 +94,28 @@ and then unzip it by clicking on the unzip icon. And also user can copy or move
 files and directories within the root directory.
 
 User can set the page title in the
-SERVER_DIRECTORY_MODE_TITLE environment variable.
+WSF_DIRECTORY_MODE_TITLE environment variable.
 
-User can set prohibited paths in the environment variable SERVER_FORBIDDEN_PATHS
+User can set prohibited paths in the environment variable WSF_FORBIDDEN_PATHS
 (relative to the root directory and separated by the symbol ":").
 Such files or directories will not be displayed in the client's browser.
 
 It is possible to run server in cluster mode.
-To do this, set the SERVER_USE_CLUSTER_MODE environment variable to 1.
+To do this, set the WSF_USE_CLUSTER_MODE environment variable to 1.
 In cluster mode, nodejs child processes will be created according to
 the number of processor cores. This mode allows you to use all 
 processor resources, but at the same time it increases the consumption of RAM.
-If SERVER_SHOULD_RESTART_WORKER=1 is given, the child process will be
+If WSF_SHOULD_RESTART_WORKER=1 is given, the child process will be
 automatically restarted if it terminates unexpectedly.
 
 By default, the server returns the contents in a compressed form.
-If you want to disable this behavior, you can set SERVER_DISABLE_COMPRESSION=1
+If you want to disable this behavior, you can set WSF_DISABLE_COMPRESSION=1
 
 The server uses the "file-icon-vectors" npm package to display file icons.
 (https://www.npmjs.com/package/file-icon-vectors)
 Three types of icons are available: "classic", "square-o", "vivid"
 (see the package page for more details).
-You can set the SERVER_ICONS_TYPE environment variable to one of these values.
+You can set the WSF_ICONS_TYPE environment variable to one of these values.
 The default is "square-o".`;
 		console.log(help);
 		process.exit(0);
@@ -127,14 +127,14 @@ for (let arg of process.argv)
 	ARGS.push(arg);
 }
 const UPLOAD_ENABLE = checkUpload(ARGS);
-const USE_CLUSTER_MODE = Number(process.env.SERVER_USE_CLUSTER_MODE);
-const SHOULD_RESTART_WORKER = Number(process.env.SERVER_SHOULD_RESTART_WORKER);
-const DIRECTORY_MODE = Number(process.env.SERVER_DIRECTORY_MODE);
-const DIRECTORY_MODE_TITLE = process.env.SERVER_DIRECTORY_MODE_TITLE;
-const AUTO_REDIRECT_HTTP_PORT = Number(process.env.SERVER_AUTO_REDIRECT_HTTP_PORT);
-const DISABLE_COMPRESSION = Number(process.env.SERVER_DISABLE_COMPRESSION);
+const USE_CLUSTER_MODE = Number(process.env.WSF_USE_CLUSTER_MODE);
+const SHOULD_RESTART_WORKER = Number(process.env.WSF_SHOULD_RESTART_WORKER);
+const DIRECTORY_MODE = Number(process.env.WSF_DIRECTORY_MODE);
+const DIRECTORY_MODE_TITLE = process.env.WSF_DIRECTORY_MODE_TITLE;
+const AUTO_REDIRECT_HTTP_PORT = Number(process.env.WSF_AUTO_REDIRECT_HTTP_PORT);
+const DISABLE_COMPRESSION = Number(process.env.WSF_DISABLE_COMPRESSION);
 
-let ICONS_TYPE = process.env.SERVER_ICONS_TYPE;
+let ICONS_TYPE = process.env.WSF_ICONS_TYPE;
 
 const MAX_FILE_LENGTH = 2147483647;
 const MAX_STRING_LENGTH = require('buffer').constants.MAX_STRING_LENGTH;
@@ -167,20 +167,59 @@ else
 	_cluster = { isPrimary: true };
 }
 
-const ROOT_PATH_RAW = (ARGS[2] || process.env.SERVER_ROOT);
+const ROOT_PATH_RAW = (ARGS[2] || process.env.WSF_ROOT);
 const ROOT_PATH = ROOT_PATH_RAW ? ROOT_PATH_RAW.replace(/"/g, '') : null; //Папка относительно которой будут задаваться все папки, которые идут с адресом
-const PORT = Number(ARGS[3] || process.env.SERVER_PORT);
-const KEY = ARGS[4] || process.env.SERVER_KEY;
-const CERT = ARGS[5] || process.env.SERVER_CERT;
-const username = ARGS[6] || process.env.SERVER_USERNAME;
-const password = ARGS[7] || process.env.SERVER_PASSWORD;
+const PORT = Number(ARGS[3] || process.env.WSF_PORT);
+const KEY = ARGS[4] || process.env.WSF_KEY;
+const CERT = ARGS[5] || process.env.WSF_CERT;
+const USERS_RAW = process.env.WSF_USERS;
 
 let SESSION_TIMEOUT = null;
 let _sessions = null;
 let _loginExceptions = null;
-if (username && password)
+
+//Format: username1@sha256password1InHex/path1/relative/ROOT_PATH:username2@sha256password2InHex/path2/relative/ROOT_PATH
+let USERS = null;
+if (USERS_RAW)
 {
-	SESSION_TIMEOUT = Number(process.env.SERVER_SESSION_TIMEOUT);
+	const usersStrs = USERS_RAW.split(':');
+	if (usersStrs.length > 0)
+	{
+		USERS = new Map();
+		for (let ustr of usersStrs)
+		{
+			const ustrArr = ustr.split('@');
+			if (ustrArr.length !== 2)
+			{
+				USERS = null;
+				console.log('Error in WSF_USERS environmental (@)');
+				break;
+			}
+			const username = ustrArr[0];
+			const pp = ustrArr[1];
+			const pi = pp.indexOf('/');
+			if (pi === -1)
+			{
+				USERS = null;
+				console.log('Error in WSF_USERS environmental (/)');
+				break;
+			}
+			const passwordHash = pp.slice(0, pi);
+			if (passwordHash.length !== 64 || (/[^0-9a-f]/gi).test(passwordHash))
+			{
+				USERS = null;
+				console.log('Error in WSF_USERS environmental (not sha256 password)');
+				break;
+			}
+			const root = pp.slice(pi);
+			USERS.set(username, { passwordHash, root });
+		}
+	}
+}
+
+if (USERS)
+{
+	SESSION_TIMEOUT = Number(process.env.WSF_SESSION_TIMEOUT);
 	if (!SESSION_TIMEOUT) SESSION_TIMEOUT = 1800;
 	_sessions = new Map();
 	_loginExceptions = new Set();
@@ -198,7 +237,7 @@ To show help use "--help" key`);
 
 let ALLOWED_INTERFACES = null;
 {
-	const ifs = process.env.SERVER_ALLOWED_INTERFACES;
+	const ifs = process.env.WSF_ALLOWED_INTERFACES;
 	if (ifs) ALLOWED_INTERFACES = ifs.split(',').map(v => v.trim());
 }
 
@@ -249,7 +288,7 @@ const _icons_svg_map = new Map();
 const _icons_catalog = new Set();
 const _forbidden_paths = new Set();
 
-const FORBIDDEN_PATHS = process.env.SERVER_FORBIDDEN_PATHS;
+const FORBIDDEN_PATHS = process.env.WSF_FORBIDDEN_PATHS;
 if (FORBIDDEN_PATHS)
 {
 	FORBIDDEN_PATHS.split(':').forEach(fp => _forbidden_paths.add(path.join(ROOT_PATH, fp)));
@@ -2595,7 +2634,7 @@ function checkUpload(args)
 		args.splice(index, 1);
 		flag = true;
 	}
-	let env = Number(process.env.SERVER_UPLOAD_ENABLE);
+	let env = Number(process.env.WSF_UPLOAD_ENABLE);
 	if (!Number.isNaN(env) && env > 0) flag = true;
 	return flag;
 }
