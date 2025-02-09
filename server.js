@@ -192,7 +192,7 @@ if (USERS_RAW)
 			if (ustrArr.length !== 2)
 			{
 				USERS = null;
-				console.log('Error in WSF_USERS environmental (@)');
+				console.log('Error in WSF_USERS (@)');
 				break;
 			}
 			const username = ustrArr[0];
@@ -201,14 +201,14 @@ if (USERS_RAW)
 			if (pi === -1)
 			{
 				USERS = null;
-				console.log('Error in WSF_USERS environmental (/)');
+				console.log('Error in WSF_USERS (/)');
 				break;
 			}
 			const passwordHash = pp.slice(0, pi);
 			if (passwordHash.length !== 64 || (/[^0-9a-f]/gi).test(passwordHash))
 			{
 				USERS = null;
-				console.log('Error in WSF_USERS environmental (not sha256 password)');
+				console.log('Error in WSF_USERS (not sha256 password)');
 				break;
 			}
 			const root = pp.slice(pi);
