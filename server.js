@@ -335,7 +335,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			_dark_css = fs.readFileSync(path.join(__dirname, 'app_files', 'dark.css'));
 			_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
 			readIconsFiles();
-			if (username && password)
+			if (USERS)
 			{
 				_login_css = fs.readFileSync(path.join(__dirname, 'app_files', 'login.css'));
 				_login_html = fs.readFileSync(path.join(__dirname, 'app_files', 'login.html')).toString().split('~%~');
@@ -357,7 +357,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			{
 				console.log('Start in not secure (http) mode.');
 			}
-			if (username && password) console.log('Authentication required!');
+			if (USERS) console.log('Authentication mode enabled.');
 			if (USE_CLUSTER_MODE)
 			{
 				console.log(`Primary ${process.pid} is running`);
@@ -529,9 +529,16 @@ function app(req, res)
 	const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
 	const localeTranslation = _locales.get(clientLang);
 	//Проводим аутентификацию
-	if (username && password)
+	if (USERS)
 	{
-		if (login()) normalWork();
+		const sessionId = login();
+		if (sessionId)
+		{
+			const username = _sessions.get(sessionId).username;
+			const root = USERS.get(username).root;
+			const userdata = { username, root };
+			normalWork(userdata);
+		}
 	}
 	else
 	{
@@ -540,9 +547,6 @@ function app(req, res)
 
 	function login()
 	{
-		const USERS = {};
-		USERS[username] = password;
-
 		if (urlPath === '/wsf_app_files/credentials')
 		{
 			const contentType = req.headers['content-type']?.split(';')[0].trim();
@@ -559,10 +563,10 @@ function app(req, res)
 					else
 					{
 						const reqPostData = parseXwwwFormUrlEncoded(postBody);
-						if (Object.prototype.hasOwnProperty.call(USERS, reqPostData?.username))
+						if (USERS.has(reqPostData?.username))
 						{
-							const username = reqPostData?.username;
-							const passwordHash = USERS[username];
+							const username = reqPostData.username;
+							const passwordHash = USERS.get(username).passwordHash;
 							if (passwordHash === crypto.createHash('sha256').update(reqPostData?.password).digest('hex'))
 							{
 								let refLink = '/';
@@ -698,11 +702,16 @@ function app(req, res)
 		}
 	}
 
-	function normalWork()
+	function normalWork(userdata)
 	{
+		const rootPath = userdata ? path.join(ROOT_PATH, userdata.root) : ROOT_PATH;
+		//Проверка пути пользователя.
+
+		
+
 		if (urlPath.match(/[/\\]\.+\.[/\\]/))
 		{
-			error404(`You can watch only ${ROOT_PATH} directory`, res, acceptEncoding, localeTranslation, clientLang);
+			error404(`You can watch only ${rootPath} directory`, res, acceptEncoding, localeTranslation, clientLang);
 			return;
 		}
 		/*Post данные*/
@@ -715,7 +724,7 @@ function app(req, res)
 				{
 					if (err)
 					{
-						answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, { error: err.message });
+						answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, { error: err.message });
 					}
 					else
 					{
@@ -734,29 +743,29 @@ function app(req, res)
 							parseMultiPartFormData(postBody, boundary, (reqPostData) =>
 							{
 								//console.log('parse complete');
-								answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
+								answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
 							});
 						}
 						else if (contentType[0] === 'application/x-www-form-urlencoded')
 						{
 							const reqPostData = parseXwwwFormUrlEncoded(postBody);
-							answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
+							answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
 						}
 						else
 						{
-							answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
+							answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 						}
 					}
 				});
 			}
 			else
 			{
-				answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
+				answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 			}
 		}
 		else
 		{
-			answer(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
+			answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 		}
 	}
 }
@@ -913,9 +922,9 @@ function parseRequest(str)
 	return params;
 }
 
-function answer(res, urlPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
+function answer(res, urlPath, rootPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
 {
-	sendFileByUrl(res, urlPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
+	sendFileByUrl(res, urlPath, rootPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
 	//if (paramsGet) console.log(paramsGet);
 	//if (postData) console.log(postData);
 }
@@ -998,7 +1007,7 @@ function compressPrepare(acceptEncoding)
 }
 
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
+function sendFileByUrl(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
 {
 	if (_generateIndex)
 	{
@@ -1070,7 +1079,7 @@ function sendFileByUrl(res, urlPath, reqGetData, cookie, acceptEncoding, clientL
 		sendCachedFile(res, _404_css, 'text/css; charset=utf-8', acceptEncoding);
 		return;
 	}
-	let filePath = path.join(ROOT_PATH, urlPath);
+	let filePath = path.join(rootPath, urlPath);
 	fs.stat(filePath, (err, stats) =>
 	{
 		if (err)
