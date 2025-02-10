@@ -707,7 +707,18 @@ function app(req, res)
 		const rootPath = userdata ? path.join(ROOT_PATH, userdata.root) : ROOT_PATH;
 		//Проверка пути пользователя.
 
-		
+		// fs.stat(ROOT_PATH, (err, stats) =>
+		// 	{
+		// 		if (err)
+		// 		{
+		// 			console.log(err?.message);
+		// 			process.exit(1);
+		// 		}
+		// 		else if (stats.isFile())
+		// 		{
+		// 			console.log('Path is not directory');
+		// 			process.exit(1);
+		// 		}
 
 		if (urlPath.match(/[/\\]\.+\.[/\\]/))
 		{
