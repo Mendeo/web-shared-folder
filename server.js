@@ -1098,7 +1098,7 @@ function sendFileByUrl(res, urlPath, rootPath, reqGetData, cookie, acceptEncodin
 		}
 		else if (_generateIndex)
 		{
-			ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, stats.isFile(), stats.size);
+			ifGenetateIndex(res, urlPath, rootPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, stats.isFile(), stats.size);
 		}
 		else if (stats.isFile())
 		{
@@ -1122,7 +1122,7 @@ function sendFileByUrl(res, urlPath, rootPath, reqGetData, cookie, acceptEncodin
 	});
 }
 
-function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, isFile, fileSize)
+function ifGenetateIndex(res, urlPath, rootPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, isFile, fileSize)
 {
 	if (!isFile)
 	{
@@ -1173,7 +1173,7 @@ function ifGenetateIndex(res, urlPath, filePath, acceptEncoding, reqGetData, coo
 					}
 					else if (reqPostData.paste_items && reqPostData.paste_from && reqPostData.paste_type)
 					{
-						pasteItems(filePath, reqPostData.paste_from, reqPostData.paste_items, reqPostData.paste_type, localeTranslation, (errorMessage) =>
+						pasteItems(filePath, rootPath, reqPostData.paste_from, reqPostData.paste_items, reqPostData.paste_type, localeTranslation, (errorMessage) =>
 						{
 							if (errorMessage)
 							{
@@ -1662,7 +1662,7 @@ function testToWrongPath(pathToTest)
 	return true;
 }
 
-function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTranslation, callback)
+function pasteItems(absolutePath, rootPath, itemsPath, itemsList, pasteType, localeTranslation, callback)
 {
 	if (!UPLOAD_ENABLE)
 	{
@@ -1677,7 +1677,7 @@ function pasteItems(absolutePath, itemsPath, itemsList, pasteType, localeTransla
 		console.log('Paste error: Item path incorrect');
 		return;
 	}
-	fromPath = path.join(ROOT_PATH, fromPath);
+	fromPath = path.join(rootPath, fromPath);
 	const items = decodeURIComponent(itemsList).split(',').map((item) => Buffer.from(item, 'base64url').toString());
 	pasteItemsByIndex(0);
 
