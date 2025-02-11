@@ -292,7 +292,8 @@ const FORBIDDEN_PATHS = process.env.WSF_FORBIDDEN_PATHS;
 if (FORBIDDEN_PATHS)
 {
 	FORBIDDEN_PATHS.split(':').forEach(fp => _forbidden_paths.add(path.join(ROOT_PATH, fp)));
-};
+}
+_forbidden_paths.add(path.join(ROOT_PATH, 'wsf_app_files'));
 
 fs.stat(ROOT_PATH, (err, stats) =>
 {
