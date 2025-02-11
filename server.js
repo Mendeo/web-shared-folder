@@ -706,78 +706,77 @@ function app(req, res)
 	{
 		const rootPath = userdata ? path.join(ROOT_PATH, userdata.root) : ROOT_PATH;
 		//Проверка пути пользователя.
-
-		// fs.stat(ROOT_PATH, (err, stats) =>
-		// 	{
-		// 		if (err)
-		// 		{
-		// 			console.log(err?.message);
-		// 			process.exit(1);
-		// 		}
-		// 		else if (stats.isFile())
-		// 		{
-		// 			console.log('Path is not directory');
-		// 			process.exit(1);
-		// 		}
-
-		if (urlPath.match(/[/\\]\.+\.[/\\]/))
+		fs.stat(rootPath, (err, stats) =>
 		{
-			error404(`You can watch only ${rootPath} directory`, res, acceptEncoding, localeTranslation, clientLang);
-			return;
-		}
-		/*Post данные*/
-		const contentType = req.headers['content-type']?.split(';').map((value) => value.trim());
-		if (contentType)
-		{
-			if (contentType[0] === 'multipart/form-data' || contentType[0] === 'application/x-www-form-urlencoded')
+			if (err)
 			{
-				getPostBody(req, (err, postBody) =>
+				console.log(err?.message);
+				process.exit(1);
+			}
+			else if (stats.isFile())
+			{
+				console.log('Path is not directory');
+				process.exit(1);
+			}
+			if (urlPath.match(/[/\\]\.+\.[/\\]/))
+			{
+				error404(`You can watch only ${rootPath} directory`, res, acceptEncoding, localeTranslation, clientLang);
+				return;
+			}
+			/*Post данные*/
+			const contentType = req.headers['content-type']?.split(';').map((value) => value.trim());
+			if (contentType)
+			{
+				if (contentType[0] === 'multipart/form-data' || contentType[0] === 'application/x-www-form-urlencoded')
 				{
-					if (err)
+					getPostBody(req, (err, postBody) =>
 					{
-						answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, { error: err.message });
-					}
-					else
-					{
-						if (UPLOAD_ENABLE && contentType[0] === 'multipart/form-data')
+						if (err)
 						{
-							let boundary = '';
-							for (let i = 1; i < contentType.length; i++)
-							{
-								const pair = contentType[i].split('=');
-								if (pair[0] === 'boundary')
-								{
-									boundary = pair[1];
-									break;
-								}
-							}
-							parseMultiPartFormData(postBody, boundary, (reqPostData) =>
-							{
-								//console.log('parse complete');
-								answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
-							});
-						}
-						else if (contentType[0] === 'application/x-www-form-urlencoded')
-						{
-							const reqPostData = parseXwwwFormUrlEncoded(postBody);
-							answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
+							answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, { error: err.message });
 						}
 						else
 						{
-							answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
+							if (UPLOAD_ENABLE && contentType[0] === 'multipart/form-data')
+							{
+								let boundary = '';
+								for (let i = 1; i < contentType.length; i++)
+								{
+									const pair = contentType[i].split('=');
+									if (pair[0] === 'boundary')
+									{
+										boundary = pair[1];
+										break;
+									}
+								}
+								parseMultiPartFormData(postBody, boundary, (reqPostData) =>
+								{
+									//console.log('parse complete');
+									answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
+								});
+							}
+							else if (contentType[0] === 'application/x-www-form-urlencoded')
+							{
+								const reqPostData = parseXwwwFormUrlEncoded(postBody);
+								answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
+							}
+							else
+							{
+								answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
+							}
 						}
-					}
-				});
+					});
+				}
+				else
+				{
+					answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
+				}
 			}
 			else
 			{
 				answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 			}
-		}
-		else
-		{
-			answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
-		}
+		});
 	}
 }
 
