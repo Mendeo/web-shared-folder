@@ -706,6 +706,7 @@ function app(req, res)
 	function normalWork(userdata)
 	{
 		const rootPath = userdata ? path.join(ROOT_PATH, userdata.root) : ROOT_PATH;
+		const username = userdata?.username;
 		//Проверка пути пользователя.
 		fs.stat(rootPath, (err, stats) =>
 		{
@@ -734,7 +735,7 @@ function app(req, res)
 					{
 						if (err)
 						{
-							answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, { error: err.message });
+							answer(res, username, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, { error: err.message });
 						}
 						else
 						{
@@ -753,29 +754,29 @@ function app(req, res)
 								parseMultiPartFormData(postBody, boundary, (reqPostData) =>
 								{
 									//console.log('parse complete');
-									answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
+									answer(res, username, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
 								});
 							}
 							else if (contentType[0] === 'application/x-www-form-urlencoded')
 							{
 								const reqPostData = parseXwwwFormUrlEncoded(postBody);
-								answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
+								answer(res, username, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
 							}
 							else
 							{
-								answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
+								answer(res, username, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 							}
 						}
 					});
 				}
 				else
 				{
-					answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
+					answer(res, username, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 				}
 			}
 			else
 			{
-				answer(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
+				answer(res, username, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie);
 			}
 		});
 	}
@@ -933,9 +934,9 @@ function parseRequest(str)
 	return params;
 }
 
-function answer(res, urlPath, rootPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
+function answer(res, username, urlPath, rootPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
 {
-	sendFileByUrl(res, urlPath, rootPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
+	sendFileByUrl(res, username, urlPath, rootPath, paramsGet, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData);
 	//if (paramsGet) console.log(paramsGet);
 	//if (postData) console.log(postData);
 }
@@ -1018,7 +1019,7 @@ function compressPrepare(acceptEncoding)
 }
 
 //Поиск и сопоставление нужных путей
-function sendFileByUrl(res, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
+function sendFileByUrl(res, username, urlPath, rootPath, reqGetData, cookie, acceptEncoding, clientLang, localeTranslation, responseCookie, reqPostData)
 {
 	if (_generateIndex)
 	{
@@ -1099,7 +1100,7 @@ function sendFileByUrl(res, urlPath, rootPath, reqGetData, cookie, acceptEncodin
 		}
 		else if (_generateIndex)
 		{
-			ifGenetateIndex(res, urlPath, rootPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, stats.isFile(), stats.size);
+			ifGenetateIndex(res, username, urlPath, rootPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, stats.isFile(), stats.size);
 		}
 		else if (stats.isFile())
 		{
@@ -1123,7 +1124,7 @@ function sendFileByUrl(res, urlPath, rootPath, reqGetData, cookie, acceptEncodin
 	});
 }
 
-function ifGenetateIndex(res, urlPath, rootPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, isFile, fileSize)
+function ifGenetateIndex(res, username, urlPath, rootPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, reqPostData, isFile, fileSize)
 {
 	if (!isFile)
 	{
@@ -1257,7 +1258,7 @@ function ifGenetateIndex(res, urlPath, rootPath, filePath, acceptEncoding, reqGe
 
 	function generateAndSendIndexHtmlAlias(errorMessage)
 	{
-		generateAndSendIndexHtml(res, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
+		generateAndSendIndexHtml(res, username, urlPath, filePath, acceptEncoding, reqGetData, cookie, responseCookie, localeTranslation, clientLang, errorMessage);
 	}
 }
 
@@ -1949,7 +1950,7 @@ function deleteFiles(absolutePath, postData, localeTranslation, callback)
 	}
 }
 
-function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
+function generateAndSendIndexHtml(res, username, urlPath, absolutePath, acceptEncoding, paramsGet, cookie, responseCookie, localeTranslation, clientLang, errorMessage)
 {
 	//Проверка на переход по запрещённым путям.
 	for (let forbiddenPath of _forbidden_paths.values())
@@ -2107,55 +2108,60 @@ function generateAndSendIndexHtml(res, urlPath, absolutePath, acceptEncoding, pa
 		{
 			return  _indexHtmlbase[0] + clientLang +
 					_indexHtmlbase[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
-					_indexHtmlbase[2] + folderName +
-					_indexHtmlbase[3] + getTranslation('checkAll', localeTranslation) +
-					_indexHtmlbase[4] + getTranslation('downloadZip', localeTranslation) +
-					_indexHtmlbase[5] + getTranslation('uncheckAll', localeTranslation) +
-					_indexHtmlbase[6] +
-					`${UPLOAD_ENABLE ? (_indexHtmlbase[7] + getTranslation('deleteFiles', localeTranslation) +
-					_indexHtmlbase[8] + getTranslation('selectForCopyOrMove', localeTranslation) +
-					_indexHtmlbase[9] + getTranslation('copy', localeTranslation) +
-					_indexHtmlbase[10] + getTranslation('move', localeTranslation) +
-					_indexHtmlbase[11]) : ''}` +
-					_indexHtmlbase[12] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
-					_indexHtmlbase[13] + getTranslation('fileName', localeTranslation) +
-					_indexHtmlbase[14] + (hasFiles ? sortLinks[0] : '') +
-					_indexHtmlbase[15] + getTranslation('fileSize', localeTranslation) +
-					_indexHtmlbase[16] + (hasFiles ? sortLinks[1] : '') +
-					_indexHtmlbase[17] + getTranslation('modifyDate', localeTranslation) +
-					_indexHtmlbase[18] + (hasFiles ? sortLinks[2] : '') +
-					_indexHtmlbase[19] + hrefsResult +
-					_indexHtmlbase[20] +
-					`${UPLOAD_ENABLE ? (_indexHtmlbase[21] + getTranslation('createFolder', localeTranslation) +
-					_indexHtmlbase[22] + getTranslation('invalidName', localeTranslation) +
-					_indexHtmlbase[23] + getTranslation('folderName', localeTranslation) +
-					_indexHtmlbase[24] + getTranslation('uploadFiles', localeTranslation) +
-					_indexHtmlbase[25] + getTranslation('dragAndDropText', localeTranslation) +
-					_indexHtmlbase[26] + getTranslation('deleteFilesWarning', localeTranslation) +
-					_indexHtmlbase[27] + getTranslation('yes', localeTranslation) +
-					_indexHtmlbase[28] + getTranslation('no', localeTranslation) +
-					_indexHtmlbase[29] + getTranslation('deleteWithoutAsk', localeTranslation) +
-					_indexHtmlbase[30]) : ''}` +
-					_indexHtmlbase[31] + errorMessage +
-					_indexHtmlbase[32] + getTranslation('poweredBy', localeTranslation) +
-					_indexHtmlbase[33] + getTranslation('lightTheme', localeTranslation) +
-					_indexHtmlbase[34] + getTranslation('lightTheme', localeTranslation) +
-					_indexHtmlbase[35] + getTranslation('autoTheme', localeTranslation) +
-					_indexHtmlbase[36] + getTranslation('autoTheme', localeTranslation) +
-					_indexHtmlbase[37] + getTranslation('darkTheme', localeTranslation) +
-					_indexHtmlbase[38] + getTranslation('darkTheme', localeTranslation) +
-					_indexHtmlbase[39] +
-					`${UPLOAD_ENABLE ? (_indexHtmlbase[40] + getTranslation('inputNewName', localeTranslation) +
-					_indexHtmlbase[41] + getTranslation('invalidName', localeTranslation) +
-					_indexHtmlbase[42] + getTranslation('newName', localeTranslation) +
-					_indexHtmlbase[43] + getTranslation('ok', localeTranslation) +
-					_indexHtmlbase[44] + getTranslation('cancel', localeTranslation) +
-					_indexHtmlbase[45] + getTranslation('replaceWarningDialog', localeTranslation) +
-					_indexHtmlbase[46] + getTranslation('ok', localeTranslation) +
-					_indexHtmlbase[47] + getTranslation('cancel', localeTranslation) +
-					_indexHtmlbase[48] + getTranslation('doNotAsk', localeTranslation) +
-					_indexHtmlbase[49]) : ''}` +
-					_indexHtmlbase[50];
+					_indexHtmlbase[2] +
+					`${USERS ? (_indexHtmlbase[3] + getTranslation('youSignInAs', localeTranslation) +
+					_indexHtmlbase[4] + username +
+					_indexHtmlbase[5] + getTranslation('signOut', localeTranslation) +
+					_indexHtmlbase[6]) : ''}` +
+					_indexHtmlbase[7] + folderName +
+					_indexHtmlbase[8] + getTranslation('checkAll', localeTranslation) +
+					_indexHtmlbase[9] + getTranslation('downloadZip', localeTranslation) +
+					_indexHtmlbase[10] + getTranslation('uncheckAll', localeTranslation) +
+					_indexHtmlbase[11] +
+					`${UPLOAD_ENABLE ? (_indexHtmlbase[12] + getTranslation('deleteFiles', localeTranslation) +
+					_indexHtmlbase[13] + getTranslation('selectForCopyOrMove', localeTranslation) +
+					_indexHtmlbase[14] + getTranslation('copy', localeTranslation) +
+					_indexHtmlbase[15] + getTranslation('move', localeTranslation) +
+					_indexHtmlbase[16]) : ''}` +
+					_indexHtmlbase[17] + `${getTranslation('filesStats', localeTranslation)}: ${filesNumber} (${getStrSize(filesSize, localeTranslation)}). ${getTranslation('foldersStats', localeTranslation)}: ${foldersNumber}` +
+					_indexHtmlbase[18] + getTranslation('fileName', localeTranslation) +
+					_indexHtmlbase[19] + (hasFiles ? sortLinks[0] : '') +
+					_indexHtmlbase[20] + getTranslation('fileSize', localeTranslation) +
+					_indexHtmlbase[21] + (hasFiles ? sortLinks[1] : '') +
+					_indexHtmlbase[22] + getTranslation('modifyDate', localeTranslation) +
+					_indexHtmlbase[23] + (hasFiles ? sortLinks[2] : '') +
+					_indexHtmlbase[24] + hrefsResult +
+					_indexHtmlbase[25] +
+					`${UPLOAD_ENABLE ? (_indexHtmlbase[26] + getTranslation('createFolder', localeTranslation) +
+					_indexHtmlbase[27] + getTranslation('invalidName', localeTranslation) +
+					_indexHtmlbase[28] + getTranslation('folderName', localeTranslation) +
+					_indexHtmlbase[29] + getTranslation('uploadFiles', localeTranslation) +
+					_indexHtmlbase[30] + getTranslation('dragAndDropText', localeTranslation) +
+					_indexHtmlbase[31] + getTranslation('deleteFilesWarning', localeTranslation) +
+					_indexHtmlbase[32] + getTranslation('yes', localeTranslation) +
+					_indexHtmlbase[33] + getTranslation('no', localeTranslation) +
+					_indexHtmlbase[34] + getTranslation('deleteWithoutAsk', localeTranslation) +
+					_indexHtmlbase[35]) : ''}` +
+					_indexHtmlbase[36] + errorMessage +
+					_indexHtmlbase[37] + getTranslation('poweredBy', localeTranslation) +
+					_indexHtmlbase[38] + getTranslation('lightTheme', localeTranslation) +
+					_indexHtmlbase[39] + getTranslation('lightTheme', localeTranslation) +
+					_indexHtmlbase[40] + getTranslation('autoTheme', localeTranslation) +
+					_indexHtmlbase[41] + getTranslation('autoTheme', localeTranslation) +
+					_indexHtmlbase[42] + getTranslation('darkTheme', localeTranslation) +
+					_indexHtmlbase[43] + getTranslation('darkTheme', localeTranslation) +
+					_indexHtmlbase[44] +
+					`${UPLOAD_ENABLE ? (_indexHtmlbase[45] + getTranslation('inputNewName', localeTranslation) +
+					_indexHtmlbase[46] + getTranslation('invalidName', localeTranslation) +
+					_indexHtmlbase[47] + getTranslation('newName', localeTranslation) +
+					_indexHtmlbase[48] + getTranslation('ok', localeTranslation) +
+					_indexHtmlbase[49] + getTranslation('cancel', localeTranslation) +
+					_indexHtmlbase[50] + getTranslation('replaceWarningDialog', localeTranslation) +
+					_indexHtmlbase[51] + getTranslation('ok', localeTranslation) +
+					_indexHtmlbase[52] + getTranslation('cancel', localeTranslation) +
+					_indexHtmlbase[53] + getTranslation('doNotAsk', localeTranslation) +
+					_indexHtmlbase[54]) : ''}` +
+					_indexHtmlbase[55];
 		}
 	});
 }

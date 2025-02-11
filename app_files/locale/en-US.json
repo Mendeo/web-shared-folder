@@ -52,5 +52,7 @@
 	"username": "Username",
 	"password": "Password",
 	"signIn": "Sign in",
-	"signInError": "No user with this name and password found. Please, try again."
+	"signInError": "No user with this name and password found. Please, try again.",
+	"youSignInAs": "You are currently signed in as",
+	"signOut": "Sign out"
 }
