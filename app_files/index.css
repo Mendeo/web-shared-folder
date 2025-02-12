@@ -25,9 +25,9 @@
 	.theme_selector
 	{
 		position: fixed;
-		top: 1rem;
-		right: 50%;
+		top: 90vh;
 		bottom: auto;
+		left: calc(100vw - 6rem);
 	}
 }
 .theme_selector > label
