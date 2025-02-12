@@ -226,6 +226,7 @@ if (USERS)
 	_loginExceptions.add('/wsf_app_files/login.css');
 	_loginExceptions.add('/wsf_app_files/favicon.ico');
 	_loginExceptions.add('/robots.txt');
+	_loginExceptions.add('/sw.js');
 }
 
 if (!ROOT_PATH || !PORT)
@@ -656,7 +657,7 @@ function app(req, res)
 				}
 				else
 				{
-					responseCookie.push(`reflink=${url}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict`);
+					responseCookie.push(`reflink=${url[0]}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict`);
 					reload(res, '/wsf_app_files/login.html', responseCookie);
 					return null;
 				}
