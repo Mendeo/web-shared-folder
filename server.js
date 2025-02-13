@@ -572,11 +572,22 @@ function app(req, res)
 				if (username) _lastUser = username;
 				if (username)
 				{
-					console.log(`user: ${username}, url: ${urlPath}`);
+					console.log(`User: ${username}, url: ${urlPath}`);
+				}
+				else if (USERS)
+				{
+					if (_loginExceptions.has(urlPath))
+					{
+						console.log('url: ' + urlPath);
+					}
+					else
+					{
+						console.log('Not authorized yet, url: ' + urlPath);
+					}
 				}
 				else
 				{
-					console.log('url: ' + urlPath);
+					console.log('Url: ' + urlPath);
 				}
 			}
 		}
