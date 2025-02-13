@@ -633,7 +633,8 @@ function app(req, res)
 						_login_html[4] + getTranslation('password', localeTranslation) +
 						_login_html[5] + getTranslation('signIn', localeTranslation) +
 						_login_html[6] + (isErrorPage ? `<p class="error">${getTranslation('signInError', localeTranslation)}</p>` : '') +
-						_login_html[7],
+						_login_html[7] + getTranslation('poweredBy', localeTranslation) +
+						_login_html[8],
 						'text/html; charset=utf-8', acceptEncoding, 200, responseCookie);
 					return null;
 				}

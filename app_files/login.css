@@ -7,7 +7,7 @@ body
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	height: 95vh;
+	height: 70vh;
 	flex-direction: column;
 }
 .form_view
@@ -38,4 +38,11 @@ body
 .error
 {
 	color: red;
+}
+.footer
+{
+	display: flex;
+	justify-content: center;
+	position: absolute;
+	bottom: 3rem;
 }
