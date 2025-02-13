@@ -226,6 +226,7 @@ if (USERS)
 	_loginExceptions = new Set();
 	_loginExceptions.add('/wsf_app_files/login.css');
 	_loginExceptions.add('/wsf_app_files/favicon.ico');
+	_loginExceptions.add('/wsf_app_files/404.css');
 	_loginExceptions.add('/robots.txt');
 	_loginExceptions.add('/sw.js');
 }
@@ -721,13 +722,13 @@ function app(req, res)
 		{
 			if (err)
 			{
-				console.log(err?.message);
-				process.exit(1);
+				error404(`User ${username} directory error: ${err?.message}`, res, acceptEncoding, localeTranslation, clientLang);
+				return;
 			}
 			else if (stats.isFile())
 			{
-				console.log('Path is not directory');
-				process.exit(1);
+				error404(`User ${username} path is not directory`, res, acceptEncoding, localeTranslation, clientLang);
+				return;
 			}
 			if (urlPath.match(/[/\\]\.+\.[/\\]/))
 			{
