@@ -173,6 +173,7 @@ const PORT = Number(ARGS[3] || process.env.WSF_PORT);
 const KEY = ARGS[4] || process.env.WSF_KEY;
 const CERT = ARGS[5] || process.env.WSF_CERT;
 const USERS_RAW = process.env.WSF_USERS;
+const SHOW_SYSTEM_FILES_REQUESTS = process.env.SHOW_SYSTEM_FILES_REQUESTS;
 
 let SESSION_TIMEOUT = null;
 let _sessions = null;
@@ -522,7 +523,14 @@ function app(req, res)
 	_lastIP = ip;
 	const url = req.url.split('?');
 	const urlPath = decodeURIComponent(url[0]);
-	console.log('url: ' + urlPath);
+	if (SHOW_SYSTEM_FILES_REQUESTS)
+	{
+		console.log('url: ' + urlPath);
+	}
+	else if (!urlPath.startsWith('/wsf_app_files/'))
+	{
+		console.log('url: ' + urlPath);
+	}
 	const cookie = parseCookie(req.headers?.cookie);
 	const reqGetData = parseRequest(url[1]);
 	const acceptEncoding = req.headers['accept-encoding'];
