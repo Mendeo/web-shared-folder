@@ -439,6 +439,7 @@ function readTranslationFiles()
 
 let _lastReqTime = new Date(0);
 let _lastIP = '';
+let _lastUser = '';
 
 function start(isHttps)
 {
@@ -519,19 +520,8 @@ function app(req, res)
 {
 	let now = new Date();
 	let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
-	if (now - _lastReqTime > 1000 || _lastIP !== ip) console.log(`*******${ip}, ${now.toLocaleString()} *******`);
-	_lastReqTime = now;
-	_lastIP = ip;
 	const url = req.url.split('?');
 	const urlPath = decodeURIComponent(url[0]);
-	if (SHOW_SYSTEM_FILES_REQUESTS)
-	{
-		console.log('url: ' + urlPath);
-	}
-	else if (!urlPath.startsWith('/wsf_app_files/'))
-	{
-		console.log('url: ' + urlPath);
-	}
 	const cookie = parseCookie(req.headers?.cookie);
 	const reqGetData = parseRequest(url[1]);
 	const acceptEncoding = req.headers['accept-encoding'];
@@ -539,21 +529,57 @@ function app(req, res)
 	const responseCookie = [];
 	const clientLang = getClientLanguage(acceptLanguage, cookie, responseCookie);
 	const localeTranslation = _locales.get(clientLang);
-	//Проводим аутентификацию
-	if (USERS)
+	//Проводим аутентификацию и вывод логов
 	{
-		const sessionId = login();
-		if (sessionId)
+		if (USERS)
 		{
-			const username = _sessions.get(sessionId).username;
-			const root = USERS.get(username).root;
-			const userdata = { username, root };
-			normalWork(userdata);
+			const sessionId = login();
+			if (sessionId)
+			{
+				const username = _sessions.get(sessionId).username;
+				const root = USERS.get(username).root;
+				const userdata = { username, root };
+				log(username);
+				normalWork(userdata);
+			}
+			else
+			{
+				log();
+			}
 		}
-	}
-	else
-	{
-		normalWork();
+		else
+		{
+			log();
+			normalWork();
+		}
+
+		function log(username)
+		{
+			if (SHOW_SYSTEM_FILES_REQUESTS)
+			{
+				show(username);
+			}
+			else if (!urlPath.startsWith('/wsf_app_files/'))
+			{
+				show(username);
+			}
+
+			function show(username)
+			{
+				if (now - _lastReqTime > 1000 || _lastIP !== ip || (username && _lastUser !== username)) console.log(`*******${ip}, ${now.toLocaleString()} *******`);
+				_lastReqTime = now;
+				_lastIP = ip;
+				if (username) _lastUser = username;
+				if (username)
+				{
+					console.log(`user: ${username}, url: ${urlPath}`);
+				}
+				else
+				{
+					console.log('url: ' + urlPath);
+				}
+			}
+		}
 	}
 
 	function login()
