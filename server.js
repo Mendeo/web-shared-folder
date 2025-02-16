@@ -173,7 +173,7 @@ const PORT = Number(ARGS[3] || process.env.WSF_PORT);
 const KEY = ARGS[4] || process.env.WSF_KEY;
 const CERT = ARGS[5] || process.env.WSF_CERT;
 const USERS_RAW = process.env.WSF_USERS;
-const SHOW_SYSTEM_FILES_REQUESTS = process.env.SHOW_SYSTEM_FILES_REQUESTS;
+const SHOW_SYSTEM_FILES_REQUESTS = process.env.WSF_SHOW_SYSTEM_FILES_REQUESTS;
 
 let SESSION_TIMEOUT = null;
 let _sessions = null;
