@@ -536,10 +536,11 @@ function app(req, res)
 			const sessionId = login();
 			if (sessionId)
 			{
-				const username = _sessions.get(sessionId).username;
-				const root = USERS.get(username).root;
-				const userdata = { username, root };
-				log(username);
+				const sessionData = _sessions.get(sessionId);
+				const root = USERS.get(sessionData.username).root;
+				updateSessionTimeout(sessionId, sessionData);
+				const userdata = { username: sessionData.username, root };
+				log(sessionData.username);
 				normalWork(userdata);
 			}
 			else
@@ -551,6 +552,16 @@ function app(req, res)
 		{
 			log();
 			normalWork();
+		}
+
+		function updateSessionTimeout(sessionId, sessionData)
+		{
+			clearTimeout(sessionData.timerId);
+			sessionData.timerId = setTimeout(() =>
+			{
+				_sessions.delete(sessionId);
+			}, SESSION_TIMEOUT * 1000);
+			responseCookie.push(`sessionId=${sessionId}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict; httpOnly`);
 		}
 
 		function log(username)
@@ -626,7 +637,7 @@ function app(req, res)
 								{
 									_sessions.delete(sessionId);
 								}, SESSION_TIMEOUT * 1000);
-								_sessions.set(sessionId, { username, timerId, timeStamp: Date.now() });
+								_sessions.set(sessionId, { username, timerId });
 								reload(res, refLink, responseCookie);
 							}
 							else
