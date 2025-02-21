@@ -6,4 +6,4 @@
 /.vscode
 /node_modules
 /docker
-test.js
+test*
