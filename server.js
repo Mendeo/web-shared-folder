@@ -518,6 +518,7 @@ function redirectApp(req, res)
 function app(req, res)
 {
 	console.log(`Pid: ${process.pid}, isPrimary: ${_cluster.isPrimary}`);
+	console.log(_sessions.size);
 
 	let now = new Date();
 	let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
