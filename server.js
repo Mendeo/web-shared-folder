@@ -539,9 +539,8 @@ function app(req, res)
 			if (sessionId)
 			{
 				const sessionData = _sessions.get(sessionId);
-				const root = USERS.get(sessionData.username).root;
-				updateSessionTimeout(sessionId, sessionData);
-				const userdata = { username: sessionData.username, root };
+				if (urlPath === '/' || urlPath === '/index.html') updateSessionTimeout(sessionId, sessionData);
+				const userdata = { username: sessionData.username, root: USERS.get(sessionData.username).root };
 				log(sessionData.username);
 				normalWork(userdata);
 			}
