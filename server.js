@@ -3,7 +3,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) Aleksandr Meniailo, Mendeo 2022 (thesolve@mail.ru, deorathemen@gmail.com)
+Copyright (c) Александр Меняйло (Aleksandr Meniailo), Mendeo 2025 (thesolve@mail.ru, deorathemen@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -228,7 +228,6 @@ if (USERS)
 	_loginExceptions.add('/wsf_app_files/favicon.ico');
 	_loginExceptions.add('/wsf_app_files/404.css');
 	_loginExceptions.add('/robots.txt');
-	_loginExceptions.add('/sw.js');
 }
 
 if (!ROOT_PATH || !PORT)
@@ -712,6 +711,11 @@ function app(req, res)
 				if (sessionId)
 				{
 					return sessionId;
+				}
+				else if (urlPath === '/favicon.ico' || urlPath === '/sw.js') //Отбиваем стандартные запросы браузера.
+				{
+					res.writeHead(404);
+					res.end();
 				}
 				else
 				{
