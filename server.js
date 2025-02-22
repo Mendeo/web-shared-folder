@@ -532,7 +532,7 @@ function workerFlow()
 				if (sessionId)
 				{
 					const sessionData = _sessions.get(sessionId);
-					if (urlPath === '/' || urlPath === '/index.html') updateSessionTimeout(sessionId, sessionData);
+					if (!urlPath.startsWith('/wsf_app_files')) updateSessionTimeout(sessionId, sessionData);
 					const userdata = { username: sessionData.username, root: USERS.get(sessionData.username).root };
 					log(sessionData.username);
 					normalWork(userdata);
