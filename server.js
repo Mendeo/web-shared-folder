@@ -179,6 +179,10 @@ if (USERS_RAW)
 	}
 }
 
+let _primarySessions = USERS ? new Map() : null;
+let SESSION_TIMEOUT = Number(process.env.WSF_SESSION_TIMEOUT);
+if (!SESSION_TIMEOUT) SESSION_TIMEOUT = 1800;
+
 if (!ROOT_PATH || !PORT)
 {
 	console.log(`web-shared-folder, version ${VERSION}
@@ -269,9 +273,32 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			{
 				console.log(`Primary ${process.pid} is running`);
 				// Fork workers.
+				const workers = [];
 				for (let i = 0; i < numCPUs; i++)
 				{
-					cluster.fork();
+					workers.push(cluster.fork());
+				}
+				for (let i = 0; i < numCPUs; i++)
+				{
+					workers[i].on('message', (msg) =>
+					{
+						if (msg.sessionId)
+						{
+							const timerId = setTimeout(() =>
+							{
+								_primarySessions.delete(msg.sessionId);
+								for (let j = 0; j < numCPUs; j++)
+								{
+									workers[j].send({ delete: msg.sessionId });
+								}
+							}, SESSION_TIMEOUT * 1000);
+							_primarySessions.set(msg.sessionId, { username: msg.username, timerId });
+							for (let j = 0; j < numCPUs; j++)
+							{
+								if (i !== j) workers[j].send(msg);
+							}
+						}
+					});
 				}
 				cluster.on('exit', (worker, code, signal) =>
 				{
@@ -322,15 +349,12 @@ function workerFlow()
 	const DEFAULT_LANG = 'en-US';
 	let DEFAULT_LOCALE_TRANSLATION = null;
 
-	let SESSION_TIMEOUT = null;
-	let _sessions = null;
+	let _workerSessions = null;
 	let _loginExceptions = null;
 
 	if (USERS)
 	{
-		SESSION_TIMEOUT = Number(process.env.WSF_SESSION_TIMEOUT);
-		if (!SESSION_TIMEOUT) SESSION_TIMEOUT = 1800;
-		_sessions = new Map();
+		if (USE_CLUSTER_MODE) _workerSessions = new Map();
 		_loginExceptions = new Set();
 		_loginExceptions.add('/wsf_app_files/login.css');
 		_loginExceptions.add('/wsf_app_files/favicon.ico');
@@ -511,7 +535,7 @@ function workerFlow()
 	function app(req, res)
 	{
 		console.log(`Pid: ${process.pid}, isPrimary: ${cluster.isPrimary}`);
-		console.log(_sessions.size);
+		console.log(_workerSessions.size);
 
 		let now = new Date();
 		let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
@@ -531,10 +555,10 @@ function workerFlow()
 				const sessionId = login();
 				if (sessionId)
 				{
-					const sessionData = _sessions.get(sessionId);
-					if (!urlPath.startsWith('/wsf_app_files')) updateSessionTimeout(sessionId, sessionData);
-					const userdata = { username: sessionData.username, root: USERS.get(sessionData.username).root };
-					log(sessionData.username);
+					const username = cluster.isPrimary ? _primarySessions.get(sessionId).username : _workerSessions.get(sessionId).username;
+					if (!urlPath.startsWith('/wsf_app_files')) updateSessionTimeout(sessionId);
+					const userdata = { username, root: USERS.get(username).root };
+					log(username);
 					normalWork(userdata);
 				}
 				else
@@ -548,13 +572,21 @@ function workerFlow()
 				normalWork();
 			}
 
-			function updateSessionTimeout(sessionId, sessionData)
+			function updateSessionTimeout(sessionId)
 			{
-				clearTimeout(sessionData.timerId);
-				sessionData.timerId = setTimeout(() =>
+				if (cluster.isPrimary)
 				{
-					_sessions.delete(sessionId);
-				}, SESSION_TIMEOUT * 1000);
+					const sessionData = _primarySessions.get(sessionId);
+					clearTimeout(sessionData.timerId);
+					sessionData.timerId = setTimeout(() =>
+					{
+						_primarySessions.delete(sessionId);
+					}, SESSION_TIMEOUT * 1000);
+				}
+				else
+				{
+
+				}
 				responseCookie.push(`sessionId=${sessionId}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict; httpOnly`);
 			}
 
@@ -627,11 +659,19 @@ function workerFlow()
 									const sessionId = generateSessionId();
 									responseCookie.push(generateSessionCookie(sessionId, username));
 									if (cookie?.reflink) responseCookie.push('reflink=/; path=/; max-age=0; samesite=strict');
-									const timerId = setTimeout(() =>
+									if (cluster.isPrimary)
 									{
-										_sessions.delete(sessionId);
-									}, SESSION_TIMEOUT * 1000);
-									_sessions.set(sessionId, { username, timerId });
+										const timerId = setTimeout(() =>
+										{
+											_primarySessions.delete(sessionId);
+										}, SESSION_TIMEOUT * 1000);
+										_primarySessions.set(sessionId, { username, timerId });
+									}
+									else
+									{
+										_workerSessions.set(sessionId, username);
+										process.send({ sessionId, username });
+									}
 									reload(res, refLink, responseCookie);
 								}
 								else
@@ -685,10 +725,17 @@ function workerFlow()
 				{
 					if (sessionId)
 					{
-						const userdata = _sessions.get(sessionId);
-						responseCookie.push(deleteSessionCookie(sessionId, userdata.username));
-						clearTimeout(userdata.timerId);
-						_sessions.delete(sessionId);
+						if (cluster.isPrimary)
+						{
+							const sessionData = _primarySessions.get(sessionId);
+							clearTimeout(sessionData.timerId);
+							_primarySessions.delete(sessionId);
+						}
+						else
+						{
+							const username = _sessions.get(sessionId);
+						}
+						responseCookie.push(deleteSessionCookie(sessionId));
 						reload(res, '/wsf_app_files/login.html', responseCookie);
 						return null;
 					}
