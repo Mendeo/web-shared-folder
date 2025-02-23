@@ -278,27 +278,51 @@ fs.stat(ROOT_PATH, (err, stats) =>
 				{
 					workers.push(cluster.fork());
 				}
-				for (let i = 0; i < numCPUs; i++)
+				if (USERS)
 				{
-					workers[i].on('message', (msg) =>
+					for (let i = 0; i < numCPUs; i++)
 					{
-						if (msg.sessionId)
+						workers[i].on('message', (msg) =>
 						{
-							const timerId = setTimeout(() =>
+							if (msg.newSession)
 							{
-								_primarySessions.delete(msg.sessionId);
+								const sessionId = msg.newSession;
+								const timerId = setTimeout(() =>
+								{
+									_primarySessions.delete(sessionId);
+									for (let j = 0; j < numCPUs; j++)
+									{
+										workers[j].send({ deleteSession: sessionId });
+									}
+								}, SESSION_TIMEOUT * 1000);
+								_primarySessions.set(sessionId, { username: msg.username, timerId });
 								for (let j = 0; j < numCPUs; j++)
 								{
-									workers[j].send({ delete: msg.sessionId });
+									if (i !== j) workers[j].send(msg);
 								}
-							}, SESSION_TIMEOUT * 1000);
-							_primarySessions.set(msg.sessionId, { username: msg.username, timerId });
-							for (let j = 0; j < numCPUs; j++)
-							{
-								if (i !== j) workers[j].send(msg);
 							}
-						}
-					});
+							else if (msg.deleteSession)
+							{
+								const sessionId = msg.deleteSession;
+								clearTimeout(_primarySessions.get(sessionId));
+								_primarySessions.delete(sessionId);
+								for (let j = 0; j < numCPUs; j++)
+								{
+									if (i !== j) workers[j].send(msg);
+								}
+							}
+							else if (msg.updateSession)
+							{
+								const sessionId = msg.updateSession;
+								const sessionData = _primarySessions.get(sessionId);
+								clearTimeout(sessionData.timerId);
+								sessionData.timerId = setTimeout(() =>
+								{
+									_primarySessions.delete(sessionId);
+								}, SESSION_TIMEOUT * 1000);
+							}
+						});
+					}
 				}
 				cluster.on('exit', (worker, code, signal) =>
 				{
@@ -360,6 +384,20 @@ function workerFlow()
 		_loginExceptions.add('/wsf_app_files/favicon.ico');
 		_loginExceptions.add('/wsf_app_files/404.css');
 		_loginExceptions.add('/robots.txt');
+		if (USE_CLUSTER_MODE)
+		{
+			process.on('message', (msg) =>
+			{
+				if (msg.newSession)
+				{
+					_workerSessions.set(msg.newSession, { username: msg.username });
+				}
+				else if (msg.deleteSession)
+				{
+					_workerSessions.delete(msg.deleteSession);
+				}
+			});
+		}
 	}
 
 	let _indexHtmlbase = null;
@@ -535,7 +573,7 @@ function workerFlow()
 	function app(req, res)
 	{
 		console.log(`Pid: ${process.pid}, isPrimary: ${cluster.isPrimary}`);
-		console.log(_workerSessions.size);
+		//console.log(cluster.isPrimary ? _primarySessions.size : _workerSessions.size);
 
 		let now = new Date();
 		let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
@@ -556,6 +594,7 @@ function workerFlow()
 				if (sessionId)
 				{
 					const username = cluster.isPrimary ? _primarySessions.get(sessionId).username : _workerSessions.get(sessionId).username;
+					//console.log(sessionId, username);
 					if (!urlPath.startsWith('/wsf_app_files')) updateSessionTimeout(sessionId);
 					const userdata = { username, root: USERS.get(username).root };
 					log(username);
@@ -585,7 +624,7 @@ function workerFlow()
 				}
 				else
 				{
-
+					process.send({ updateSession: sessionId });
 				}
 				responseCookie.push(`sessionId=${sessionId}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict; httpOnly`);
 			}
@@ -669,8 +708,8 @@ function workerFlow()
 									}
 									else
 									{
-										_workerSessions.set(sessionId, username);
-										process.send({ sessionId, username });
+										_workerSessions.set(sessionId, { username });
+										process.send({ newSession: sessionId, username });
 									}
 									reload(res, refLink, responseCookie);
 								}
@@ -693,10 +732,33 @@ function workerFlow()
 					return null;
 				}
 			}
+			//Login exceptions
+			else if (_loginExceptions.has(urlPath))
+			{
+				normalWork();
+				return null;
+			}
 			else
 			{
 				let sessionId = null;
-				if (cookie?.sessionId && _sessions.has(cookie.sessionId)) sessionId = cookie.sessionId;
+				if (cookie?.sessionId)
+				{
+					if (cluster.isPrimary)
+					{
+						if (_primarySessions.has(cookie.sessionId)) sessionId = cookie.sessionId;
+					}
+					else
+					{
+						if (_workerSessions.has(cookie.sessionId))
+						{
+							sessionId = cookie.sessionId;
+						}
+						else
+						{
+							console.log('Orphan session!');
+						}
+					}
+				}
 				if (urlPath === '/wsf_app_files/login.html' || urlPath === '/wsf_app_files/login_error.html')
 				{
 					if (sessionId)
@@ -733,19 +795,14 @@ function workerFlow()
 						}
 						else
 						{
-							const username = _sessions.get(sessionId);
+							_workerSessions.delete(sessionId);
+							process.send({ deleteSession: sessionId });
 						}
 						responseCookie.push(deleteSessionCookie(sessionId));
 						reload(res, '/wsf_app_files/login.html', responseCookie);
 						return null;
 					}
 					reload(res, '/wsf_app_files/login.html', responseCookie);
-					return null;
-				}
-				//Исключения
-				else if (_loginExceptions.has(urlPath))
-				{
-					normalWork();
 					return null;
 				}
 				else
@@ -800,7 +857,8 @@ function workerFlow()
 			{
 				const size = 64;
 				let key = Buffer.from(crypto.randomBytes(size)).toString('base64url');
-				while (_sessions.has(key))
+				const sessions = cluster.isPrimary ? _primarySessions : _workerSessions;
+				while (sessions.has(key))
 				{
 					key = Buffer.from(crypto.randomBytes(size)).toString('base64url');
 				}
