@@ -330,7 +330,18 @@ fs.stat(ROOT_PATH, (err, stats) =>
 					if (SHOULD_RESTART_WORKER)
 					{
 						console.log('Restarting...');
-						cluster.fork();
+						const w = cluster.fork();
+						w.on('message', (msg) =>
+						{
+							if (msg === 'ready')
+							{
+								for (let session of _primarySessions)
+								{
+									w.send({ newSession: session[0], username: session[1].username });
+								}
+								console.log('Restat complete.');
+							}
+						});
 					}
 				});
 			}
@@ -388,6 +399,7 @@ function workerFlow()
 		{
 			process.on('message', (msg) =>
 			{
+				//console.log(msg);
 				if (msg.newSession)
 				{
 					_workerSessions.set(msg.newSession, { username: msg.username });
@@ -572,8 +584,7 @@ function workerFlow()
 
 	function app(req, res)
 	{
-		console.log(`Pid: ${process.pid}, isPrimary: ${cluster.isPrimary}`);
-		//console.log(cluster.isPrimary ? _primarySessions.size : _workerSessions.size);
+		console.log(`Pid: ${process.pid}, isPrimary: ${cluster.isPrimary}, size: ${cluster.isPrimary ? _primarySessions.size : _workerSessions.size}`);
 
 		let now = new Date();
 		let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
@@ -755,7 +766,7 @@ function workerFlow()
 						}
 						else
 						{
-							console.log('Orphan session!');
+							//process.send();
 						}
 					}
 				}
@@ -2782,6 +2793,7 @@ function workerFlow()
 		if (ext === '.yml' || ext === '.yaml') return 'text/yaml; charset=UTF-8';
 		return 'application/octet-stream';
 	}
+	process.send('ready');
 }
 
 function getIpV4()
