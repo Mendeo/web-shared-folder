@@ -321,6 +321,11 @@ fs.stat(ROOT_PATH, (err, stats) =>
 									_primarySessions.delete(sessionId);
 								}, SESSION_TIMEOUT * 1000);
 							}
+							else if (msg.hasSession)
+							{
+								console.log(msg.hasSession);
+								workers[i].send({ hasSession: _primarySessions.has(msg.hasSession) });
+							}
 						});
 					}
 				}
@@ -601,20 +606,22 @@ function workerFlow()
 		{
 			if (USERS)
 			{
-				const sessionId = login();
-				if (sessionId)
+				login((sessionId) =>
 				{
-					const username = cluster.isPrimary ? _primarySessions.get(sessionId).username : _workerSessions.get(sessionId).username;
-					//console.log(sessionId, username);
-					if (!urlPath.startsWith('/wsf_app_files')) updateSessionTimeout(sessionId);
-					const userdata = { username, root: USERS.get(username).root };
-					log(username);
-					normalWork(userdata);
-				}
-				else
-				{
-					log();
-				}
+					if (sessionId)
+					{
+						const username = cluster.isPrimary ? _primarySessions.get(sessionId).username : _workerSessions.get(sessionId).username;
+						//console.log(sessionId, username);
+						if (!urlPath.startsWith('/wsf_app_files')) updateSessionTimeout(sessionId);
+						const userdata = { username, root: USERS.get(username).root };
+						log(username);
+						normalWork(userdata);
+					}
+					else
+					{
+						log();
+					}
+				});
 			}
 			else
 			{
@@ -680,7 +687,7 @@ function workerFlow()
 			}
 		}
 
-		function login()
+		function login(callback)
 		{
 			if (urlPath === '/wsf_app_files/credentials')
 			{
@@ -693,7 +700,7 @@ function workerFlow()
 						{
 							console.log(err.message);
 							res.end('Error occured while handling request!');
-							return null;
+							callback(null);
 						}
 						else
 						{
@@ -735,19 +742,19 @@ function workerFlow()
 							}
 						}
 					});
-					return null;
+					callback(null);
 				}
 				else
 				{
 					reload(res, '/wsf_app_files/login.html', responseCookie);
-					return null;
+					callback(null);
 				}
 			}
 			//Login exceptions
 			else if (_loginExceptions.has(urlPath))
 			{
 				normalWork();
-				return null;
+				callback(null);
 			}
 			else
 			{
@@ -757,81 +764,102 @@ function workerFlow()
 					if (cluster.isPrimary)
 					{
 						if (_primarySessions.has(cookie.sessionId)) sessionId = cookie.sessionId;
+						next();
 					}
 					else
 					{
 						if (_workerSessions.has(cookie.sessionId))
 						{
 							sessionId = cookie.sessionId;
+							next();
 						}
 						else
 						{
-							//process.send();
+							//Рабочий процесс ничего не знает про текущую сессию из кук. Требуется проверить наличие этой сессии в главном процессе.
+							function onPrimaryAnswer(msg)
+							{
+								if (msg.hasSession !== undefined)
+								{
+									process.removeListener('message', onPrimaryAnswer);
+									if (msg.hasSession) sessionId = cookie.sessionId;
+									next();
+								}
+							}
+							process.on('message', onPrimaryAnswer);
+							process.send({ hasSession: cookie.sessionId });
 						}
 					}
-				}
-				if (urlPath === '/wsf_app_files/login.html' || urlPath === '/wsf_app_files/login_error.html')
-				{
-					if (sessionId)
-					{
-						reload(res, '/', responseCookie);
-						return null;
-					}
-					else
-					{
-						const isErrorPage = urlPath === '/wsf_app_files/login_error.html';
-						sendCachedFile(res,
-							_login_html[0] + clientLang +
-							_login_html[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
-							_login_html[2] + getTranslation('needLoginAndPassword', localeTranslation) +
-							_login_html[3] + getTranslation('username', localeTranslation) +
-							_login_html[4] + getTranslation('password', localeTranslation) +
-							_login_html[5] + getTranslation('signIn', localeTranslation) +
-							_login_html[6] + (isErrorPage ? `<p class="error">${getTranslation('signInError', localeTranslation)}</p>` : '') +
-							_login_html[7] + getTranslation('poweredBy', localeTranslation) +
-							_login_html[8],
-							'text/html; charset=utf-8', acceptEncoding, 200, responseCookie);
-						return null;
-					}
-				}
-				else if (urlPath === '/wsf_app_files/logout')
-				{
-					if (sessionId)
-					{
-						if (cluster.isPrimary)
-						{
-							const sessionData = _primarySessions.get(sessionId);
-							clearTimeout(sessionData.timerId);
-							_primarySessions.delete(sessionId);
-						}
-						else
-						{
-							_workerSessions.delete(sessionId);
-							process.send({ deleteSession: sessionId });
-						}
-						responseCookie.push(deleteSessionCookie(sessionId));
-						reload(res, '/wsf_app_files/login.html', responseCookie);
-						return null;
-					}
-					reload(res, '/wsf_app_files/login.html', responseCookie);
-					return null;
 				}
 				else
 				{
-					if (sessionId)
+					next();
+				}
+
+				function next()
+				{
+					if (urlPath === '/wsf_app_files/login.html' || urlPath === '/wsf_app_files/login_error.html')
 					{
-						return sessionId;
+						if (sessionId)
+						{
+							reload(res, '/', responseCookie);
+							callback(null);
+						}
+						else
+						{
+							const isErrorPage = urlPath === '/wsf_app_files/login_error.html';
+							sendCachedFile(res,
+								_login_html[0] + clientLang +
+								_login_html[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
+								_login_html[2] + getTranslation('needLoginAndPassword', localeTranslation) +
+								_login_html[3] + getTranslation('username', localeTranslation) +
+								_login_html[4] + getTranslation('password', localeTranslation) +
+								_login_html[5] + getTranslation('signIn', localeTranslation) +
+								_login_html[6] + (isErrorPage ? `<p class="error">${getTranslation('signInError', localeTranslation)}</p>` : '') +
+								_login_html[7] + getTranslation('poweredBy', localeTranslation) +
+								_login_html[8],
+								'text/html; charset=utf-8', acceptEncoding, 200, responseCookie);
+							callback(null);
+						}
 					}
-					else if (urlPath === '/favicon.ico' || urlPath === '/sw.js') //Отбиваем стандартные запросы браузера.
+					else if (urlPath === '/wsf_app_files/logout')
 					{
-						res.writeHead(404);
-						res.end();
+						if (sessionId)
+						{
+							if (cluster.isPrimary)
+							{
+								const sessionData = _primarySessions.get(sessionId);
+								clearTimeout(sessionData.timerId);
+								_primarySessions.delete(sessionId);
+							}
+							else
+							{
+								_workerSessions.delete(sessionId);
+								process.send({ deleteSession: sessionId });
+							}
+							responseCookie.push(deleteSessionCookie(sessionId));
+							reload(res, '/wsf_app_files/login.html', responseCookie);
+							callback(null);
+						}
+						reload(res, '/wsf_app_files/login.html', responseCookie);
+						callback(null);
 					}
 					else
 					{
-						responseCookie.push(`reflink=${url[0]}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict`);
-						reload(res, '/wsf_app_files/login.html', responseCookie);
-						return null;
+						if (sessionId)
+						{
+							callback(sessionId);
+						}
+						else if (urlPath === '/favicon.ico' || urlPath === '/sw.js') //Отбиваем стандартные запросы браузера.
+						{
+							res.writeHead(404);
+							res.end();
+						}
+						else
+						{
+							responseCookie.push(`reflink=${url[0]}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict`);
+							reload(res, '/wsf_app_files/login.html', responseCookie);
+							callback(null);
+						}
 					}
 				}
 			}
