@@ -273,58 +273,32 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			{
 				console.log(`Primary ${process.pid} is running`);
 				// Fork workers.
-				const workers = [];
+				const workers = new Set();
 				for (let i = 0; i < numCPUs; i++)
 				{
-					workers.push(cluster.fork());
+					workers.add(cluster.fork());
 				}
 				if (USERS)
 				{
-					for (let i = 0; i < numCPUs; i++)
+					for (let w of workers)
 					{
-						workers[i].on('message', (msg) =>
+						w.on('message', (msg) =>
 						{
 							if (msg.newSession)
 							{
-								const sessionId = msg.newSession;
-								const timerId = setTimeout(() =>
-								{
-									_primarySessions.delete(sessionId);
-									for (let j = 0; j < numCPUs; j++)
-									{
-										workers[j].send({ deleteSession: sessionId });
-									}
-								}, SESSION_TIMEOUT * 1000);
-								_primarySessions.set(sessionId, { username: msg.username, timerId });
-								for (let j = 0; j < numCPUs; j++)
-								{
-									if (i !== j) workers[j].send(msg);
-								}
+								onNewSession(msg, w, workers);
 							}
 							else if (msg.deleteSession)
 							{
-								const sessionId = msg.deleteSession;
-								clearTimeout(_primarySessions.get(sessionId));
-								_primarySessions.delete(sessionId);
-								for (let j = 0; j < numCPUs; j++)
-								{
-									if (i !== j) workers[j].send(msg);
-								}
+								onDeleteSession(msg, w, workers);
 							}
 							else if (msg.updateSession)
 							{
-								const sessionId = msg.updateSession;
-								const sessionData = _primarySessions.get(sessionId);
-								clearTimeout(sessionData.timerId);
-								sessionData.timerId = setTimeout(() =>
-								{
-									_primarySessions.delete(sessionId);
-								}, SESSION_TIMEOUT * 1000);
+								onUpdateSession(msg);
 							}
 							else if (msg.hasSession)
 							{
-								console.log(msg.hasSession);
-								workers[i].send({ hasSession: _primarySessions.has(msg.hasSession) });
+								onHasSession(msg, w);
 							}
 						});
 					}
@@ -332,23 +306,89 @@ fs.stat(ROOT_PATH, (err, stats) =>
 				cluster.on('exit', (worker, code, signal) =>
 				{
 					console.log(`Worker ${worker.process.pid} died. Code ${code}, signal: ${signal}`);
+					workers.delete(worker);
 					if (SHOULD_RESTART_WORKER)
 					{
 						console.log('Restarting...');
 						const w = cluster.fork();
-						w.on('message', (msg) =>
+						workers.add(w);
+						if (USERS)
 						{
-							if (msg === 'ready')
+							w.on('message', (msg) =>
 							{
-								for (let session of _primarySessions)
+								if (msg === 'ready')
 								{
-									w.send({ newSession: session[0], username: session[1].username });
+									for (let session of _primarySessions)
+									{
+										w.send({ newSession: session[0], username: session[1].username });
+									}
+									console.log('Restat complete.');
 								}
-								console.log('Restat complete.');
-							}
-						});
+								else if (msg.newSession)
+								{
+									onNewSession(msg, w, workers);
+								}
+								else if (msg.deleteSession)
+								{
+									onDeleteSession(msg, w, workers);
+								}
+								else if (msg.updateSession)
+								{
+									onUpdateSession(msg);
+								}
+								else if (msg.hasSession)
+								{
+									onHasSession(msg, w);
+								}
+							});
+						}
 					}
 				});
+
+				function onNewSession(msg, currentWorker, workers)
+				{
+					const sessionId = msg.newSession;
+					const timerId = setTimeout(() =>
+					{
+						_primarySessions.delete(sessionId);
+						for (let w of workers)
+						{
+							w.send({ deleteSession: sessionId });
+						}
+					}, SESSION_TIMEOUT * 1000);
+					_primarySessions.set(sessionId, { username: msg.username, timerId });
+					for (let w of workers)
+					{
+						if (currentWorker !== w) w.send(msg);
+					}
+				}
+
+				function onDeleteSession(msg, currentWorker, workers)
+				{
+					const sessionId = msg.deleteSession;
+					clearTimeout(_primarySessions.get(sessionId));
+					_primarySessions.delete(sessionId);
+					for (let w of workers)
+					{
+						if (currentWorker !== w) w.send(msg);
+					}
+				}
+
+				function onUpdateSession(msg)
+				{
+					const sessionId = msg.updateSession;
+					const sessionData = _primarySessions.get(sessionId);
+					clearTimeout(sessionData.timerId);
+					sessionData.timerId = setTimeout(() =>
+					{
+						_primarySessions.delete(sessionId);
+					}, SESSION_TIMEOUT * 1000);
+				}
+
+				function onHasSession(msg, currentWorker)
+				{
+					currentWorker.send({ hasSession: _primarySessions.has(msg.hasSession) });
+				}
 			}
 			else
 			{
