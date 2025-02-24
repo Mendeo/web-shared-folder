@@ -378,11 +378,14 @@ fs.stat(ROOT_PATH, (err, stats) =>
 				{
 					const sessionId = msg.updateSession;
 					const sessionData = _primarySessions.get(sessionId);
-					clearTimeout(sessionData.timerId);
-					sessionData.timerId = setTimeout(() =>
+					if (sessionData)
 					{
-						_primarySessions.delete(sessionId);
-					}, SESSION_TIMEOUT * 1000);
+						clearTimeout(sessionData.timerId);
+						sessionData.timerId = setTimeout(() =>
+						{
+							_primarySessions.delete(sessionId);
+						}, SESSION_TIMEOUT * 1000);
+					}
 				}
 
 				function onHasSession(msg, currentWorker)
@@ -452,6 +455,7 @@ function workerFlow()
 				else if (msg.deleteSession)
 				{
 					_workerSessions.delete(msg.deleteSession);
+					console.log(`pid: ${process.pid}, deleting: ${msg.deleteSession}`);
 				}
 			});
 		}
