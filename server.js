@@ -821,7 +821,7 @@ function workerFlow()
 								if (msg.hasSession !== undefined)
 								{
 									process.removeListener('message', onPrimaryAnswer);
-									if (msg.hasSession) sessionId = cookie.sessionId;
+									if (msg.hasSession === true) sessionId = cookie.sessionId;
 									next();
 								}
 							}
