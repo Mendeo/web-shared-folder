@@ -348,9 +348,11 @@ fs.stat(ROOT_PATH, (err, stats) =>
 				function onNewSession(msg, currentWorker, workers)
 				{
 					const sessionId = msg.newSession;
+					console.log(SESSION_TIMEOUT);
 					const timerId = setTimeout(() =>
 					{
 						_primarySessions.delete(sessionId);
+						console.log(`Send deleting ${sessionId}`);
 						for (let w of workers)
 						{
 							w.send({ deleteSession: sessionId });
@@ -762,8 +764,10 @@ function workerFlow()
 									if (cookie?.reflink) responseCookie.push('reflink=/; path=/; max-age=0; samesite=strict');
 									if (cluster.isPrimary)
 									{
+										console.log(`Setting: ${sessionId}, timer: ${SESSION_TIMEOUT}`);
 										const timerId = setTimeout(() =>
 										{
+											console.log(`deleting async: ${sessionId}`);
 											_primarySessions.delete(sessionId);
 										}, SESSION_TIMEOUT * 1000);
 										_primarySessions.set(sessionId, { username, timerId });
