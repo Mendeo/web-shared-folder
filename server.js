@@ -629,7 +629,7 @@ function workerFlow()
 
 	function app(req, res)
 	{
-		console.log(`Pid: ${process.pid}, isPrimary: ${cluster.isPrimary}, size: ${cluster.isPrimary ? _primarySessions.size : _workerSessions.size}`);
+		console.log(`Pid: ${process.pid}, isPrimary: ${cluster.isPrimary}, size: ${USE_CLUSTER_MODE ? (cluster.isPrimary ? _primarySessions.size : _workerSessions.size) : 'not a cluster'}`);
 
 		let now = new Date();
 		let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
@@ -880,8 +880,11 @@ function workerFlow()
 							reload(res, '/wsf_app_files/login.html', responseCookie);
 							callback(null);
 						}
-						reload(res, '/wsf_app_files/login.html', responseCookie);
-						callback(null);
+						else
+						{
+							reload(res, '/wsf_app_files/login.html', responseCookie);
+							callback(null);
+						}
 					}
 					else
 					{
@@ -2861,7 +2864,7 @@ function workerFlow()
 		if (ext === '.yml' || ext === '.yaml') return 'text/yaml; charset=UTF-8';
 		return 'application/octet-stream';
 	}
-	process.send('ready');
+	if (cluster.isWorker) process.send('ready');
 }
 
 function getIpV4()
