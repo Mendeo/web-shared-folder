@@ -182,6 +182,7 @@ if (USERS_RAW)
 let _primarySessions = USERS ? new Map() : null;
 let SESSION_TIMEOUT = Number(process.env.WSF_SESSION_TIMEOUT);
 if (!SESSION_TIMEOUT) SESSION_TIMEOUT = 1800;
+const SESSION_UPDATE_PAUSE_MILLISECONDS = 5000; //Если запросы приходят чаще, чем это время, то сессия на эти запросы не обновляется.
 
 if (!ROOT_PATH || !PORT)
 {
@@ -294,7 +295,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 							}
 							else if (msg.updateSession)
 							{
-								onUpdateSession(msg);
+								onUpdateSession(msg, w, workers);
 							}
 							else if (msg.hasSession)
 							{
@@ -334,7 +335,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 								}
 								else if (msg.updateSession)
 								{
-									onUpdateSession(msg);
+									onUpdateSession(msg, w, workers);
 								}
 								else if (msg.hasSession)
 								{
@@ -348,11 +349,9 @@ fs.stat(ROOT_PATH, (err, stats) =>
 				function onNewSession(msg, currentWorker, workers)
 				{
 					const sessionId = msg.newSession;
-					console.log(SESSION_TIMEOUT);
 					const timerId = setTimeout(() =>
 					{
 						_primarySessions.delete(sessionId);
-						console.log(`Send deleting ${sessionId}`);
 						for (let w of workers)
 						{
 							w.send({ deleteSession: sessionId });
@@ -376,17 +375,21 @@ fs.stat(ROOT_PATH, (err, stats) =>
 					}
 				}
 
-				function onUpdateSession(msg)
+				function onUpdateSession(msg, currentWorker, workers)
 				{
 					const sessionId = msg.updateSession;
 					const sessionData = _primarySessions.get(sessionId);
 					if (sessionData)
 					{
 						clearTimeout(sessionData.timerId);
+						sessionData.timeStamp = msg.timeStamp;
+						for (let w of workers)
+						{
+							if (currentWorker !== w) w.send(msg);
+						}
 						sessionData.timerId = setTimeout(() =>
 						{
 							_primarySessions.delete(sessionId);
-							console.log(`Send deleting after update ${sessionId}`);
 							for (let w of workers)
 							{
 								w.send({ deleteSession: sessionId });
@@ -415,7 +418,7 @@ fs.stat(ROOT_PATH, (err, stats) =>
 
 function workerFlow()
 {
-	const SHOW_SYSTEM_FILES_REQUESTS = process.env.WSF_SHOW_SYSTEM_FILES_REQUESTS;
+	const SHOW_SYSTEM_FILES_REQUESTS = Number(process.env.WSF_SHOW_SYSTEM_FILES_REQUESTS);
 	const DIRECTORY_MODE_TITLE = process.env.WSF_DIRECTORY_MODE_TITLE;
 	const MAX_FILE_LENGTH = 2147483647;
 	const MAX_STRING_LENGTH = require('buffer').constants.MAX_STRING_LENGTH;
@@ -462,7 +465,11 @@ function workerFlow()
 				else if (msg.deleteSession)
 				{
 					_workerSessions.delete(msg.deleteSession);
-					console.log(`pid: ${process.pid}, deleting: ${msg.deleteSession}`);
+				}
+				else if (msg.updateSession)
+				{
+					const sessionData = _workerSessions.get(msg.updateSession);
+					sessionData.timeStamp = msg.timeStamp;
 				}
 			});
 		}
@@ -640,7 +647,7 @@ function workerFlow()
 
 	function app(req, res)
 	{
-		console.log(`Pid: ${process.pid}, isPrimary: ${cluster.isPrimary}, size: ${USE_CLUSTER_MODE ? (cluster.isPrimary ? _primarySessions.size : _workerSessions.size) : 'not a cluster'}`);
+		//console.log(`Pid: ${process.pid}, isPrimary: ${cluster.isPrimary}, size: ${USE_CLUSTER_MODE ? (cluster.isPrimary ? _primarySessions.size : _workerSessions.size) : 'not a cluster'}`);
 
 		let now = new Date();
 		let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || null;
@@ -682,21 +689,32 @@ function workerFlow()
 
 			function updateSessionTimeout(sessionId)
 			{
+				const now = Date.now();
+				const sessionCookie = `sessionId=${sessionId}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict; httpOnly`;
 				if (cluster.isPrimary)
 				{
 					const sessionData = _primarySessions.get(sessionId);
-					clearTimeout(sessionData.timerId);
-					sessionData.timerId = setTimeout(() =>
+					if (now - sessionData.timeStamp > SESSION_UPDATE_PAUSE_MILLISECONDS)
 					{
-						console.log(`Timer after update: ${sessionId}`);
-						_primarySessions.delete(sessionId);
-					}, SESSION_TIMEOUT * 1000);
+						clearTimeout(sessionData.timerId);
+						sessionData.timeStamp = now;
+						sessionData.timerId = setTimeout(() =>
+						{
+							_primarySessions.delete(sessionId);
+						}, SESSION_TIMEOUT * 1000);
+						responseCookie.push(sessionCookie);
+					}
 				}
 				else
 				{
-					process.send({ updateSession: sessionId });
+					const sessionData = _workerSessions.get(sessionId);
+					if (now - sessionData.timeStamp > SESSION_UPDATE_PAUSE_MILLISECONDS)
+					{
+						process.send({ updateSession: sessionId, timeStamp: now });
+						sessionData.timeStamp = now;
+						responseCookie.push(sessionCookie);
+					}
 				}
-				responseCookie.push(`sessionId=${sessionId}; path=/; max-age=${SESSION_TIMEOUT}; samesite=strict; httpOnly`);
 			}
 
 			function log(username)
@@ -768,20 +786,19 @@ function workerFlow()
 									const sessionId = generateSessionId();
 									responseCookie.push(generateSessionCookie(sessionId, username));
 									if (cookie?.reflink) responseCookie.push('reflink=/; path=/; max-age=0; samesite=strict');
+									const now = Date.now();
 									if (cluster.isPrimary)
 									{
-										console.log(`Setting: ${sessionId}, timer: ${SESSION_TIMEOUT}`);
 										const timerId = setTimeout(() =>
 										{
-											console.log(`deleting async: ${sessionId}`);
 											_primarySessions.delete(sessionId);
 										}, SESSION_TIMEOUT * 1000);
-										_primarySessions.set(sessionId, { username, timerId });
+										_primarySessions.set(sessionId, { username, timerId, timeStamp: now });
 									}
 									else
 									{
-										_workerSessions.set(sessionId, { username });
-										process.send({ newSession: sessionId, username });
+										_workerSessions.set(sessionId, { username, timeStamp: now });
+										process.send({ newSession: sessionId, username, timeStamp: now });
 									}
 									reload(res, refLink, responseCookie);
 								}
