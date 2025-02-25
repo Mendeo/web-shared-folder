@@ -386,6 +386,11 @@ fs.stat(ROOT_PATH, (err, stats) =>
 						sessionData.timerId = setTimeout(() =>
 						{
 							_primarySessions.delete(sessionId);
+							console.log(`Send deleting after update ${sessionId}`);
+							for (let w of workers)
+							{
+								w.send({ deleteSession: sessionId });
+							}
 						}, SESSION_TIMEOUT * 1000);
 					}
 				}
@@ -683,6 +688,7 @@ function workerFlow()
 					clearTimeout(sessionData.timerId);
 					sessionData.timerId = setTimeout(() =>
 					{
+						console.log(`Timer after update: ${sessionId}`);
 						_primarySessions.delete(sessionId);
 					}, SESSION_TIMEOUT * 1000);
 				}
