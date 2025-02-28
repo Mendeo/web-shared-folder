@@ -48,7 +48,7 @@
 	"pasteError": "Failed to copy or move",
 	"replaceWarningDialog": "Please note! If the names are the same, existing files in the destination folder will be replaced with new ones without warning!",
 	"doNotAsk": "Do not show this message again",
-	"needLoginAndPassword": "You need to enter your user name and password",
+	"needLoginAndPassword": "You need to enter your username and password",
 	"username": "Username",
 	"password": "Password",
 	"signIn": "Sign in",
