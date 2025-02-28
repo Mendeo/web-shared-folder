@@ -510,7 +510,7 @@ function workerFlow()
 
 	function start()
 	{
-		if (KEY & CERT)
+		if (KEY && CERT)
 		{
 			const ssl_cert =
 			{
