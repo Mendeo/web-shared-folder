@@ -182,7 +182,10 @@ if (USERS_RAW)
 let _primarySessions = USERS ? new Map() : null;
 let SESSION_TIMEOUT = Number(process.env.WSF_SESSION_TIMEOUT);
 if (!SESSION_TIMEOUT) SESSION_TIMEOUT = 1800;
-const SESSION_UPDATE_PAUSE_MILLISECONDS = 5000; //Если запросы приходят чаще, чем это время, то сессия на эти запросы не обновляется.
+//Если запросы приходят чаще, чем это время, то сессия на эти запросы не обновляется.
+let SESSION_UPDATE_PAUSE_MILLISECONDS = Number(process.env.WSF_SESSION_UPDATE_PAUSE_MILLISECONDS);
+if (!SESSION_UPDATE_PAUSE_MILLISECONDS) SESSION_UPDATE_PAUSE_MILLISECONDS = 5000;
+
 
 if (!ROOT_PATH || !PORT)
 {
