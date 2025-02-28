@@ -52,72 +52,8 @@ const VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'))
 	if (h)
 	{
 		const help =
-`Web server on nodejs, designed to share user directory from network.
-It can also be used as a web server to serve static sites.
-
-Usage:
-web-shared-folder [--upload or -u] <path to the directory for sharing> <port> [<key> <cert>] [<username> <password>]
-
-If there is the "index.html" file in the specified directory,
-then the server will start in the static web site mode.
-The directory contents viewing mode can be forced.
-To do this, set the environment variable WSF_DIRECTORY_MODE=1.
-Also, this mode can be forcibly disabled by setting WSF_DIRECTORY_MODE=0.
-
-In order to limit the number of network interfaces that the server will listen on,
-you need to use the environment variable WSF_ALLOWED_INTERFACES.
-In this variable, you should specify a comma-separated list of IP addresses that the server will listen on.
-For example, to limit the server to work only on the localhost, you need to specify
-WSF_ALLOWED_INTERFACES=127.0.0.1
-
-In order to allow users to upload files to the server,
-it is necessary to add command key **--upload** or **-u** or set the environment variable WSF_UPLOAD_ENABLE to 1.
-
-In order to start the server to work over https, you must specify the files:
-the private key file (<key>) and the certificate file (<cert>).
-
-In https mode, it is possible to enable automatic redirection from http.
-To do this, set to the WSF_AUTO_REDIRECT_HTTP_PORT environment variable
-the port number from which the redirection will be performed (usually 80).
-
-If the keys <username> and <password> are given,
-then HTTP authentication is enabled with the given login and password.
-
-All command line options can also be set in the environment variables:
-WSF_ROOT, WSF_PORT, WSF_KEY,
-WSF_CERT, WSF_USERNAME, WSF_PASSWORD.
-Also in the WSF_PASSWORD_MD5 environment variable
-the server password can be set as a md5 hash.
-Options specified on the command line have higher precedence.
-
-In particular, in this mode, the user can upload a zip archive to the server
-and then unzip it by clicking on the unzip icon. And also user can copy or move
-files and directories within the root directory.
-
-User can set the page title in the
-WSF_DIRECTORY_MODE_TITLE environment variable.
-
-User can set prohibited paths in the environment variable WSF_FORBIDDEN_PATHS
-(relative to the root directory and separated by the symbol ":").
-Such files or directories will not be displayed in the client's browser.
-
-It is possible to run server in cluster mode.
-To do this, set the WSF_USE_CLUSTER_MODE environment variable to 1.
-In cluster mode, nodejs child processes will be created according to
-the number of processor cores. This mode allows you to use all 
-processor resources, but at the same time it increases the consumption of RAM.
-If WSF_SHOULD_RESTART_WORKER=1 is given, the child process will be
-automatically restarted if it terminates unexpectedly.
-
-By default, the server returns the contents in a compressed form.
-If you want to disable this behavior, you can set WSF_DISABLE_COMPRESSION=1
-
-The server uses the "file-icon-vectors" npm package to display file icons.
-(https://www.npmjs.com/package/file-icon-vectors)
-Three types of icons are available: "classic", "square-o", "vivid"
-(see the package page for more details).
-You can set the WSF_ICONS_TYPE environment variable to one of these values.
-The default is "square-o".`;
+`Help is not ready yet.
+`;
 		console.log(help);
 		process.exit(0);
 	}
@@ -185,7 +121,6 @@ if (!SESSION_TIMEOUT) SESSION_TIMEOUT = 1800;
 //Если запросы приходят чаще, чем это время, то сессия на эти запросы не обновляется.
 let SESSION_UPDATE_PAUSE_MILLISECONDS = Number(process.env.WSF_SESSION_UPDATE_PAUSE_MILLISECONDS);
 if (!SESSION_UPDATE_PAUSE_MILLISECONDS) SESSION_UPDATE_PAUSE_MILLISECONDS = 5000;
-
 
 if (!ROOT_PATH || !PORT)
 {
