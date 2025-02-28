@@ -46,3 +46,10 @@ body
 	position: absolute;
 	bottom: 3rem;
 }
+@media screen and (max-height: 350px)
+{
+	.footer
+	{
+		display: none;
+	}
+}
