@@ -1,28 +1,75 @@
 # web-shared-folder
 
-Convenient http server on nodejs. Designed to share some folder on a local network or even on the Internet. It can also be used as a web server to serve static sites.
+Convenient http server on nodejs. Designed to share files and folders on a local network or even on the Internet via a web interface. Can also be used as a web server to serve static sites.
 
 Capabilities
 
-* Download the selected files and folders at once as a zip archive.
-* Upload, delete, copy or move files, unpack zip archives into a shared folder (if the write option is enabled on the server).
-* Set file sorting by name, size or date.
-* Switch between light and dark themes. 
-* It is possible to work over https protocol with an automatic redirect from http.
-* It is possible to enable basic HTTP authentication with a given username and password.
-* Can work without javascript enabled on the client side.
+* Shared directory in a local network or the Internet via a web interface.
+* There is an option not only to download data from a specified folder but also to upload data to it.
+* It is possible to create users with access only to a specified folder.
+* It can work as a server for hosting a static website.
+* It is possible to work over HTTPS protocol with an automatic redirect from HTTP.
+* If the load is high, then you can enable cluster mode, using all cores of the server machine.
+* There is a dark theme.
 * Pages are automatically displayed in the user language (only two languages are available at the moment).
+
+## Installation
+
+```
+npm i -g web-shared-folder
+```
+
+## Usage
+
+```
+wsf </path/to/folder/for/sharing> <port> [</path/to/key> </path/to/cert>] [--upload or -u]
+```
+
+To output only the version number:
+```
+wsf -v
+```
+
+To output help:
+```
+wsf -h
+```
+
+Instead of *wsf* you can use the full program name *web-shared-folder*.
+
+To run the server, you need to specify at least the path to the directory to be shared and the port number on which the server will operate. The folder path is specified in the first parameter, followed by the port number.
+
+The web-shared-folder server operates as follows:
+If there is an index.html file in the root of the specified directory, web-shared-folder starts working as a web server that hosts a static website and sends index.html when the root URL is requested. Otherwise, the server switches to a mode that displays the contents of the directory specified in the startup parameters. In this case, the user can download files and folders located in that directory.
+
+Example:
+
+```
+wsf . 80
+```
+
+If there is no index.html file in the root directory, this command will start the server on port 80 and share the current folder for browsing and downloading.
+The server will be accessible on all available network interfaces (this can be changed by setting the appropriate environment variable). For example, if the server has an IP address of 192.168.1.2, you can access it in the local network by entering the address http://192.168.1.2 in your browser. Since the standard port number 80 is used, the port number does not need to be specified in the address. If a non-standard port number is used, such as 8080, it must be included in the address: http://192.168.1.2:8080. On Linux machines, you may need to run the program from root to work with port 80.
 
 ![Screenshot with files upload disabled](https://github.com/Mendeo/web-shared-folder/blob/master/img/screenshot_upload_disabled.png)  
 *Screenshot with files upload disabled*
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ![Screenshot with files upload enabled](https://github.com/Mendeo/web-shared-folder/blob/master/img/screenshot_upload_enabled.png)  
 *Screenshot with files upload enabled*
 
-## Installation
-```bash
-npm i -g web-shared-folder
-```
 
 ## Usage
 ```bash
