@@ -1,0 +1,55 @@
+body
+{
+	font-family: Arial, Helvetica, sans-serif;
+}
+.center
+{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 70vh;
+	flex-direction: column;
+}
+.form_view
+{
+	display: flex;
+	align-items: start;
+	flex-direction: column;
+	justify-content: space-between;
+	height: 5rem;
+	width: max-content;
+}
+.form_view div
+{
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+}
+.form_view label
+{
+	display: block;
+	padding-right: 0.5rem;
+}
+.form_view button
+{
+	width: 100%;
+}
+.error
+{
+	color: red;
+}
+.footer
+{
+	display: flex;
+	justify-content: center;
+	position: absolute;
+	bottom: 3rem;
+}
+@media screen and (max-height: 350px)
+{
+	.footer
+	{
+		display: none;
+	}
+}

@@ -4,7 +4,7 @@
 	"fileSize": "Size",
 	"modifyDate": "Modify date",
 	"folderSizeStub": "&lt;dir&gt;",
-	"defaultTitle": "Directory browsing mode",
+	"defaultTitle": "Remote file manager",
 	"sizeByte": "B",
 	"sizeKiB": "KiB",
 	"sizeMiB": "MiB",
@@ -47,5 +47,12 @@
 	"move": "Move",
 	"pasteError": "Failed to copy or move",
 	"replaceWarningDialog": "Please note! If the names are the same, existing files in the destination folder will be replaced with new ones without warning!",
-	"doNotAsk": "Do not show this message again"
+	"doNotAsk": "Do not show this message again",
+	"needLoginAndPassword": "You need to enter your username and password",
+	"username": "Username",
+	"password": "Password",
+	"signIn": "Sign in",
+	"signInError": "No user with this name and password found. Please, try again.",
+	"youSignInAs": "You are currently signed in as",
+	"signOut": "Sign out"
 }
