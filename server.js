@@ -449,11 +449,11 @@ function workerFlow()
 		_dark_css = fs.readFileSync(path.join(__dirname, 'app_files', 'dark.css'));
 		_robots_txt = fs.readFileSync(path.join(__dirname, 'app_files', 'robots.txt'));
 		readIconsFiles();
-		if (USERS)
-		{
-			_login_css = fs.readFileSync(path.join(__dirname, 'app_files', 'login.css'));
-			_login_html = fs.readFileSync(path.join(__dirname, 'app_files', 'login.html')).toString().split('~%~');
-		}
+	}
+	if (USERS)
+	{
+		_login_css = fs.readFileSync(path.join(__dirname, 'app_files', 'login.css'));
+		_login_html = fs.readFileSync(path.join(__dirname, 'app_files', 'login.html')).toString().split('~%~');
 	}
 	readTranslationFiles();
 	_404_css = fs.readFileSync(path.join(__dirname, 'app_files', '404.css'));
@@ -819,13 +819,14 @@ function workerFlow()
 							sendCachedFile(res,
 								_login_html[0] + clientLang +
 								_login_html[1] + (DIRECTORY_MODE_TITLE ? DIRECTORY_MODE_TITLE : getTranslation('defaultTitle', localeTranslation)) +
-								_login_html[2] + getTranslation('needLoginAndPassword', localeTranslation) +
-								_login_html[3] + getTranslation('username', localeTranslation) +
-								_login_html[4] + getTranslation('password', localeTranslation) +
-								_login_html[5] + getTranslation('signIn', localeTranslation) +
-								_login_html[6] + (isErrorPage ? `<p class="error">${getTranslation('signInError', localeTranslation)}</p>` : '') +
-								_login_html[7] + getTranslation('poweredBy', localeTranslation) +
-								_login_html[8],
+								_login_html[2] + (_generateIndex ? 'wsf_app_files/' : '') +
+								_login_html[3] + getTranslation('needLoginAndPassword', localeTranslation) +
+								_login_html[4] + getTranslation('username', localeTranslation) +
+								_login_html[5] + getTranslation('password', localeTranslation) +
+								_login_html[6] + getTranslation('signIn', localeTranslation) +
+								_login_html[7] + (isErrorPage ? `<p class="error">${getTranslation('signInError', localeTranslation)}</p>` : '') +
+								_login_html[8] + getTranslation('poweredBy', localeTranslation) +
+								_login_html[9],
 								'text/html; charset=utf-8', acceptEncoding, 200, responseCookie);
 							callback(null);
 						}
@@ -1254,9 +1255,6 @@ function workerFlow()
 			case '/wsf_app_files/dark.css':
 				sendCachedFile(res, _dark_css, 'text/css; charset=utf-8', acceptEncoding);
 				return;
-			case '/wsf_app_files/login.css':
-				sendCachedFile(res, _login_css, 'text/css; charset=utf-8', acceptEncoding);
-				return;
 			case '/robots.txt':
 				sendCachedFile(res, _robots_txt, 'text/plain; charset=utf-8', acceptEncoding);
 				return;
@@ -1303,6 +1301,11 @@ function workerFlow()
 		if (urlPath === '/wsf_app_files/404.css')
 		{
 			sendCachedFile(res, _404_css, 'text/css; charset=utf-8', acceptEncoding);
+			return;
+		}
+		else if (urlPath === '/wsf_app_files/login.css')
+		{
+			sendCachedFile(res, _login_css, 'text/css; charset=utf-8', acceptEncoding);
 			return;
 		}
 		let filePath = path.join(rootPath, urlPath);
