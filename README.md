@@ -2,6 +2,10 @@
 
 Convenient http server on nodejs. Designed to share files and folders on a local network or even on the Internet via a web interface. Can also be used as a web server to serve static sites.
 
+**Breaking changes in v 4.\***
+* **In the environment variables, the prefix is ​​now WSF instead of SERVER**
+* **Username and password can no longer be specified in command line arguments**
+
 Capabilities
 
 * Shared directory in a local network or the Internet via a web interface.
