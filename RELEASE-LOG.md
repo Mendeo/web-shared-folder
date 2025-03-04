@@ -1,5 +1,5 @@
 # v 4.0.0
-Removed http authentication. Instead, added the ability to create different users with access only to a specified user folder. Updated README.md and ```wsf --help```  
+Removed http authentication. Instead, added the ability to create different users with access only to a specified user folder. Updated README.md and `wsf --help`  
 **Breaking changes:**
 * **In the environment variables, the prefix is ​​now WSF instead of SERVER**
 * **Username and password can no longer be specified in command line arguments**
