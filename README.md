@@ -71,7 +71,7 @@ wsf . 80 -u
 ![Screenshot with files upload enabled](https://github.com/Mendeo/web-shared-folder/blob/master/img/screenshot_upload_enabled.png)  
 *Screenshot with files upload enabled*
 
-In this case, clicking on the link in the form of an up arrow next to the zip archive file will unpack this archive into the current directory.
+In this mode, clicking on the link in the form of an up arrow next to the zip archive file will unpack this archive into the current directory.
 
 ## Using the HTTPS
 
@@ -112,8 +112,8 @@ WSF_DIRECTORY_MODE_TITLE              |Sets the title of the pages displayed in 
 
 Environment Variable                  |Description
 :-------------------------------------|:-
-WSF_CERT                              |Path to the SSL certificate file (`fullchain.pem`).
-WSF_KEY                               |Path to the SSL private key file (`privkey.pem`)..
+WSF_CERT                              |Path to the SSL certificate file (usually `fullchain.pem`).
+WSF_KEY                               |Path to the SSL private key file (usually `privkey.pem`).
 WSF_AUTO_REDIRECT_HTTP_PORT           |When the server operates in secure mode (using HTTPS), it is possible to enable automatic redirection for clients attempting to connect via HTTP. For example, if the server is running on the standard HTTPS port 443, you can set up automatic redirection for clients connecting via HTTP (standard port 80) by setting `WSF_AUTO_REDIRECT_HTTP_PORT=80`.
 
 ### Security Settings
