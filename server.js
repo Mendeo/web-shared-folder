@@ -265,6 +265,7 @@ let ROOT_PATH_RAW = ARGS[2] || process.env.WSF_ROOT;
 ROOT_PATH_RAW = ROOT_PATH_RAW ? ROOT_PATH_RAW.replace(/"/g, '') : null;
 if (!path.isAbsolute(ROOT_PATH_RAW)) ROOT_PATH_RAW = path.join(__dirname, ROOT_PATH_RAW);
 const ROOT_PATH = ROOT_PATH_RAW; //Папка относительно которой будут задаваться все папки, которые идут с адресом
+ROOT_PATH_RAW = null;
 const PORT = Number(ARGS[3] || process.env.WSF_PORT);
 const KEY = ARGS[4] || process.env.WSF_KEY;
 const CERT = ARGS[5] || process.env.WSF_CERT;
