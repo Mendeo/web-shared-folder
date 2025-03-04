@@ -35,7 +35,7 @@ To output help:
 wsf -h
 ```
 
-Instead of *wsf* you can use the full program name *web-shared-folder*.
+Instead of `wsf` you can use the full program name `web-shared-folder`.
 
 ## Basic
 
@@ -59,6 +59,8 @@ The server will be accessible on all available network interfaces (this can be c
 The eye-shaped link next to the file allows you to open it directly in the browser in a separate tab. This way, you can view, for example, text, photos, or some videos (if the browser supports the encoding).
 
 If you need to give users the ability to upload files to the server in a shared folder, as well as the ability to rename, delete, and move existing files and folders, then the web-shared-folder server must be launched with the --upload or -u key.
+
+However, there are limitations on file uploads. The issue is that the uploaded files are transmitted in a single request, and browsers have a limit on the duration of such a request, typically 5 or 10 minutes (depending on the browser). If the upload duration exceeds this time, it will end with an error. Another limitation is the total size of files uploaded at once. It should not exceed 2 GiB.
 
 Example:
 
