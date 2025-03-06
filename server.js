@@ -412,12 +412,12 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		{
 			if (KEY && CERT)
 			{
-				console.log('Started in secure (https) mode.');
+				console.log('Started in secure (HTTPS) mode.');
 				if (AUTO_REDIRECT_HTTP_PORT) console.log(`Auto redirect from http port ${AUTO_REDIRECT_HTTP_PORT} is enabled.`);
 			}
 			else
 			{
-				console.log('Started in not secure (http) mode.');
+				console.log('Started in NOT secure (HTTP) mode.');
 			}
 			if (USERS) console.log('Authentication mode enabled.');
 			if (USE_CLUSTER_MODE)
