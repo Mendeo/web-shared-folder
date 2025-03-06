@@ -2,7 +2,7 @@
 
 Лицензия MIT
 
-Copyright © Александр Меняйло (Aleksandr Meniailo), 2025 (thesolve@mail.ru, deorathemen@gmail.com)
+Copyright (c) Александр Меняйло (Aleksandr Meniailo), 2025 (thesolve@mail.ru, deorathemen@gmail.com)
 
 Данная лицензия разрешает лицам, получившим копию данного программного обеспечения и
 сопутствующей документации (в дальнейшем именуемыми «Программное Обеспечение»),
