@@ -30,13 +30,21 @@ wsf </path/to/folder/for/sharing> <port> [</path/to/key> </path/to/cert>] [--upl
 ```
 
 To output only the version number:
+
 ```
-wsf -v
+wsf -v [or --version]
 ```
 
 To output help:
+
 ```
-wsf -h
+wsf -h [or --help]
+```
+
+To output license information:
+
+```
+wsf -l [or --license]
 ```
 
 Instead of `wsf` you can use the full program name `web-shared-folder`.

@@ -24,13 +24,21 @@ wsf </path/to/folder/for/sharing> <port> [</path/to/key> </path/to/cert>] [--upl
 ```
 
 Для вывода только номера версии:
+
 ```
-wsf -v
+wsf -v [or --version]
 ```
 
 Для вывода справки:
+
 ```
-wsf -h
+wsf -h [or --help]
+```
+
+Для вывода информации о лицензии:
+
+```
+wsf -l [or --license]
 ```
 
 Вместо `wsf` для запуска можно использовать полное имя программы `web-shared-folder`
