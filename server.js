@@ -51,7 +51,7 @@ const VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'))
 	const l = process.argv.includes('-l') || process.argv.includes('-L') || process.argv.includes('--license');
 	if (l)
 	{
-		const license = fs.readFileSync(path.join(__dirname, 'LICENSE')).toString();
+		const license = fs.readFileSync(path.join(__dirname, 'LICENSE.txt')).toString();
 		console.log(license);
 		process.exit(0);
 	}
