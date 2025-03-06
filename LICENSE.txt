@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) Александр Меняйло (Aleksandr Meniailo), Mendeo 2025 (thesolve@mail.ru, deorathemen@gmail.com)
+Copyright (c) Александр Меняйло (Aleksandr Meniailo), 2025 (thesolve@mail.ru, deorathemen@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
