@@ -413,7 +413,18 @@ fs.stat(ROOT_PATH, (err, stats) =>
 			if (KEY && CERT)
 			{
 				console.log('Started in secure (HTTPS) mode.');
-				if (AUTO_REDIRECT_HTTP_PORT) console.log(`Auto redirect from http port ${AUTO_REDIRECT_HTTP_PORT} is enabled.`);
+				if (AUTO_REDIRECT_HTTP_PORT)
+				{
+					if (AUTO_REDIRECT_HTTP_PORT === PORT)
+					{
+						console.log('HTTP port for autoredirect is equal to HTTPS port!');
+						process.exit(1);
+					}
+					else
+					{
+						console.log(`Auto redirect from http port ${AUTO_REDIRECT_HTTP_PORT} is enabled.`);
+					}
+				}
 			}
 			else
 			{
