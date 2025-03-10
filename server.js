@@ -47,12 +47,23 @@ const VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'))
 		process.exit(0);
 	}
 }
+{//Show license
+	const l = process.argv.includes('-l') || process.argv.includes('-L') || process.argv.includes('--license');
+	if (l)
+	{
+		const license = fs.readFileSync(path.join(__dirname, 'LICENSE.txt')).toString();
+		console.log(license);
+		process.exit(0);
+	}
+}
 {//Show help
 	const h = process.argv.includes('-h') || process.argv.includes('-H') || process.argv.includes('--help');
 	if (h)
 	{
 		const help =
 `web-shared-folder
+
+This is free software and is provided "as is", without warranty of any kind (MIT License).
 
 Convenient http server on nodejs. Designed to share files and folders on a local network or even
 on the Internet via a web interface. Can also be used as a web server to serve static sites.
@@ -72,7 +83,10 @@ Usage
 wsf </path/to/folder/for/sharing> <port> [</path/to/key> </path/to/cert>] [--upload or -u]
 
 To output only the version number:
-wsf -v
+wsf -v [or --version]
+
+To output license
+wsf -l [or --license]
 
 Instead of "wsf" you can use the full program name "web-shared-folder".
 
@@ -263,7 +277,7 @@ const AUTO_REDIRECT_HTTP_PORT = Number(process.env.WSF_AUTO_REDIRECT_HTTP_PORT);
 const DISABLE_COMPRESSION = Number(process.env.WSF_DISABLE_COMPRESSION);
 let ROOT_PATH_RAW = ARGS[2] || process.env.WSF_ROOT;
 ROOT_PATH_RAW = ROOT_PATH_RAW ? ROOT_PATH_RAW.replace(/"/g, '') : null;
-if (!path.isAbsolute(ROOT_PATH_RAW)) ROOT_PATH_RAW = path.join(process.cwd(), ROOT_PATH_RAW);
+if (ROOT_PATH_RAW && !path.isAbsolute(ROOT_PATH_RAW)) ROOT_PATH_RAW = path.join(process.cwd(), ROOT_PATH_RAW);
 const ROOT_PATH = ROOT_PATH_RAW; //Папка относительно которой будут задаваться все папки, которые идут с адресом
 ROOT_PATH_RAW = null;
 const PORT = Number(ARGS[3] || process.env.WSF_PORT);
@@ -334,6 +348,9 @@ const numCPUs = USE_CLUSTER_MODE ? cpus().length : 1;
 if (cluster.isPrimary)
 {
 	console.log('web-shared-folder, version ' + VERSION);
+	console.log();
+	console.log('This is free software and is provided "as is", without warranty of any kind.');
+	console.log();
 	console.log('Port = ' + PORT);
 	console.log('Root = ' + ROOT_PATH);
 	if (USE_CLUSTER_MODE) console.log('CPUs number = ' + numCPUs);
@@ -395,12 +412,23 @@ fs.stat(ROOT_PATH, (err, stats) =>
 		{
 			if (KEY && CERT)
 			{
-				console.log('Start in secure (https) mode.');
-				if (AUTO_REDIRECT_HTTP_PORT) console.log(`Auto redirect from http port ${AUTO_REDIRECT_HTTP_PORT} is enabled.`);
+				console.log('Started in secure (HTTPS) mode.');
+				if (AUTO_REDIRECT_HTTP_PORT)
+				{
+					if (AUTO_REDIRECT_HTTP_PORT === PORT)
+					{
+						console.log('HTTP port for autoredirect is equal to HTTPS port!');
+						process.exit(1);
+					}
+					else
+					{
+						console.log(`Auto redirect from http port ${AUTO_REDIRECT_HTTP_PORT} is enabled.`);
+					}
+				}
 			}
 			else
 			{
-				console.log('Start in not secure (http) mode.');
+				console.log('Started in NOT secure (HTTP) mode.');
 			}
 			if (USERS) console.log('Authentication mode enabled.');
 			if (USE_CLUSTER_MODE)
