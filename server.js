@@ -936,11 +936,12 @@ function workerFlow()
 						else
 						{
 							const reqPostData = parseXwwwFormUrlEncoded(postBody);
-							if (USERS.has(reqPostData?.username))
+							const username = decodeURIComponent(reqPostData?.username);
+							const password = decodeURIComponent(reqPostData?.password);
+							if (username !== undefined && USERS.has(username))
 							{
-								const username = reqPostData.username;
 								const passwordHash = USERS.get(username).passwordHash;
-								if (passwordHash === crypto.createHash('sha256').update(reqPostData?.password).digest('hex'))
+								if (passwordHash === crypto.createHash('sha256').update(password).digest('hex'))
 								{
 									let refLink = '/';
 									if (cookie?.reflink) refLink = cookie.reflink;
