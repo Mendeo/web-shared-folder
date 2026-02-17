@@ -1320,7 +1320,25 @@ function workerFlow()
 			for (let entry of entries)
 			{
 				const dataIndex = entry.indexOf('\r\n\r\n', 72) + 4;
-				const startFileNameIndex = entry.indexOf('filename="') + 10;
+				const startNameIndex =  entry.indexOf('name="') + 6;
+				if (startNameIndex === -1 || startNameIndex > dataIndex)
+				{
+					callback({ error: 'No input name in post data.' });
+					return;
+				}
+				const endNameIndex = entry.indexOf('"', startNameIndex);
+				if (endNameIndex === -1 || endNameIndex > dataIndex)
+				{
+					callback({ error: 'No file name in post data.' });
+					return;
+				}
+				const name = entry.subarray(startNameIndex, endNameIndex).toString();
+				if (!name || !(name === 'upload_files' || name === 'upload_folder'))
+				{
+					callback({ error: 'Incorrect input name in post data.' });
+					return;
+				}
+				const startFileNameIndex = entry.indexOf('filename="', endNameIndex) + 10;
 				if (startFileNameIndex === -1 || startFileNameIndex > dataIndex)
 				{
 					callback({ error: 'No file name in post data.' });
@@ -1335,8 +1353,7 @@ function workerFlow()
 				const fileName = entry.subarray(startFileNameIndex, endFileNameIndex).toString();
 				if (!fileName || fileName === '')
 				{
-					callback({ error: 'No file selected!' });
-					return;
+					continue;
 				}
 				const data = entry.subarray(dataIndex, entry.length - 2);
 				result.push({ fileName, data });

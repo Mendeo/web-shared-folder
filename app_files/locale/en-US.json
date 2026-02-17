@@ -25,7 +25,7 @@
 	"deleteFilesWarning": "Are you sure you want to delete the selected files? <br>This operation cannot be undone.",
 	"deleteWithoutAsk": "Delete without confirmation",
 	"deleteError": "An error occurred during deletion",
-	"dragAndDropText": "Drag files here.",
+	"dragAndDropText": "Or drag files and folders here.",
 	"linkToUnzip": "Unzip archive on server",
 	"filesStats": "Files",
 	"foldersStats": "Folders",

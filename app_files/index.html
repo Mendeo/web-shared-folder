@@ -82,7 +82,16 @@
 					</form>
 					<!--Upload files form-->
 					<form class="footer__upload_files_form" method="post" enctype="multipart/form-data" name="upload_files">
-						<input type="file" name="upload" multiple>
+						<label>
+							<span>Выбрать отдельные файлы:</span><br>
+							<input type="file" name="upload_files" multiple>
+						</label>
+						<br><br>
+						<label>
+							<span>Или выбрать всю папку:</span><br>
+							<input type="file" name="upload_folder" webkitdirectory>
+						</label>
+						<br><br>
 						<!--Upload files-->
 						<input type="submit" value="~%~">
 					</form>
