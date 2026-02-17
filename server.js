@@ -1836,7 +1836,31 @@ function workerFlow()
 			let numOfFiles = reqPostData.length;
 			for (let fileData of reqPostData)
 			{
-				fs.writeFile(path.join(absolutePath, fileData.fileName), fileData.data, (err) =>
+				let filePath = fileData.fileName;
+				let dirName = '';
+				let fileName = '';
+				if (filePath.indexOf('/') !== -1) //Это не просто файл, а файл в папке
+				{
+					if (path.sep !== '/') filePath.replace('/', path.sep);
+					dirName = path.dirname(filePath);
+					fileName = path.basename(filePath);
+					if (!testToWrongPath(path.dirname(dirName)))
+					{
+						callback('Wrong folder name!');
+						return;
+					}
+					fs.mkdirSync(path.join(absolutePath, dirName), { recursive: true });
+				}
+				else
+				{
+					fileName = fileData.fileName;
+				}
+				if (fileName.match(FILE_REG_EXP) !== null)
+				{
+					callback('Wrong file name!');
+					return;
+				}
+				fs.writeFile(path.join(absolutePath, dirName, fileName), fileData.data, (err) =>
 				{
 					numOfFiles--;
 					if (err)
