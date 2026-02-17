@@ -1,3 +1,6 @@
+# v 4.2.*
+Added the ability to upload an entire folder.
+
 # v 4.0.*
 Removed http authentication. Instead, added the ability to create different users with access only to a specified user folder. Updated README.md and `wsf --help`  
 **Breaking changes:**
