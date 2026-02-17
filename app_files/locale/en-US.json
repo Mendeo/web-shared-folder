@@ -54,5 +54,7 @@
 	"signIn": "Sign in",
 	"signInError": "No user with this name and password found. Please, try again.",
 	"youSignInAs": "You are currently signed in as",
-	"signOut": "Sign out"
+	"signOut": "Sign out",
+	"selectIndividualFiles":"Select individual files",
+	"selectEntireFolder":"Or select the entire folder"
 }

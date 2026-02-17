@@ -2617,33 +2617,35 @@ function workerFlow()
 						`${UPLOAD_ENABLE ? (_indexHtmlbase[26] + getTranslation('createFolder', localeTranslation) +
 						_indexHtmlbase[27] + getTranslation('invalidName', localeTranslation) +
 						_indexHtmlbase[28] + getTranslation('folderName', localeTranslation) +
-						_indexHtmlbase[29] + getTranslation('uploadFiles', localeTranslation) +
-						_indexHtmlbase[30] + getTranslation('dragAndDropText', localeTranslation) +
-						_indexHtmlbase[31] + getTranslation('deleteFilesWarning', localeTranslation) +
-						_indexHtmlbase[32] + getTranslation('yes', localeTranslation) +
-						_indexHtmlbase[33] + getTranslation('no', localeTranslation) +
-						_indexHtmlbase[34] + getTranslation('deleteWithoutAsk', localeTranslation) +
-						_indexHtmlbase[35]) : ''}` +
-						_indexHtmlbase[36] + errorMessage +
-						_indexHtmlbase[37] + getTranslation('poweredBy', localeTranslation) +
-						_indexHtmlbase[38] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[39] + getTranslation('lightTheme', localeTranslation) +
-						_indexHtmlbase[40] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[41] + getTranslation('autoTheme', localeTranslation) +
-						_indexHtmlbase[42] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[43] + getTranslation('darkTheme', localeTranslation) +
-						_indexHtmlbase[44] +
-						`${UPLOAD_ENABLE ? (_indexHtmlbase[45] + getTranslation('inputNewName', localeTranslation) +
-						_indexHtmlbase[46] + getTranslation('invalidName', localeTranslation) +
-						_indexHtmlbase[47] + getTranslation('newName', localeTranslation) +
-						_indexHtmlbase[48] + getTranslation('ok', localeTranslation) +
-						_indexHtmlbase[49] + getTranslation('cancel', localeTranslation) +
-						_indexHtmlbase[50] + getTranslation('replaceWarningDialog', localeTranslation) +
-						_indexHtmlbase[51] + getTranslation('ok', localeTranslation) +
-						_indexHtmlbase[52] + getTranslation('cancel', localeTranslation) +
-						_indexHtmlbase[53] + getTranslation('doNotAsk', localeTranslation) +
-						_indexHtmlbase[54]) : ''}` +
-						_indexHtmlbase[55];
+						_indexHtmlbase[29] + getTranslation('selectIndividualFiles', localeTranslation) +
+						_indexHtmlbase[30] + getTranslation('selectEntireFolder', localeTranslation) +
+						_indexHtmlbase[31] + getTranslation('uploadFiles', localeTranslation) +
+						_indexHtmlbase[32] + getTranslation('dragAndDropText', localeTranslation) +
+						_indexHtmlbase[33] + getTranslation('deleteFilesWarning', localeTranslation) +
+						_indexHtmlbase[34] + getTranslation('yes', localeTranslation) +
+						_indexHtmlbase[35] + getTranslation('no', localeTranslation) +
+						_indexHtmlbase[36] + getTranslation('deleteWithoutAsk', localeTranslation) +
+						_indexHtmlbase[37]) : ''}` +
+						_indexHtmlbase[38] + errorMessage +
+						_indexHtmlbase[39] + getTranslation('poweredBy', localeTranslation) +
+						_indexHtmlbase[40] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[41] + getTranslation('lightTheme', localeTranslation) +
+						_indexHtmlbase[42] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[43] + getTranslation('autoTheme', localeTranslation) +
+						_indexHtmlbase[44] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[45] + getTranslation('darkTheme', localeTranslation) +
+						_indexHtmlbase[46] +
+						`${UPLOAD_ENABLE ? (_indexHtmlbase[47] + getTranslation('inputNewName', localeTranslation) +
+						_indexHtmlbase[48] + getTranslation('invalidName', localeTranslation) +
+						_indexHtmlbase[49] + getTranslation('newName', localeTranslation) +
+						_indexHtmlbase[50] + getTranslation('ok', localeTranslation) +
+						_indexHtmlbase[51] + getTranslation('cancel', localeTranslation) +
+						_indexHtmlbase[52] + getTranslation('replaceWarningDialog', localeTranslation) +
+						_indexHtmlbase[53] + getTranslation('ok', localeTranslation) +
+						_indexHtmlbase[54] + getTranslation('cancel', localeTranslation) +
+						_indexHtmlbase[55] + getTranslation('doNotAsk', localeTranslation) +
+						_indexHtmlbase[56]) : ''}` +
+						_indexHtmlbase[57];
 			}
 		});
 	}
