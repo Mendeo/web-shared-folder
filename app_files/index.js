@@ -560,7 +560,7 @@ function dragAndDropFiles()
 			//next();
 			function appendFile(file)
 			{
-				formData.append('upload_xhr', file);
+				formData.append('upload_dnd', file);
 			}
 			function next()
 			{

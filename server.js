@@ -1333,7 +1333,7 @@ function workerFlow()
 					return;
 				}
 				const name = entry.subarray(startNameIndex, endNameIndex).toString();
-				if (!name || !(name === 'upload_files' || name === 'upload_folder'))
+				if (!name || !(name === 'upload_files' || name === 'upload_folder' || name == 'upload_dnd'))
 				{
 					callback({ error: 'Incorrect input name in post data.' });
 					return;
