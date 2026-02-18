@@ -305,7 +305,7 @@ input[type="text"]:invalid
 	flex-direction: column;
 	align-items: start;
 	justify-content: space-around;
-	height: 7rem;
+	height: 7.7rem;
 }
 .rename_button
 {
