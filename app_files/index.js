@@ -444,7 +444,14 @@ function upload(formData, callback)
 					files = files.concat(Array.from(f.files));
 				}
 			}
-			if (files.length === 0) return;
+			if (files.length === 0)
+			{
+				for (let f of inputFiles)
+				{
+					f.disabled = false;
+				}
+				return;
+			}
 			const totalSize = filesSize(files);
 			if (totalSize <= 5242880)
 			{
