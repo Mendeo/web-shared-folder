@@ -34,8 +34,8 @@
   },
   "homepage": "https://github.com/Mendeo/web-shared-folder#readme",
   "bin": {
-    "web-shared-folder": "./server.js",
-    "wsf": "./server.js"
+    "web-shared-folder": "server.js",
+    "wsf": "server.js"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
