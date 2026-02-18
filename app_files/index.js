@@ -437,7 +437,7 @@ function upload(formData, callback)
 			{
 				if (f.files.length === 0)
 				{
-					f.remove();
+					f.disabled = true;
 				}
 				else
 				{
@@ -454,6 +454,10 @@ function upload(formData, callback)
 			else
 			{
 				formData = new FormData(uploadForm);
+				for (let f of inputFiles)
+				{
+					f.disabled = true;
+				}
 				submit(formData);
 			}
 		});
