@@ -1,3 +1,7 @@
+# v 4.3.*
+Bug fixes.
+Security improvements.
+
 # v 4.2.*
 Added the ability to upload an entire folder.
 
