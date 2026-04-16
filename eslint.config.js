@@ -74,5 +74,6 @@ module.exports = [...compat.extends("eslint:recommended"),
 		{
 			checkLoops: false,
 		}],
+		"no-control-regex": "off"
 	},
 }];

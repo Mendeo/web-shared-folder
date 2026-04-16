@@ -599,7 +599,7 @@ function workerFlow()
 		}
 	}
 
-	const FILE_REG_EXP = new RegExp(/[<>":?*|\\/]/g);
+	const FILE_REG_EXP = new RegExp(/[<>":?*|\\\x7f\x00-\x1f/]/g);
 	const DEFAULT_LANG = 'en-US';
 	let DEFAULT_LOCALE_TRANSLATION = null;
 
@@ -2138,7 +2138,7 @@ function workerFlow()
 	function testToWrongPath(pathToTest)
 	{
 		if (pathToTest === '..') return false;
-		if (pathToTest.match(/[<>":?*|]/g) !== null) return false;
+		if (pathToTest.match(/[<>":?*|\x7f\x00-\x1f]/g) !== null) return false;
 		const index = pathToTest.indexOf('..');
 		if (index === -1) return true;
 		if (pathToTest[index - 1] === path.sep) return false;
