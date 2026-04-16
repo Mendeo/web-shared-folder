@@ -391,7 +391,7 @@ function upload(formData, callback)
 	{
 		if (event.total > MAX_FILE_LENGTH)
 		{
-			errorFiled.innerHTML = 'Maximum files upload size exceeded';
+			errorFiled.textContent = 'Maximum files upload size exceeded';
 			removeProgressBar();
 			xhr.abort();
 			return;
@@ -408,7 +408,7 @@ function upload(formData, callback)
 			if (typeof callback === 'function') callback(xhr.response);
 			if (xhr.response)
 			{
-				errorFiled.innerHTML = xhr.response;
+				errorFiled.textContent = xhr.response;
 			}
 			else
 			{
@@ -422,7 +422,7 @@ function upload(formData, callback)
 		removeProgressBar();
 		const msg = 'Error occurred!';
 		if (typeof callback === 'function') callback(msg);
-		errorFiled.innerHTML = msg;
+		errorFiled.textContent = msg;
 		console.log(err);
 	});
 
