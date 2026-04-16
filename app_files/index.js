@@ -542,9 +542,9 @@ function dragAndDropFiles()
 			}
 			function scan(entry)
 			{
+				cnt++;
 				if (entry.isFile)
 				{
-					cnt++;
 					entry.file(file =>
 					{
 						cnt--;
@@ -556,6 +556,7 @@ function dragAndDropFiles()
 				{
 					entry.createReader().readEntries((newEntries) =>
 					{
+						cnt--;
 						for (let newEntry of newEntries)
 						{
 							scan(newEntry);
