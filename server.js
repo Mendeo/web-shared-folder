@@ -2879,32 +2879,47 @@ function workerFlow()
 		{
 			//console.log('Sent successfully: ' + filePath);
 		});
-
 	}
 
 	function unzip(pathToZip, callback)
 	{
 		const zip = new JSZip();
+		const MAX_FILES = 100000;
+		const MAX_TOTAL_SIZE = 4 * 1024 * 1024 * 1024; // 4GiB
+
 		fs.readFile(pathToZip, (err, data) =>
 		{
+			const ERROR_MESSAGE = 'Server error while uziping';
 			if (err)
 			{
-				callback(err.message);
+				console.log('Unzip error: ' + err.message);
+				callback(ERROR_MESSAGE);
 			}
 			else
 			{
 				zip.loadAsync(data, { createFolders: true }).then(zipData =>
 				{
 					const files = Object.keys(zipData.files);
+
+					if (files.length > MAX_FILES)
+					{
+						console.log('Unzip error: Too many files in archive');
+						callback(ERROR_MESSAGE);
+						return;
+					}
+
 					if (files.length > 0) next(0);
+					let totalSize = 0;
 
 					function next(index)
 					{
-						const file = files[index];
-						const name = zipData.files[file].name;
-						const isDir = zipData.files[file].dir;
-						const fullPath = path.join(path.dirname(pathToZip), name);
-						if (isDir)
+						const entry = zipData.files[files[index]];
+						const fullPath = path.join(path.dirname(pathToZip), entry.name);
+						if (!testToWrongPath(entry.name))
+						{
+							perform(new Error('Zip entry contains invalid characters'));
+						}
+						else if (entry.dir)
 						{
 							fs.mkdir(fullPath, { recursive: true }, err =>
 							{
@@ -2913,23 +2928,31 @@ function workerFlow()
 						}
 						else
 						{
-							zipData.files[file].async('uint8array').then(data =>
+							entry.async('uint8array').then(data =>
 							{
-								const fileDir = path.dirname(fullPath);
-								fs.mkdir(fileDir, { recursive: true }, err =>
+								totalSize += data.length;
+								if (totalSize > MAX_TOTAL_SIZE)
 								{
-									if (err)
+									perform(new Error('Archive data is too large'));
+								}
+								else
+								{
+									const fileDir = path.dirname(fullPath);
+									fs.mkdir(fileDir, { recursive: true }, err =>
 									{
-										perform(err);
-									}
-									else
-									{
-										fs.writeFile(fullPath, data, err =>
+										if (err)
 										{
 											perform(err);
-										});
-									}
-								});
+										}
+										else
+										{
+											fs.writeFile(fullPath, data, err =>
+											{
+												perform(err);
+											});
+										}
+									});
+								}
 							}).catch(perform);
 						}
 
@@ -2938,7 +2961,7 @@ function workerFlow()
 							if (err)
 							{
 								console.log('Unzip error: ' + err.message);
-								callback('Server error while uziping');
+								callback(ERROR_MESSAGE);
 							}
 							else
 							{
